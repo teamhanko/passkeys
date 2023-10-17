@@ -1,0 +1,5 @@
+console_output:
+  enabled: true
+  output: stdout
+storage:
+  enabled: true

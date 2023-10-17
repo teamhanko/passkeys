@@ -1,0 +1,3 @@
+drop_foreign_key("webauthn_credentials", "webauthn_user_credentials_fk", {"if_exists": true})
+
+drop_table("webauthn_users")

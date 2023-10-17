@@ -1,0 +1,49 @@
+version: '3.9'
+services:
+  passkey-migrate:
+    build: ../../server
+    volumes:
+      - type: bind
+        source: ./config.yaml
+        target: /etc/config/config.yaml
+    command: --config /etc/config/config.yaml migrate up
+    restart: on-failure
+    depends_on:
+      postgresd:
+        condition: service_healthy
+    networks:
+      - intranet
+  passkey-server:
+    build: ../../server
+    volumes:
+      - type: bind
+        source: ./config.yaml
+        target: /etc/config/config.yaml
+    command: --config /etc/config/config.yaml serve
+    ports:
+      - '8000:8000'
+    restart: unless-stopped
+    depends_on:
+      passkey-migrate:
+        condition: service_completed_successfully
+    networks:
+      - intranet
+  postgresd:
+    image: postgres:12-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=hanko
+      - POSTGRES_PASSWORD=hanko
+      - POSTGRES_DB=passkey
+    healthcheck:
+      test: pg_isready -U hanko -d hanko
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - intranet
+
+networks:
+  intranet:

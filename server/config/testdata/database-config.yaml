@@ -1,0 +1,7 @@
+database: hanko
+user: test
+password: strong-password
+host: localhost
+port: 3456
+dialect: postgres
+url: postgres://test@localhost:3456/postgres

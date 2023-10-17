@@ -1,0 +1,6 @@
+api_key: 60eb263e-1bfb-4e6b-818f-fdb9668f1504
+database:
+  url: postgres://postgres@localhost:5432/hanko
+secrets:
+  keys:
+    - super-long-and-super-secret

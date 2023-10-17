@@ -1,0 +1,676 @@
+openapi: 3.1.0
+info:
+  version: '1.0'
+  title: passkey-server
+  summary: 'OpenAPI Spec for creating, managing and using passkeys'
+  description: 'This api shall represent the private and public endpoints for Passkey registration, management and authentication'
+  termsOfService: 'https://www.hanko.io/terms'
+  contact:
+    email: developers@hanko.io
+    url: hanko.io
+    name: Developers@hanko
+  license:
+    url: 'https://www.gnu.org/licenses/gpl-3.0.de.html'
+    name: GPLv3
+servers:
+  - url: 'http://localhost:8000'
+paths:
+  /credentials:
+    get:
+      tags:
+        - credentials
+      summary: List Credentials
+      description: Get a list of webauthn credentials for a user
+      operationId: get-credentials
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - $ref: '#/components/parameters/userid'
+      requestBody:
+        description: ''
+        content: {}
+      responses:
+        '200':
+          $ref: '#/components/responses/get-credentials'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://localhost:8000'
+  '/credentials/{credentialId}':
+    patch:
+      tags:
+        - credentials
+      summary: Update Credential
+      description: Endpoint for updating a webauthn credential
+      operationId: patch-credentials-credentialId
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - $ref: '#/components/parameters/credentialId'
+      requestBody:
+        $ref: '#/components/requestBodies/patch-credential'
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://localhost:8000'
+    delete:
+      summary: Remove Credential
+      description: Endpoint for removing a webauthn credential
+      operationId: delete-credentials-credentialId
+      parameters:
+        - $ref: '#/components/parameters/credentialId'
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://localhost:8000'
+  /registration/initialize:
+    post:
+      tags:
+        - credentials
+      summary: Start Passkey Registration
+      description: Initialize a registration for webauthn credentials
+      operationId: post-registration-initialize
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+      requestBody:
+        $ref: '#/components/requestBodies/post-registration-initialize'
+      responses:
+        '200':
+          $ref: '#/components/responses/post-registration-initialize'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://localhost:8000'
+  /registration/finalize:
+    post:
+      tags:
+        - credentials
+      summary: Finish Passkey Registration
+      description: Finish credential registration process.
+      operationId: post-registration-finalize
+      requestBody:
+        $ref: '#/components/requestBodies/post-registration-finalize'
+      responses:
+        '200':
+          $ref: '#/components/responses/token'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://localhost:8000'
+  /login/initialize:
+    post:
+      summary: Start Login
+      description: Initialize a login flow for passkeys
+      operationId: post-login-initialize
+      responses:
+        '200':
+          $ref: '#/components/responses/post-login-initialize'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://localhost:8000'
+  /login/finalize:
+    post:
+      summary: Finish Login
+      description: Finalize the login operation
+      operationId: post-login-finalize
+      requestBody:
+        $ref: '#/components/requestBodies/post-login-finalize'
+      responses:
+        '200':
+          $ref: '#/components/responses/token'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://localhost:8000'
+  /.well-known/jwks.json:
+    get:
+      tags:
+        - credentials
+        - webauthn
+      summary: Well-known JWKS
+      description: Endpoint for fetching JWKS
+      operationId: get-.well-known-jwks.json
+      responses:
+        '200':
+          $ref: '#/components/responses/jwks'
+      servers:
+        - url: 'http://localhost:8000'
+tags:
+  - name: credentials
+    description: Represents all objects which are related to webauthn credentials
+  - name: webauthn
+    description: Represents all objects which are related to webauthn in common
+components:
+  parameters:
+    userid:
+      name: userid
+      in: query
+      description: uuid representation of the user
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+        examples:
+          - 1f496bcd-49da-4839-a02f-7ce681ccb488
+    credentialId:
+      name: credentialId
+      in: path
+      description: UUID of the credential
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+        examples:
+          - 1f496bcd-49da-4839-a02f-7ce681cdaaaa
+    X-API-KEY:
+      name: apiKey
+      in: header
+      description: Secret API Key
+      required: true
+      schema:
+        type: string
+        minLength: 32
+  requestBodies:
+    patch-credential:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+            required:
+              - name
+    post-registration-initialize:
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              userId:
+                type: string
+                format: uuid
+                minLength: 36
+                maxLength: 36
+              username:
+                type: string
+              icon:
+                type:
+                  - string
+                  - 'null'
+              displayname:
+                type:
+                  - string
+                  - 'null'
+            required:
+              - userId
+              - username
+    post-registration-finalize:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/public-key-credential'
+              - type: object
+                properties:
+                  response:
+                    $ref: '#/components/schemas/authenticator-attestation-response'
+                  transports:
+                    type:
+                      - array
+                      - 'null'
+                    uniqueItems: true
+                    items:
+                      type: string
+                required:
+                  - response
+    post-login-finalize:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/public-key-credential'
+              - type: object
+                properties:
+                  response:
+                    $ref: '#/components/schemas/autenticator-assertion-response'
+                required:
+                  - response
+  responses:
+    get-credentials:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            uniqueItems: true
+            items:
+              type: object
+              additionalProperties: false
+              properties:
+                id:
+                  type: string
+                name:
+                  type:
+                    - string
+                    - 'null'
+                public_key:
+                  type: string
+                attestation_type:
+                  type: string
+                aaguid:
+                  type: string
+                  format: uuid
+                  minLength: 36
+                  maxLength: 36
+                last_used_at:
+                  type:
+                    - string
+                    - 'null'
+                  format: date-time
+                created_at:
+                  type: string
+                  format: date-time
+                transports:
+                  type: array
+                  uniqueItems: true
+                  items:
+                    type: string
+                backup_eligible:
+                  type: boolean
+                  default: false
+                backup_state:
+                  type: boolean
+                  default: false
+              required:
+                - id
+                - public_key
+                - attestation_type
+                - aaguid
+                - created_at
+                - transports
+                - backup_eligible
+                - backup_state
+    error:
+      description: Error Response with detailed information
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              type:
+                type:
+                  - string
+                  - 'null'
+                examples:
+                  - 'http://link-to-documentation'
+              title:
+                type:
+                  - string
+                  - 'null'
+                examples:
+                  - explanatory title
+              details:
+                type:
+                  - string
+                  - 'null'
+                examples:
+                  - Information which helps resolving the problem
+              status:
+                type:
+                  - integer
+                  - 'null'
+    post-registration-initialize:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              rp:
+                $ref: '#/components/schemas/relying-party-entity'
+              user:
+                $ref: '#/components/schemas/user-entity'
+              challenge:
+                type: string
+              pubKeyCredParams:
+                type:
+                  - array
+                  - 'null'
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/credential-parameter-entity'
+              timeout:
+                type:
+                  - integer
+                  - 'null'
+              excludeCredentials:
+                type:
+                  - array
+                  - 'null'
+                items:
+                  $ref: '#/components/schemas/credential-descriptor-entity'
+              authenticatorSelection:
+                $ref: '#/components/schemas/authentication-selection-entity'
+              attestation:
+                type: string
+              extensions:
+                type: array
+                items:
+                  type: object
+            required:
+              - rp
+              - user
+              - challenge
+    post-login-initialize:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              publicKey:
+                type: object
+                additionalProperties: false
+                properties:
+                  challenge:
+                    type: string
+                  timeout:
+                    type:
+                      - integer
+                      - 'null'
+                    format: int32
+                  rpId:
+                    type:
+                      - string
+                      - 'null'
+                  allowCredentials:
+                    type:
+                      - array
+                      - 'null'
+                    items:
+                      type: string
+                  userVerification:
+                    type:
+                      - string
+                      - 'null'
+                  extensions:
+                    type:
+                      - array
+                      - 'null'
+                    uniqueItems: true
+                    items:
+                      type: object
+                      additionalProperties: false
+                required:
+                  - challenge
+            required:
+              - publicKey
+    jwks:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              keys:
+                type: array
+                minItems: 1
+                uniqueItems: true
+                items:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    alg:
+                      type: string
+                      readOnly: true
+                      examples:
+                        - RS256
+                    e:
+                      type: string
+                      readOnly: true
+                      examples:
+                        - AAAA
+                    kid:
+                      type: string
+                      format: uuid
+                      readOnly: true
+                      examples:
+                        - 483b2499-1ed7-4325-94e3-97e8118ceee9
+                    kty:
+                      type: string
+                      readOnly: true
+                      examples:
+                        - RSA
+                    'n':
+                      type: string
+                      readOnly: true
+                    use:
+                      type: string
+                      readOnly: true
+                      examples:
+                        - sig
+                  minProperties: 6
+            minProperties: 1
+    token:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              token:
+                type: string
+            minProperties: 1
+  schemas:
+    public-key-credential:
+      title: public-key-credential
+      allOf:
+        - $ref: '#/components/schemas/credential'
+        - type: object
+          properties:
+            rawId:
+              type: string
+            clientExtensionResults:
+              type: object
+            authenticatorAttachment:
+              type: string
+          required:
+            - rawId
+    credential:
+      type: object
+      title: credential
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+      required:
+        - id
+        - type
+    authenticator-attestation-response:
+      title: authenticator-attestation-response
+      allOf:
+        - $ref: '#/components/schemas/authenticator-response'
+        - type: object
+          properties:
+            attestationObject:
+              type: string
+            transports:
+              type:
+                - array
+                - 'null'
+              uniqueItems: true
+              items:
+                type: string
+          required:
+            - attestationObject
+    authenticator-response:
+      type: object
+      title: authenticator-response
+      properties:
+        clientDataJSON:
+          type: string
+      required:
+        - clientDataJSON
+    autenticator-assertion-response:
+      title: autenticator-assertion-response
+      allOf:
+        - $ref: '#/components/schemas/authenticator-response'
+        - type: object
+          properties:
+            authenticatorData:
+              type: string
+            signature:
+              type: string
+            userHandle:
+              type:
+                - string
+                - 'null'
+          required:
+            - authenticatorData
+            - signature
+    relying-party-entity:
+      title: relying-party-entity
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+          required:
+            - id
+        - $ref: '#/components/schemas/credential-entity'
+    credential-entity:
+      type: object
+      title: credential-entity
+      properties:
+        name:
+          type: string
+        icon:
+          type:
+            - string
+            - 'null'
+      required:
+        - name
+    user-entity:
+      title: user-entity
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+            displayName:
+              type:
+                - string
+                - 'null'
+          required:
+            - id
+        - $ref: '#/components/schemas/credential-entity'
+    credential-parameter-entity:
+      type: object
+      title: credential-parameter-entity
+      properties:
+        type:
+          type: string
+        alg:
+          type: integer
+          format: int32
+      required:
+        - type
+        - alg
+    credential-descriptor-entity:
+      type: object
+      title: credential-descriptor-entity
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+        transports:
+          type:
+            - array
+            - 'null'
+          uniqueItems: true
+          items:
+            type: string
+      required:
+        - type
+        - id
+    authentication-selection-entity:
+      type: object
+      title: authentication-selection-entity
+      properties:
+        authenticatorAttachement:
+          type:
+            - string
+            - 'null'
+        requireResidentKey:
+          type:
+            - boolean
+            - 'null'
+          default: false
+        residentKey:
+          type:
+            - string
+            - 'null'
+        userVerification:
+          type:
+            - string
+            - 'null'

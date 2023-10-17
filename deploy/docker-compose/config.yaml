@@ -1,0 +1,11 @@
+api_key: 60eb263e-1bfb-4e6b-818f-fdb9668f1504
+database:
+  database: passkey
+  dialect: postgres
+  host: postgresd
+  port: 5432
+  user: hanko
+  password: hanko
+secrets:
+  keys:
+    - super-long-and-super-secret
