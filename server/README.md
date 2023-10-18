@@ -25,7 +25,8 @@ docker compose -f backend.yaml up -d
 
 After running the Docker compose command the passkey server will be available at http://localhost:8000
 
-> **Note:** If you want to use a different origin you have to configure CORS and webauthn. Please see the TODO:[MISSING LINK]
+> **Note:** If you want to use a different origin you have to configure CORS and webauthn. Please see [Step 6](#configure-webauthn)
+> and [Step 7](#configure-cors) for detailed instructions.
 
 ## Start the passkey server manually
 
@@ -38,7 +39,7 @@ If you do not want to use our deployment or already have a database you want to 
 5. [Configure an API key](#configure-an-api-key)
 6. [Configure WebAuthn](#configure-webauthn)
 7. [Configure CORS](#configure-cors)
-8. [Start the backend](#start-the-backend)
+8. [Start the backend](#start-the-server)
 
 ### Run a database
 
@@ -112,7 +113,7 @@ docker run --mount type=bind,source=<PATH-TO-CONFIG-FILE>,target=/config/config.
 
 #### From source
 
-First build the Hanko backend. The only prerequisite is to have Go (v1.18+) [installed](https://go.dev/doc/install)
+First build the passkey server. The only prerequisite is to have Go (v1.18+) [installed](https://go.dev/doc/install)
 on your computer.
 
 ```shell
@@ -121,7 +122,7 @@ go build -a -o passkey-server main.go
 ```
 
 This command will create an executable with the name `passkey-server`, which then can be used to apply the database migrations
-and start the Hanko backend.
+and start the passkey server.
 
 To apply the migrations, run:
 
@@ -237,7 +238,7 @@ webauthn:
 
 ### Configure CORS
 
-Because the backend and your application(s) consuming backend API most likely have different origins, i.e.
+Because the server and your application(s) consuming the server API most likely have different origins, i.e.
 scheme (protocol), hostname (domain), and port part of the URL are different, you need to configure
 Cross-Origin Resource Sharing (CORS) and specify your application(s) as allowed origins:
 
@@ -265,8 +266,7 @@ we want to make sure, that you understand what you are doing, hence this flag.
 
 ### Start the server
 
-The passkey server consists of a public and an administrative API (currently providing user management
-endpoints). These can be started separately or in a single command.
+To serve the API with the passkey-server you can use the following command:
 
 ##### Docker
 
@@ -278,7 +278,7 @@ docker run --mount type=bind,source=<PATH-TO-CONFIG-FILE>,target=/config/config.
 
 The service is now available at `localhost:8000`.
 
-`8000` is the default port for the public API. It can be customized via in the configuration through
+`8000` is the default port for the API. It can be customized via in the configuration through
 the `server.address` option.
 
 ```yaml
