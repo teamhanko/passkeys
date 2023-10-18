@@ -2,7 +2,7 @@
 
 ## Getting started
 
-For a quick start of the Passkey server you can use the config and docker compose file in [deploy](../deploy).
+For a quick start of the passkey server you can use the config and docker compose file in [deploy](../deploy).
 All you have to do to start the server is to add an API key and a secret key in the config file in `secrets.api_keys` like:
 
 ```yaml
@@ -12,20 +12,20 @@ secrets:
   keys:
     - your-super-secret-crypto-key
 ```
-> **Note:** You must at least provide 1 api key and 1 secret key.
+> **Note:** You must at least provide 1 API key and 1 secret key.
 > * Each secret key needs to be at least 16 characters long
-> * Each api key needs to be at least 32 characters long
+> * Each API key needs to be at least 32 characters long
 
-After that you can run the following docker compose command to start the passkey server for local usage:
+After that you can run the following Docker compose command to start the passkey server for local usage:
 
 ```bash
 cd deploy
 docker compose -f backend.yaml up -d
 ```
 
-After running the docker compose command the passkey server will be available at http://localhost:8000
+After running the Docker compose command the passkey server will be available at http://localhost:8000
 
-> **Note:** If you want to use a different origin you have to configure CORS and webauthn. Please see the
+> **Note:** If you want to use a different origin you have to configure CORS and webauthn. Please see the TODO:[MISSING LINK]
 
 ## Start the passkey server manually
 
@@ -98,7 +98,7 @@ Replace `<DB_USER>`, `<DB_PASSWORD>`, `<DB_PORT>`, `<DB_DATABASE>` with the valu
 DB instance (cf. the Docker commands above used for running the DB containers) and replace `<DB_DIALECT>` with
 the DB of your choice.
 
-### Apply Database migrations
+### Apply database migrations
 
 Before you can start and use the service you need to run the database migrations:
 
@@ -120,7 +120,7 @@ go generate ./...
 go build -a -o passkey-server main.go
 ```
 
-This command will create an executable with the name `hanko`, which then can be used to apply the database migrations
+This command will create an executable with the name `passkey-server`, which then can be used to apply the database migrations
 and start the Hanko backend.
 
 To apply the migrations, run:
@@ -170,10 +170,10 @@ endpoint to enable clients to verify token signatures.
 ### Configure WebAuthn
 
 Passkeys are based on the [Web Authentication API](https://www.w3.org/TR/webauthn-2/#web-authentication-api).
-In order to create and login with passkeys, the Hanko backend must be provided information about
+In order to create and login with passkeys, the passkey server must be provided information about
 the [WebAuthn Relying Party](https://www.w3.org/TR/webauthn-2/#webauthn-relying-party).
 
-For most use cases, you just need the domain of your web application that uses the Hanko backend. Set
+For most use cases, you just need the domain of your web application that uses the passkey server. Set
 `webauthn.relying_party.id` to the domain and set `webauthn.relying_party.origin` to the domain _including_ the
 protocol.
 
@@ -182,7 +182,7 @@ protocol.
 
 #### Local development example
 
-When developing locally, the Passkey server defaults to:
+When developing locally, the passkey server defaults to:
 
 ```yaml
 webauthn:
@@ -195,7 +195,7 @@ webauthn:
 
 so no further configuration changes need to be made to your configuration file.
 
-#### Production Examples
+#### Production examples
 
 When you have a website hosted at `example.com` and you want to add a login to it that will be available
 at `https://example.com/login`, the WebAuthn config would look like this:
@@ -263,9 +263,9 @@ we want to make sure, that you understand what you are doing, hence this flag.
 
 > **Note** In most cases, the `allow_origins` list here should contain the same entries as the `webauthn.relying_party.origins` list. Only when you have an Android app you will have an extra entry (`android:apk-key-hash:...`) in the `webauthn.relying_party.origins` list.
 
-### Start the backend
+### Start the server
 
-The Hanko backend consists of a public and an administrative API (currently providing user management
+The passkey server consists of a public and an administrative API (currently providing user management
 endpoints). These can be started separately or in a single command.
 
 ##### Docker
