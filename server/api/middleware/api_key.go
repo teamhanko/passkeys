@@ -12,18 +12,20 @@ func ApiKeyMiddleware(cfg *config.Config) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			apiKey := c.Request().Header.Get("apiKey")
 
-			if strings.TrimSpace(apiKey) != cfg.ApiKey {
-				errorType := "about:blank"
-				title := "The api key is invalid"
-				details := "api keys needs to be an apiKey Header and 32 byte long"
-				status := http.StatusUnauthorized
+			for _, key := range cfg.Secrets.ApiKeys {
+				if strings.TrimSpace(apiKey) != key {
+					errorType := "about:blank"
+					title := "The api key is invalid"
+					details := "api keys needs to be an apiKey Header and 32 byte long"
+					status := http.StatusUnauthorized
 
-				return c.JSON(http.StatusUnauthorized, &HttpError{
-					ErrorType: &errorType,
-					Title:     &title,
-					Details:   &details,
-					Status:    &status,
-				})
+					return c.JSON(http.StatusUnauthorized, &HttpError{
+						ErrorType: &errorType,
+						Title:     &title,
+						Details:   &details,
+						Status:    &status,
+					})
+				}
 			}
 
 			return next(c)

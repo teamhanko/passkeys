@@ -24,7 +24,7 @@ paths:
       operationId: get-credentials
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
-        - $ref: '#/components/parameters/userid'
+        - $ref: '#/components/parameters/user_id'
       requestBody:
         description: ''
         content: {}
@@ -40,7 +40,7 @@ paths:
       security: []
       servers:
         - url: 'http://localhost:8000'
-  '/credentials/{credentialId}':
+  '/credentials/{credential_id}':
     patch:
       tags:
         - credentials
@@ -49,7 +49,7 @@ paths:
       operationId: patch-credentials-credentialId
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
-        - $ref: '#/components/parameters/credentialId'
+        - $ref: '#/components/parameters/credential_id'
       requestBody:
         $ref: '#/components/requestBodies/patch-credential'
       responses:
@@ -71,7 +71,7 @@ paths:
       description: Endpoint for removing a webauthn credential
       operationId: delete-credentials-credentialId
       parameters:
-        - $ref: '#/components/parameters/credentialId'
+        - $ref: '#/components/parameters/credential_id'
       responses:
         '204':
           description: No Content
@@ -192,8 +192,8 @@ tags:
     description: Represents all objects which are related to webauthn in common
 components:
   parameters:
-    userid:
-      name: userid
+    user_id:
+      name: user_id
       in: query
       description: uuid representation of the user
       required: true
@@ -204,8 +204,8 @@ components:
         maxLength: 36
         examples:
           - 1f496bcd-49da-4839-a02f-7ce681ccb488
-    credentialId:
-      name: credentialId
+    credential_id:
+      name: credential_id
       in: path
       description: UUID of the credential
       required: true
@@ -242,7 +242,7 @@ components:
           schema:
             type: object
             properties:
-              userId:
+              user_id:
                 type: string
                 format: uuid
                 minLength: 36
@@ -253,12 +253,12 @@ components:
                 type:
                   - string
                   - 'null'
-              displayname:
+              display_name:
                 type:
                   - string
                   - 'null'
             required:
-              - userId
+              - user_id
               - username
     post-registration-finalize:
       content:

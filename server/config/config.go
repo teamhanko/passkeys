@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/knadh/koanf"
@@ -16,7 +15,6 @@ var (
 )
 
 type Config struct {
-	ApiKey   string   `yaml:"api_key" json:"api_key" koanf:"api_key"`
 	Server   Server   `yaml:"server" json:"server,omitempty" koanf:"server"`
 	Database Database `yaml:"database" json:"database,omitempty" koanf:"database"`
 	Secrets  Secrets  `yaml:"secrets" json:"secrets,omitempty" koanf:"secrets"`
@@ -26,10 +24,6 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	if len(c.ApiKey) < 32 {
-		return errors.New("api key needs to be defined and at least 32 bytes long")
-	}
-
 	err := c.Server.Validate()
 	if err != nil {
 		return fmt.Errorf("failed to validate server config: %w", err)
