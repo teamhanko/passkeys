@@ -3,6 +3,5 @@ database:
 secrets:
   api_keys:
     - 2d92ff02-a646-4ddb-948a-931f122b4371
-    - 231d511e-1905-4ca8-8ae4-605f18914c0a
   keys:
     - super-long-and-super-secret
