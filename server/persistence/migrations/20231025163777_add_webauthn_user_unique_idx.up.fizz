@@ -1,0 +1,1 @@
+add_index("webauthn_users", "user_id", { "unique": true })

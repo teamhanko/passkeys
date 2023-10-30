@@ -1,7 +1,7 @@
 database:
-  url: postgres://postgres@localhost:5432/hanko
-secrets:
-  api_keys:
-    - 2d92ff02-a646-4ddb-948a-931f122b4371
-  keys:
-    - super-long-and-super-secret
+  database: passkey
+  dialect: postgres
+  host: postgresd
+  port: 5432
+  user: hanko
+  password: hanko

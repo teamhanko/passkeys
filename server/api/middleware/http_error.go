@@ -15,6 +15,20 @@ type HttpError struct {
 	Additional *map[string]string `json:"additional,omitempty"`
 }
 
+const (
+	AboutBlank = "about:blank"
+)
+
+func NewHttpError(errorType string, title string, details string, status int, additional *map[string]string) *HttpError {
+	return &HttpError{
+		ErrorType:  &errorType,
+		Title:      &title,
+		Details:    &details,
+		Status:     &status,
+		Additional: additional,
+	}
+}
+
 func ToHttpError(err error) *HttpError {
 	var e *echo.HTTPError
 	var errorMessage string
@@ -25,7 +39,7 @@ func ToHttpError(err error) *HttpError {
 	case errors.As(err, &e):
 		errorMessage = fmt.Sprintf("%v", e.Message)
 		var additional *map[string]string
-		internalErrors := make(map[string]string, 0)
+		internalErrors := make(map[string]string)
 		if e.Internal != nil {
 			internalErrors["internal"] = fmt.Sprintf("%v", e.Internal)
 			additional = &internalErrors

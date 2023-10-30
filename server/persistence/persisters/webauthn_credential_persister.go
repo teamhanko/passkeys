@@ -42,7 +42,7 @@ func (w *webauthnCredentialPersister) Get(id string) (*models.WebauthnCredential
 }
 
 func (w *webauthnCredentialPersister) Create(credential *models.WebauthnCredential) error {
-	vErr, err := w.database.ValidateAndCreate(&credential)
+	vErr, err := w.database.ValidateAndCreate(credential)
 	if err != nil {
 		return fmt.Errorf("failed to store credential: %w", err)
 	}
@@ -53,7 +53,7 @@ func (w *webauthnCredentialPersister) Create(credential *models.WebauthnCredenti
 
 	// Eager creation seems to be broken, so we need to store the transports separately.
 	// See: https://github.com/gobuffalo/pop/issues/608
-	vErr, err = w.database.ValidateAndCreate(&credential.Transports)
+	vErr, err = w.database.ValidateAndCreate(credential.Transports)
 	if err != nil {
 		return fmt.Errorf("failed to store credential transport: %w", err)
 	}

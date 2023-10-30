@@ -1,0 +1,11 @@
+create_table("relying_parties") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("rp_id", "string", { "null": false })
+	t.Column("display_name", "string", { "null": false})
+	t.Column("icon", "string", {"null": true})
+	t.Column("webauthn_config_id", "uuid", { "null": false, "unique": true })
+
+	t.ForeignKey("webauthn_config_id", {"webauthn_configs": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

@@ -6,9 +6,6 @@ import (
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"os"
-	"reflect"
 	"testing"
 )
 
@@ -70,8 +67,7 @@ func TestLoadingMinimalConfig(t *testing.T) {
 	}
 
 	assert.NotNil(t, cfg)
-	assert.Equal(t, "60eb263e-1bfb-4e6b-818f-fdb9668f1504", cfg.ApiKey)
-	assert.Equal(t, defaultConfig.Server.Address, cfg.Server.Address)
+	assert.Equal(t, defaultConfig.Address, cfg.Address)
 }
 
 func TestMissingApiKeyFailure(t *testing.T) {
@@ -83,16 +79,5 @@ func TestMissingApiKeyFailure(t *testing.T) {
 
 	// then
 	assert.NotNil(t, err)
-	assert.Equal(t, "api key needs to be defined and at least 32 bytes long", err.Error())
-}
-
-func TestEnvironmentVariables(t *testing.T) {
-	err := os.Setenv("WEBAUTHN_RELYING_PARTY_ORIGINS", "https://hanko.io,https://auth.hanko.io")
-	require.NoError(t, err)
-
-	configPath := "./config.yaml"
-	cfg, err := Load(&configPath)
-	require.NoError(t, err)
-
-	assert.True(t, reflect.DeepEqual([]string{"https://hanko.io", "https://auth.hanko.io"}, cfg.Webauthn.RelyingParty.Origins))
+	assert.Equal(t, "at least one api key must be defined", err.Error())
 }

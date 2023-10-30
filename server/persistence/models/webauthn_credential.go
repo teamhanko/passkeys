@@ -26,6 +26,8 @@ type WebauthnCredential struct {
 	BackupState     bool       `db:"backup_state" json:"-"`
 }
 
+type WebauthnCredentials []WebauthnCredential
+
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 func (credential *WebauthnCredential) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validate.Validate(

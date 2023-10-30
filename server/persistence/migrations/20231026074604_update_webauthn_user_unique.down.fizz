@@ -1,0 +1,2 @@
+drop_index("webauthn_user", "webauthn_user_tenant_unique_idx")
+add_index("webauthn_users", "user_id", { "unique": true })

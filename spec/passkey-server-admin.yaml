@@ -1,0 +1,508 @@
+openapi: 3.1.0
+info:
+  version: '1.0'
+  title: passkey-server-admin
+  summary: Admin API for Passkey Server
+  description: 'ADmin API for Hanko Passkey Server. Allows creation and configiration of tenants and api keys, '
+  termsOfService: 'https://www.hanko.io/terms'
+  contact:
+    name: Developers@hanko.io
+    url: 'https://hanko.io'
+    email: developers@hanko.io
+  license:
+    url: 'https://www.gnu.org/licenses/gpl-3.0.de.html'
+    name: GPLv3
+servers:
+  - url: 'http://{host}:8001/{path_prefix}'
+    variables:
+      host:
+        description: Host-Part of the URL
+        default: localhost
+      path_prefix:
+        description: Path-Prefix
+        default: ''
+paths:
+  /tenants:
+    get:
+      summary: Get tenant list
+      description: Get a list of all Tenants
+      operationId: get-admin-tenant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/tenant_list'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+    post:
+      summary: Create a tenant
+      description: Create a new tenant
+      operationId: post-admin-tenant
+      requestBody:
+        $ref: '#/components/requestBodies/create_tenant'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tenant_api_key'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+  '/tenants/{tenant_id}':
+    get:
+      summary: Get a tenant
+      description: Get detailed information about the tenant
+      operationId: get-admin-tenant-tenant_id
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tenant'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+    put:
+      summary: Update tenant
+      description: Update information of a tenant
+      operationId: put-admin-tenant-tenant_id
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+      requestBody:
+        $ref: '#/components/requestBodies/update_tenant'
+      responses:
+        '204':
+          description: No Content
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+    delete:
+      summary: Delete tenant
+      description: Remove a tenant
+      operationId: delete-admin-tenant-tenant_id
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+      responses:
+        '204':
+          description: No Content
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+  '/tenants/{tenant_id}/secrets/jwk':
+    post:
+      summary: Create secret
+      description: Creates a new JWT encryption key
+      operationId: post-admin-tenant-tenant_id-secrets-jwk
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/secret'
+                description: The created secret
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+    get:
+      summary: ''
+      description: Get all JWKs as list
+      operationId: get-path_prefix-tenants-tenant_id-secrets-jwk
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/secret_list'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+  '/tenants/{tenant_id}/secrets/api':
+    post:
+      summary: Create API Key
+      description: Creates a new API key
+      operationId: post-admin-tenant-tenant_id-secrets-api
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/secret'
+                description: The created secret
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+    get:
+      summary: List API keys
+      description: Get all API keys as list
+      operationId: get-path_prefix-tenants-tenant_id-secrets-api
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/secret_list'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+  '/tenants/{tenant_id}/secrets/jwk/{secret_id}':
+    delete:
+      summary: Remove JWK
+      description: Remove a JWK
+      operationId: delete-admin-tenant-tenant_id-secrets-jwk-secret_id
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+        - $ref: '#/components/parameters/secret_id'
+      responses:
+        '204':
+          description: No Content
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+  '/tenants/{tenant_id}/secrets/api/{secret_id}':
+    delete:
+      summary: Remove API key
+      description: Remove an api key
+      operationId: delete-admin-tenant-tenant_id-secrets-api-secret-id
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+        - $ref: '#/components/parameters/secret_id'
+      responses:
+        '204':
+          description: No Content
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+  '/tenants/{tenant_id}/config':
+    put:
+      summary: Update config
+      description: Update config
+      operationId: put-admin-tenant-tenant_id-config
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
+      requestBody:
+        $ref: '#/components/requestBodies/update_config'
+      responses:
+        '204':
+          description: No Content
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              description: Host-Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path-Prefix
+              default: ''
+tags:
+  - name: admin api
+    description: Hanko Passkey-Server Admin API
+components:
+  parameters:
+    tenant_id:
+      name: tenant_id
+      in: path
+      description: UUID of the tenant
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+        examples:
+          - 1f496bcd-49da-4839-a02f-7ce681ccb488
+    secret_id:
+      name: secret_id
+      in: path
+      description: UUID of a secret
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+  requestBodies:
+    create_tenant:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              display_name:
+                type: string
+              config:
+                $ref: '#/components/schemas/config'
+            required:
+              - display_name
+    update_tenant:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              display_name:
+                type: string
+            required:
+              - display_name
+    update_config:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/config'
+  schemas:
+    tenant_list:
+      type: object
+      title: tenant_list
+      properties:
+        id:
+          type: string
+          format: uuid
+          maxLength: 36
+        display_name:
+          type: string
+      required:
+        - id
+        - display_name
+    tenant_api_key:
+      type: object
+      title: tenant_api_key
+      properties:
+        id:
+          type: string
+          format: uuid
+          minLength: 36
+          maxLength: 36
+        api_key:
+          $ref: '#/components/schemas/secret'
+      required:
+        - id
+        - api_key
+    secret:
+      type: object
+      title: secret
+      description: Entiy Model of a secret
+      properties:
+        id:
+          type: string
+          format: uuid
+          minLength: 36
+          maxLength: 36
+        name:
+          type: string
+        secret:
+          type: string
+          minLength: 36
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - secret
+        - created_at
+    tenant:
+      title: tenant
+      allOf:
+        - type: object
+          additionalProperties: false
+          properties:
+            config:
+              $ref: '#/components/schemas/config'
+          required:
+            - config
+          minProperties: 3
+          maxProperties: 3
+        - $ref: '#/components/schemas/tenant_list'
+    config:
+      type: object
+      title: config
+      properties:
+        cors:
+          $ref: '#/components/schemas/cors'
+        webauthn:
+          $ref: '#/components/schemas/webauthn'
+      required:
+        - cors
+        - webauthn
+    cors:
+      type: object
+      title: cors
+      properties:
+        allowed_origins:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            examples:
+              - '*.example.local'
+        allow_unsafe_wildcard:
+          type: boolean
+          default: false
+      required:
+        - allowed_origins
+        - allow_unsafe_wildcard
+    webauthn:
+      type: object
+      title: webauthn
+      properties:
+        relying_party:
+          $ref: '#/components/schemas/relying_party'
+        timeout:
+          type: number
+          default: 60000
+          examples:
+            - 60000
+        user_verification:
+          enum:
+            - required
+            - preferred
+            - discouraged
+      required:
+        - relying_party
+        - timeout
+        - user_verification
+    relying_party:
+      type: object
+      title: relying_party
+      description: Relying Party part of config
+      properties:
+        id:
+          type: string
+          default: localhost
+          examples:
+            - localhost
+        display_name:
+          type: string
+          default: Hanko Passkey Server
+          examples:
+            - Hanko Passkey Server
+        icon:
+          type:
+            - string
+            - 'null'
+          format: uri
+          examples:
+            - 'http://link.to/icon'
+        origins:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+      required:
+        - id
+        - display_name
+    secret_list:
+      type: array
+      title: secret_list
+      uniqueItems: true
+      items:
+        $ref: '#/components/schemas/secret'

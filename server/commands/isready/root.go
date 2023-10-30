@@ -24,9 +24,9 @@ func NewIsReadyCommand() *cobra.Command {
 				log.Fatal(err)
 			}
 
-			host, port, err := net.SplitHostPort(globalConf.Server.Address)
+			host, port, err := net.SplitHostPort(globalConf.Address)
 			if err != nil {
-				log.Fatalf("Could not parse address %s", globalConf.Server.Address)
+				log.Fatalf("Could not parse address %s", globalConf.Address)
 			}
 
 			if strings.TrimSpace(host) == "" {

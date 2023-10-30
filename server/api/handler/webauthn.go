@@ -1,16 +1,13 @@
 package handler
 
 import (
-	"fmt"
-	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	auditlog "github.com/teamhanko/passkey-server/audit_log"
-	"github.com/teamhanko/passkey-server/config"
-	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence"
-	"time"
+	"github.com/teamhanko/passkey-server/persistence/models"
+	"net/http"
 )
 
 type WebauthnHandler interface {
@@ -18,67 +15,46 @@ type WebauthnHandler interface {
 	Finish(ctx echo.Context) error
 }
 
-type webauthnHandler struct {
-	config       *config.Config
-	persister    persistence.Persister
-	webauthn     *webauthn.WebAuthn
-	auditLog     auditlog.Logger
-	jwtGenerator jwt.Generator
+type WebauthnContext struct {
+	tenant   *models.Tenant
+	webauthn *webauthn.WebAuthn
+	config   models.Config
+	auditLog auditlog.Logger
 }
 
-func newWebAuthnHandler(cfg *config.Config, persister persistence.Persister, logger auditlog.Logger, generator jwt.Generator) (*webauthnHandler, error) {
+type webauthnHandler struct {
+	persister persistence.Persister
+}
 
-	f := false
-	webauthnClient, err := webauthn.New(&webauthn.Config{
-		RPDisplayName:         cfg.Webauthn.RelyingParty.DisplayName,
-		RPID:                  cfg.Webauthn.RelyingParty.Id,
-		RPOrigins:             cfg.Webauthn.RelyingParty.Origins,
-		AttestationPreference: protocol.PreferNoAttestation,
-		AuthenticatorSelection: protocol.AuthenticatorSelection{
-			RequireResidentKey: &f,
-			ResidentKey:        protocol.ResidentKeyRequirementDiscouraged,
-			UserVerification:   protocol.VerificationRequired,
-		},
-		Debug: false,
-		Timeouts: webauthn.TimeoutsConfig{
-			Login: webauthn.TimeoutConfig{
-				Timeout: time.Duration(cfg.Webauthn.Timeout) * time.Millisecond,
-				Enforce: true,
-			},
-			Registration: webauthn.TimeoutConfig{
-				Timeout: time.Duration(cfg.Webauthn.Timeout) * time.Millisecond,
-				Enforce: true,
-			},
-		},
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to create webauthn instance: %w", err)
-	}
-
+func newWebAuthnHandler(persister persistence.Persister) (*webauthnHandler, error) {
 	return &webauthnHandler{
-		config:       cfg,
-		persister:    persister,
-		webauthn:     webauthnClient,
-		auditLog:     logger,
-		jwtGenerator: generator,
+		persister: persister,
 	}, nil
 }
 
+func GetHandlerContext(ctx echo.Context) *WebauthnContext {
+	tenant := ctx.Get("tenant").(*models.Tenant)
+	return &WebauthnContext{
+		tenant:   tenant,
+		webauthn: ctx.Get("webauthn_client").(*webauthn.WebAuthn),
+		config:   tenant.Config,
+		auditLog: ctx.Get("audit_logger").(auditlog.Logger),
+	}
+}
+
 func BindAndValidateRequest[I request.CredentialRequest | request.InitRegistrationDto](ctx echo.Context) (*I, error) {
-	fmt.Println("lorem")
 	var requestDto I
 	err := ctx.Bind(&requestDto)
 	if err != nil {
-		fmt.Println("Here")
-		return nil, err
+		ctx.Logger().Error(err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	err = ctx.Validate(&requestDto)
 	if err != nil {
-		fmt.Println("Here2")
-		return nil, err
+		ctx.Logger().Error(err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	return &requestDto, err
+	return &requestDto, nil
 }

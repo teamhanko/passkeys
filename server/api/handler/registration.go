@@ -11,8 +11,6 @@ import (
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
-	auditlog "github.com/teamhanko/passkey-server/audit_log"
-	"github.com/teamhanko/passkey-server/config"
 	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
@@ -25,8 +23,8 @@ type registrationHandler struct {
 	*webauthnHandler
 }
 
-func NewRegistrationHandler(cfg *config.Config, persister persistence.Persister, logger auditlog.Logger, generator jwt.Generator) (WebauthnHandler, error) {
-	webauthnHandler, err := newWebAuthnHandler(cfg, persister, logger, generator)
+func NewRegistrationHandler(persister persistence.Persister) (WebauthnHandler, error) {
+	webauthnHandler, err := newWebAuthnHandler(persister)
 	if err != nil {
 		return nil, err
 	}
@@ -44,43 +42,44 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 
 	webauthnUser, err := models.FromRegistrationDto(dto)
 	if err != nil {
+		ctx.Logger().Error(err)
 		return err
 	}
 
-	fmt.Println("Here3")
+	h := GetHandlerContext(ctx)
 
 	return r.persister.Transaction(func(tx *pop.Connection) error {
 		webauthnUserPersister := r.persister.GetWebauthnUserPersister(tx)
 		webauthnSessionPersister := r.persister.GetWebauthnSessionDataPersister(tx)
 
+		webauthnUser.Tenant = h.tenant
 		err := webauthnUserPersister.Create(webauthnUser)
 		if err != nil {
-			fmt.Println("Here4")
-			fmt.Printf("%v\n", err.Error())
+			ctx.Logger().Error(err)
 			return err
 		}
 
-		fmt.Printf("Ipsum")
-
 		t := true
-		options, sessionData, err := r.webauthn.BeginRegistration(
+		options, sessionData, err := h.webauthn.BeginRegistration(
 			intern.NewWebauthnUser(*webauthnUser),
 			webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
 				RequireResidentKey: &t,
 				ResidentKey:        protocol.ResidentKeyRequirementRequired,
-				UserVerification:   protocol.UserVerificationRequirement(r.config.Webauthn.UserVerification),
+				UserVerification:   h.config.WebauthnConfig.UserVerification,
 			}),
 			webauthn.WithConveyancePreference(protocol.PreferNoAttestation),
 			// don't set the excludeCredentials list, so an already registered device can be re-registered
 		)
 
-		err = webauthnSessionPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, models.WebauthnOperationRegistration))
+		err = webauthnSessionPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, h.tenant, models.WebauthnOperationRegistration))
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to create session data: %w", err)
 		}
 
-		err = r.auditLog.CreateWithConnection(tx, ctx, models.AuditLogWebAuthnRegistrationInitSucceeded, &webauthnUser.UserID, nil)
+		err = h.auditLog.CreateWithConnection(tx, ctx, h.tenant, models.AuditLogWebAuthnRegistrationInitSucceeded, &webauthnUser.UserID, nil)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to create audit log: %w", err)
 		}
 
@@ -91,8 +90,11 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 func (r *registrationHandler) Finish(ctx echo.Context) error {
 	parsedRequest, err := protocol.ParseCredentialCreationResponse(ctx.Request())
 	if err != nil {
-		return err
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse credential creation response").SetInternal(err)
 	}
+
+	h := GetHandlerContext(ctx)
 
 	return r.persister.Transaction(func(tx *pop.Connection) error {
 		sessionDataPersister := r.persister.GetWebauthnSessionDataPersister(tx)
@@ -100,12 +102,13 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 
 		sessionData, err := r.getSessionByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return err
 		}
 
 		webauthnUser, err := r.GetWebauthnUser(sessionData.UserId, webauthnUserPersister)
 
-		credential, err := r.webauthn.CreateCredential(webauthnUser, *intern.WebauthnSessionDataFromModel(sessionData), parsedRequest)
+		credential, err := h.webauthn.CreateCredential(webauthnUser, *intern.WebauthnSessionDataFromModel(sessionData), parsedRequest)
 		if err != nil {
 			errorMessage := "failed to validate attestation"
 			errorStatus := http.StatusBadRequest
@@ -122,6 +125,7 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 				errorStatus = http.StatusUnprocessableEntity
 			}
 
+			ctx.Logger().Error(err)
 			return echo.NewHTTPError(errorStatus, errorMessage).SetInternal(err)
 		}
 
@@ -129,6 +133,7 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		model := intern.WebauthnCredentialToModel(credential, sessionData.UserId, flags.HasBackupEligible(), flags.HasBackupState())
 		err = r.persister.GetWebauthnCredentialPersister(tx).Create(model)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to store webauthn credential: %w", err)
 		}
 
@@ -137,8 +142,10 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 			ctx.Logger().Errorf("failed to delete attestation session data: %w", err)
 		}
 
-		token, err := r.jwtGenerator.Generate(webauthnUser.UserId, model.ID)
+		generator := ctx.Get("jwt_generator").(jwt.Generator)
+		token, err := generator.Generate(webauthnUser.UserId, model.ID)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to generate jwt: %w", err)
 		}
 

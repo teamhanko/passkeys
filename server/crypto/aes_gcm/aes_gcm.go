@@ -16,12 +16,12 @@ type AESGCM struct {
 	keys [][32]byte
 }
 
-// Construct a AES GCM encrypter/decrypter and check the keys as a prerequisite
+// NewAESGCM constructs an AES GCM encrypter/decrypter and check the keys as a prerequisite
 func NewAESGCM(keys []string) (*AESGCM, error) {
 	if len(keys) < 1 {
 		return nil, errors.New("at least one encryption key must be provided")
 	}
-	hashedKeys := [][32]byte{}
+	var hashedKeys [][32]byte
 
 	for i, v := range keys {
 		if len(v) < 16 {

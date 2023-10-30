@@ -28,6 +28,8 @@ type WebauthnSessionData struct {
 	Operation          Operation                              `db:"operation"`
 	AllowedCredentials []WebauthnSessionDataAllowedCredential `has_many:"webauthn_session_data_allowed_credentials"`
 	ExpiresAt          nulls.Time                             `db:"expires_at"`
+	Tenant             *Tenant                                `belongs_to:"tenants"`
+	TenantID           uuid.UUID                              `db:"tenant_id"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.

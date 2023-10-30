@@ -1,0 +1,1 @@
+drop_index("webauthn_users", "webauthn_users_user_id_idx")

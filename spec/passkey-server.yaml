@@ -8,14 +8,21 @@ info:
   contact:
     email: developers@hanko.io
     url: hanko.io
-    name: Developers@hanko
+    name: Developers@hanko.io
   license:
     url: 'https://www.gnu.org/licenses/gpl-3.0.de.html'
     name: GPLv3
 servers:
-  - url: 'http://localhost:8000'
+  - url: 'http://{host}:8000/{path_prefix}'
+    variables:
+      host:
+        description: Host Part of the URL
+        default: localhost
+      path_prefix:
+        description: Path prefix
+        default: ''
 paths:
-  /credentials:
+  '/{tenant_id}/credentials':
     get:
       tags:
         - credentials
@@ -25,6 +32,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
         - $ref: '#/components/parameters/user_id'
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         description: ''
         content: {}
@@ -39,8 +47,15 @@ paths:
           $ref: '#/components/responses/error'
       security: []
       servers:
-        - url: 'http://localhost:8000'
-  '/credentials/{credential_id}':
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              description: Host Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path prefix
+              default: ''
+  '/{tenant_id}/credentials/{credential_id}':
     patch:
       tags:
         - credentials
@@ -50,6 +65,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
         - $ref: '#/components/parameters/credential_id'
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         $ref: '#/components/requestBodies/patch-credential'
       responses:
@@ -65,13 +81,21 @@ paths:
           $ref: '#/components/responses/error'
       security: []
       servers:
-        - url: 'http://localhost:8000'
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              description: Host Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path prefix
+              default: ''
     delete:
       summary: Remove Credential
       description: Endpoint for removing a webauthn credential
       operationId: delete-credentials-credentialId
       parameters:
         - $ref: '#/components/parameters/credential_id'
+        - $ref: '#/components/parameters/tenant_id'
       responses:
         '204':
           description: No Content
@@ -85,8 +109,15 @@ paths:
           $ref: '#/components/responses/error'
       security: []
       servers:
-        - url: 'http://localhost:8000'
-  /registration/initialize:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              description: Host Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path prefix
+              default: ''
+  '/{tenant_id}/registration/initialize':
     post:
       tags:
         - credentials
@@ -95,6 +126,7 @@ paths:
       operationId: post-registration-initialize
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         $ref: '#/components/requestBodies/post-registration-initialize'
       responses:
@@ -108,14 +140,23 @@ paths:
           $ref: '#/components/responses/error'
       security: []
       servers:
-        - url: 'http://localhost:8000'
-  /registration/finalize:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              description: Host Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path prefix
+              default: ''
+  '/{tenant_id}/registration/finalize':
     post:
       tags:
         - credentials
       summary: Finish Passkey Registration
       description: Finish credential registration process.
       operationId: post-registration-finalize
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         $ref: '#/components/requestBodies/post-registration-finalize'
       responses:
@@ -131,12 +172,21 @@ paths:
           $ref: '#/components/responses/error'
       security: []
       servers:
-        - url: 'http://localhost:8000'
-  /login/initialize:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              description: Host Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path prefix
+              default: ''
+  '/{tenant_id}/login/initialize':
     post:
       summary: Start Login
       description: Initialize a login flow for passkeys
       operationId: post-login-initialize
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
       responses:
         '200':
           $ref: '#/components/responses/post-login-initialize'
@@ -150,12 +200,21 @@ paths:
           $ref: '#/components/responses/error'
       security: []
       servers:
-        - url: 'http://localhost:8000'
-  /login/finalize:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              description: Host Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path prefix
+              default: ''
+  '/{tenant_id}/login/finalize':
     post:
       summary: Finish Login
       description: Finalize the login operation
       operationId: post-login-finalize
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         $ref: '#/components/requestBodies/post-login-finalize'
       responses:
@@ -171,8 +230,15 @@ paths:
           $ref: '#/components/responses/error'
       security: []
       servers:
-        - url: 'http://localhost:8000'
-  /.well-known/jwks.json:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              description: Host Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path prefix
+              default: ''
+  '/{tenant_id}/.well-known/jwks.json':
     get:
       tags:
         - credentials
@@ -180,11 +246,20 @@ paths:
       summary: Well-known JWKS
       description: Endpoint for fetching JWKS
       operationId: get-.well-known-jwks.json
+      parameters:
+        - $ref: '#/components/parameters/tenant_id'
       responses:
         '200':
           $ref: '#/components/responses/jwks'
       servers:
-        - url: 'http://localhost:8000'
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              description: Host Part of the URL
+              default: localhost
+            path_prefix:
+              description: Path prefix
+              default: ''
 tags:
   - name: credentials
     description: Represents all objects which are related to webauthn credentials
@@ -216,6 +291,18 @@ components:
         maxLength: 36
         examples:
           - 1f496bcd-49da-4839-a02f-7ce681cdaaaa
+    tenant_id:
+      name: tenant_id
+      in: path
+      description: UUID of the tenant
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
+        examples:
+          - 1f496bcd-49da-4839-a02f-7ce681ccb488
     X-API-KEY:
       name: apiKey
       in: header

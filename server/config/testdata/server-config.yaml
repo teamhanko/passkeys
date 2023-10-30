@@ -1,6 +1,0 @@
-address: http://localhost:8000
-cors:
-  allow_origins:
-    - localhost:8000
-    - localhost:8888
-  unsafe_wildcard_origin_allowed: false

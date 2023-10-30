@@ -12,11 +12,11 @@ import (
 
 type Manager interface {
 	// GenerateKey is used to generate a jwk Key
-	GenerateKey() (jwk.Key, error)
+	GenerateKey(tenantId uuid.UUID) (*models.Jwk, error)
 	// GetPublicKeys returns all Public keys that are persisted
-	GetPublicKeys() (jwk.Set, error)
+	GetPublicKeys(tenantId uuid.UUID) (jwk.Set, error)
 	// GetSigningKey returns the last added private key that is used for signing
-	GetSigningKey() (jwk.Key, error)
+	GetSigningKey(tenantId uuid.UUID) (jwk.Key, error)
 }
 
 type DefaultManager struct {
@@ -24,8 +24,8 @@ type DefaultManager struct {
 	persister persisters.JwkPersister
 }
 
-// Returns a DefaultManager that reads and persists the jwks to database and generates jwks if a new secret gets added to the config.
-func NewDefaultManager(keys []string, persister persisters.JwkPersister) (Manager, error) {
+// NewDefaultManager returns a DefaultManager that reads and persists the jwks to database and generates jwks if a new secret gets added to the config.
+func NewDefaultManager(keys []string, tenantId uuid.UUID, persister persisters.JwkPersister) (Manager, error) {
 	encrypter, err := aes_gcm.NewAESGCM(keys)
 	if err != nil {
 		return nil, err
@@ -34,23 +34,27 @@ func NewDefaultManager(keys []string, persister persisters.JwkPersister) (Manage
 		encrypter: encrypter,
 		persister: persister,
 	}
-	// for every key we should check if a jwk with index exists and create one if not.
-	for i := range keys {
-		j, err := persister.Get(i + 1)
-		if j == nil && err == nil {
-			_, err := manager.GenerateKey()
+
+	foundKeys, err := persister.GetAllForTenant(tenantId)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(keys) > len(foundKeys) {
+		keysToCreate := len(keys) - len(foundKeys)
+
+		for i := 0; i < keysToCreate; i++ {
+			_, err := manager.GenerateKey(tenantId)
 			if err != nil {
 				return nil, err
 			}
-		} else if err != nil {
-			return nil, err
 		}
 	}
 
 	return manager, nil
 }
 
-func (m *DefaultManager) GenerateKey() (jwk.Key, error) {
+func (m *DefaultManager) GenerateKey(tenantId uuid.UUID) (*models.Jwk, error) {
 	rsa := &RSAKeyGenerator{}
 	id, _ := uuid.NewV4()
 	key, err := rsa.Generate(id.String())
@@ -65,19 +69,23 @@ func (m *DefaultManager) GenerateKey() (jwk.Key, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	model := models.Jwk{
+		TenantID:  tenantId,
 		KeyData:   encryptedKey,
 		CreatedAt: time.Now(),
 	}
+
 	err = m.persister.Create(model)
 	if err != nil {
 		return nil, err
 	}
-	return key, nil
+
+	return &model, nil
 }
 
-func (m *DefaultManager) GetSigningKey() (jwk.Key, error) {
-	sigModel, err := m.persister.GetLast()
+func (m *DefaultManager) GetSigningKey(tenantId uuid.UUID) (jwk.Key, error) {
+	sigModel, err := m.persister.GetLast(tenantId)
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +101,8 @@ func (m *DefaultManager) GetSigningKey() (jwk.Key, error) {
 	return key, nil
 }
 
-func (m *DefaultManager) GetPublicKeys() (jwk.Set, error) {
-	modelList, err := m.persister.GetAll()
+func (m *DefaultManager) GetPublicKeys(tenantId uuid.UUID) (jwk.Set, error) {
+	modelList, err := m.persister.GetAllForTenant(tenantId)
 	if err != nil {
 		return nil, err
 	}

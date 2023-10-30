@@ -1,0 +1,10 @@
+create_table("webauthn_origins") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("origin", "string", { "null": false })
+	t.Column("relying_party_id", "uuid", { "null": false })
+
+	t.Index(["origin", "relying_party_id"], { "unique": true })
+	t.ForeignKey("relying_party_id", {"relying_parties": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

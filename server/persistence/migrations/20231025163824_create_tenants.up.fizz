@@ -1,0 +1,43 @@
+create_table("tenants") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("display_name", "string", {})
+
+	t.Timestamps()
+}
+
+add_column("audit_logs", "tenant_id", "uuid", {})
+add_column("jwks", "tenant_id", "uuid", {})
+add_column("webauthn_credentials", "tenant_id", "uuid", {})
+add_column("webauthn_session_data", "tenant_id", "uuid", {})
+add_column("webauthn_users", "tenant_id", "uuid", {})
+
+add_foreign_key("audit_logs", "tenant_id", {"tenants": ["id"]}, {
+    "name": "audit_tenant_fk",
+    "on_delete": "cascade",
+    "on_update": "cascade",
+})
+
+add_foreign_key("jwks", "tenant_id", {"tenants": ["id"]}, {
+    "name": "jwks_tenant_fk",
+    "on_delete": "cascade",
+    "on_update": "cascade",
+})
+
+add_foreign_key("webauthn_credentials", "tenant_id", {"tenants": ["id"]}, {
+    "name": "webauthn_credential_tenant_fk",
+    "on_delete": "cascade",
+    "on_update": "cascade",
+})
+
+add_foreign_key("webauthn_session_data", "tenant_id", {"tenants": ["id"]}, {
+    "name": "webauthn_session_tenant_fk",
+    "on_delete": "cascade",
+    "on_update": "cascade",
+})
+
+add_foreign_key("webauthn_users", "tenant_id", {"tenants": ["id"]}, {
+    "name": "webauthn_user_tenant_fk",
+    "on_delete": "cascade",
+    "on_update": "cascade",
+})
+

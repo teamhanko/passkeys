@@ -6,8 +6,8 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
-	"github.com/teamhanko/passkey-server/config"
 	hankoJwk "github.com/teamhanko/passkey-server/crypto/jwk"
+	"github.com/teamhanko/passkey-server/persistence/models"
 	"time"
 )
 
@@ -21,18 +21,18 @@ type Generator interface {
 type generator struct {
 	signatureKey jwk.Key
 	verKeys      jwk.Set
-	config       *config.Config
+	config       *models.WebauthnConfig
 }
 
 // NewGenerator returns a new jwt generator which signs JWTs with the given signing key and verifies JWTs with the given verificationKeys
-func NewGenerator(cfg *config.Config, jwkManager hankoJwk.Manager) (Generator, error) {
-	signatureKey, err := jwkManager.GetSigningKey()
+func NewGenerator(cfg *models.WebauthnConfig, jwkManager hankoJwk.Manager, tenantId uuid.UUID) (Generator, error) {
+	signatureKey, err := jwkManager.GetSigningKey(tenantId)
 	const jwkGenFailure = "failed to create jwk jwtGenerator: %w"
 	if err != nil {
 		return nil, fmt.Errorf(jwkGenFailure, err)
 	}
 
-	verificationKeys, err := jwkManager.GetPublicKeys()
+	verificationKeys, err := jwkManager.GetPublicKeys(tenantId)
 	if err != nil {
 		return nil, fmt.Errorf(jwkGenFailure, err)
 	}
@@ -72,7 +72,7 @@ func (g *generator) Generate(userId uuid.UUID, credentialId string) (string, err
 	token := jwt.New()
 	_ = token.Set(jwt.SubjectKey, userId.String())
 	_ = token.Set(jwt.IssuedAtKey, issuedAt)
-	_ = token.Set(jwt.AudienceKey, []string{g.config.Webauthn.RelyingParty.Id})
+	_ = token.Set(jwt.AudienceKey, []string{g.config.RelyingParty.RPId})
 	_ = token.Set("cred", credentialId)
 
 	signed, err := g.Sign(token)
