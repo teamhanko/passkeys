@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/labstack/echo/v4"
 	hankoJwk "github.com/teamhanko/passkey-server/crypto/jwk"
+	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
 )
 
@@ -13,8 +14,9 @@ func NewWellKnownHandler() *WellKnownHandler {
 }
 
 func (h *WellKnownHandler) GetPublicKeys(ctx echo.Context) error {
+	tenant := ctx.Get("tenant").(*models.Tenant)
 	manager := ctx.Get("jwk_manager").(hankoJwk.Manager)
-	keys, err := manager.GetPublicKeys()
+	keys, err := manager.GetPublicKeys(tenant.ID)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err

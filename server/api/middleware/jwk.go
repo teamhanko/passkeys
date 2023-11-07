@@ -24,6 +24,7 @@ func JWKMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 
 			jwkManager, err := hankoJwk.NewDefaultManager(keys, tenant.ID, persister.GetJwkPersister(nil))
 			if err != nil {
+				ctx.Logger().Error(err)
 				return ctx.JSON(http.StatusInternalServerError, NewHttpError(
 					"about:blank",
 					"unable to initialize jwt generator",
@@ -34,8 +35,9 @@ func JWKMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 			}
 			ctx.Set("jwk_manager", jwkManager)
 
-			generator, err := jwt.NewGenerator(&tenant.Config.WebauthnConfig, jwkManager)
+			generator, err := jwt.NewGenerator(&tenant.Config.WebauthnConfig, jwkManager, tenant.ID)
 			if err != nil {
+				ctx.Logger().Error(err)
 				return ctx.JSON(http.StatusInternalServerError, NewHttpError(
 					"about:blank",
 					"unable to initialize jwt generator",
