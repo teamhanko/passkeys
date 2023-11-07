@@ -1,1 +1,0 @@
-drop_table("audit_log_configs")

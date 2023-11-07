@@ -83,7 +83,11 @@ func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
 		})
 	}
 
-	h := GetHandlerContext(ctx)
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
 
 	return credHandler.persister.Transaction(func(tx *pop.Connection) error {
 		credential.Name = &requestDto.Name
@@ -117,7 +121,11 @@ func (credHandler *credentialsHandler) Delete(ctx echo.Context) error {
 		return err
 	}
 
-	h := GetHandlerContext(ctx)
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
 
 	return credHandler.persister.Transaction(func(tx *pop.Connection) error {
 		persister = credHandler.persister.GetWebauthnCredentialPersister(tx)

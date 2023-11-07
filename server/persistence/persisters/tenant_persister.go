@@ -45,9 +45,6 @@ func (t tenantPersister) Get(tenantId uuid.UUID) (*models.Tenant, error) {
 		"Config.WebauthnConfig.RelyingParty.Origins",
 		"Config.Cors.Origins",
 		"Config.AuditLogConfig",
-		"WebauthnCredentials.Transports",
-		"WebauthnSessionData.AllowedCredentials",
-		"WebauthnUsers",
 	).Find(&tenant, tenantId)
 
 	if err != nil && errors.Is(err, sql.ErrNoRows) {

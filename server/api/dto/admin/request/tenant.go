@@ -16,15 +16,10 @@ func (dto *CreateTenantDto) ToModel() models.Tenant {
 	now := time.Now()
 
 	tenant := models.Tenant{
-		ID:                  tenantId,
-		DisplayName:         dto.DisplayName,
-		AuditLogs:           nil,
-		Jwks:                nil,
-		WebauthnCredentials: nil,
-		WebauthnSessionData: nil,
-		WebauthnUsers:       nil,
-		CreatedAt:           now,
-		UpdatedAt:           now,
+		ID:          tenantId,
+		DisplayName: dto.DisplayName,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
 	return tenant

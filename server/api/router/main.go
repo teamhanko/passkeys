@@ -69,8 +69,8 @@ func RouteCredentials(parent *echo.Group, persister persistence.Persister) {
 
 	group := parent.Group("/credentials", passkeyMiddleware.ApiKeyMiddleware())
 	group.GET("", credentialsHandler.List)
-	group.PATCH("/:credentialId", credentialsHandler.Update)
-	group.DELETE("/:credentialId", credentialsHandler.Delete)
+	group.PATCH("/:credential_id", credentialsHandler.Update)
+	group.DELETE("/:credential_id", credentialsHandler.Delete)
 
 	return
 }

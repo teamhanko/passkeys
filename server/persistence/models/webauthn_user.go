@@ -13,16 +13,17 @@ import (
 
 // WebauthnUser is used by pop to map your webauthn_users database table to your go code.
 type WebauthnUser struct {
-	ID          uuid.UUID            `json:"id" db:"id"`
-	UserID      uuid.UUID            `json:"user_id" db:"user_id"`
-	Name        string               `json:"name" db:"name"`
-	Icon        string               `json:"icon" db:"icon"`
-	DisplayName string               `json:"display_name" db:"display_name"`
-	Credentials []WebauthnCredential `has_many:"webauthn_credentials"`
-	CreatedAt   time.Time            `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time            `json:"updated_at" db:"updated_at"`
-	Tenant      *Tenant              `json:"tenant" belongs_to:"tenants"`
-	TenantID    uuid.UUID            `json:"tenant_id" db:"tenant_id"`
+	ID          uuid.UUID `json:"id" db:"id"`
+	UserID      uuid.UUID `json:"user_id" db:"user_id"`
+	Name        string    `json:"name" db:"name"`
+	Icon        string    `json:"icon" db:"icon"`
+	DisplayName string    `json:"display_name" db:"display_name"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	Tenant      *Tenant   `json:"tenant" belongs_to:"tenant"`
+	TenantID    uuid.UUID `json:"tenant_id" db:"tenant_id"`
+
+	WebauthnCredentials WebauthnCredentials `json:"webauthn_credentials,omitempty" has_many:"webauthn_credentials"`
 }
 
 type WebauthnUsers []WebauthnUser

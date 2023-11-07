@@ -32,14 +32,31 @@ func newWebAuthnHandler(persister persistence.Persister) (*webauthnHandler, erro
 	}, nil
 }
 
-func GetHandlerContext(ctx echo.Context) *WebauthnContext {
-	tenant := ctx.Get("tenant").(*models.Tenant)
+func GetHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
+	ctxTenant := ctx.Get("tenant")
+	if ctxTenant == nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Unable to find tenant")
+	}
+	tenant := ctxTenant.(*models.Tenant)
+
+	ctxWebautn := ctx.Get("webauthn_client")
+	var webauthnClient *webauthn.WebAuthn
+	if ctxWebautn != nil {
+		webauthnClient = ctxWebautn.(*webauthn.WebAuthn)
+	}
+
+	ctxAuditLog := ctx.Get("audit_logger")
+	var auditLogger auditlog.Logger
+	if ctxAuditLog != nil {
+		auditLogger = ctxAuditLog.(auditlog.Logger)
+	}
+
 	return &WebauthnContext{
 		tenant:   tenant,
-		webauthn: ctx.Get("webauthn_client").(*webauthn.WebAuthn),
+		webauthn: webauthnClient,
 		config:   tenant.Config,
-		auditLog: ctx.Get("audit_logger").(auditlog.Logger),
-	}
+		auditLog: auditLogger,
+	}, nil
 }
 
 func BindAndValidateRequest[I request.CredentialRequest | request.InitRegistrationDto](ctx echo.Context) (*I, error) {

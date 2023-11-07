@@ -14,12 +14,11 @@ type Tenant struct {
 	ID          uuid.UUID `json:"id" db:"id"`
 	DisplayName string    `json:"display_name" db:"display_name"`
 
-	Config              Config                `json:"config" has_one:"config"`
-	AuditLogs           AuditLogs             `json:"audit_logs,omitempty" has_many:"audit_logs"`
-	Jwks                Jwks                  `json:"jwks,omitempty" has_many:"jwks"`
-	WebauthnCredentials WebauthnCredentials   `json:"webauthn_credentials,omitempty" has_many:"webauthn_credentials"`
-	WebauthnSessionData []WebauthnSessionData `json:"webauthn_session_data,omitempty" has_many:"webauthn_session_data"`
-	WebauthnUsers       WebauthnUsers         `json:"webauthn_users,omitempty" has_many:"webauthn_users"`
+	Config        Config                `json:"config" has_one:"config"`
+	AuditLogs     AuditLogs             `json:"audit_logs,omitempty" has_many:"audit_logs"`
+	Jwks          Jwks                  `json:"jwks,omitempty" has_many:"jwks"`
+	SessionData   []WebauthnSessionData `has_many:"webauthn_session_data"`
+	WebauthnUsers WebauthnUsers         `json:"webauthn_users,omitempty" has_many:"webauthn_users"`
 
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`

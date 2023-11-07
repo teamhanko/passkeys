@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/persistence"
@@ -37,7 +36,6 @@ func TenantMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 			}
 
 			ctx.Set("tenant", tenant)
-			fmt.Printf("Tenant: %v\n", tenant)
 
 			return next(ctx)
 		}

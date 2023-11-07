@@ -5,6 +5,11 @@ create_table("webauthn_session_data") {
     t.Column("user_verification", "string", {})
     t.Column("operation", "string", {})
     t.Column("expires_at", "timestamp", { "null": true })
+    t.Column("tenant_id", "uuid", { "null": true })
+
+    t.ForeignKey("tenant_id", {"tenants": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
     t.Timestamps()
+
     t.Index("challenge", {"unique": true})
 }

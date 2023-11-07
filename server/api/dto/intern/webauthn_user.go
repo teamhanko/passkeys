@@ -20,7 +20,7 @@ func NewWebauthnUser(user models.WebauthnUser) *WebauthnUser {
 		Name:                user.Name,
 		Icon:                user.Icon,
 		DisplayName:         user.DisplayName,
-		WebauthnCredentials: user.Credentials,
+		WebauthnCredentials: user.WebauthnCredentials,
 	}
 }
 

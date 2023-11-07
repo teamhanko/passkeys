@@ -46,22 +46,36 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 		return err
 	}
 
-	h := GetHandlerContext(ctx)
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
 
 	return r.persister.Transaction(func(tx *pop.Connection) error {
 		webauthnUserPersister := r.persister.GetWebauthnUserPersister(tx)
 		webauthnSessionPersister := r.persister.GetWebauthnSessionDataPersister(tx)
 
 		webauthnUser.Tenant = h.tenant
-		err := webauthnUserPersister.Create(webauthnUser)
+		internalUserDto, _, err := r.GetWebauthnUser(webauthnUser.UserID, webauthnUser.Tenant.ID, webauthnUserPersister)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err
 		}
 
+		if internalUserDto == nil {
+			err = webauthnUserPersister.Create(webauthnUser)
+			if err != nil {
+				ctx.Logger().Error(err)
+				return err
+			}
+
+			internalUserDto = intern.NewWebauthnUser(*webauthnUser)
+		}
+
 		t := true
 		options, sessionData, err := h.webauthn.BeginRegistration(
-			intern.NewWebauthnUser(*webauthnUser),
+			internalUserDto,
 			webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
 				RequireResidentKey: &t,
 				ResidentKey:        protocol.ResidentKeyRequirementRequired,
@@ -71,7 +85,7 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 			// don't set the excludeCredentials list, so an already registered device can be re-registered
 		)
 
-		err = webauthnSessionPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, h.tenant, models.WebauthnOperationRegistration))
+		err = webauthnSessionPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, h.tenant.ID, models.WebauthnOperationRegistration))
 		if err != nil {
 			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to create session data: %w", err)
@@ -94,19 +108,31 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse credential creation response").SetInternal(err)
 	}
 
-	h := GetHandlerContext(ctx)
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
 
 	return r.persister.Transaction(func(tx *pop.Connection) error {
 		sessionDataPersister := r.persister.GetWebauthnSessionDataPersister(tx)
 		webauthnUserPersister := r.persister.GetWebauthnUserPersister(tx)
 
-		sessionData, err := r.getSessionByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister)
+		sessionData, err := r.getSessionByChallenge(parsedRequest.Response.CollectedClientData.Challenge, h.tenant.ID, sessionDataPersister)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err
 		}
 
-		webauthnUser, err := r.GetWebauthnUser(sessionData.UserId, webauthnUserPersister)
+		webauthnUser, userModel, err := r.GetWebauthnUser(sessionData.UserId, h.tenant.ID, webauthnUserPersister)
+		if err != nil {
+			ctx.Logger().Error(err)
+			return err
+		}
+
+		if webauthnUser == nil || userModel == nil {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found")
+		}
 
 		credential, err := h.webauthn.CreateCredential(webauthnUser, *intern.WebauthnSessionDataFromModel(sessionData), parsedRequest)
 		if err != nil {
@@ -119,9 +145,10 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 			// need to return an error response distinguishable from other error cases. We use a dedicated/separate HTTP
 			// status code because it seemed a bit more robust than forcing the frontend to check on a matching
 			// (sub-)string in the error message in order to properly display the error.
-			var err *protocol.Error
-			if errors.As(err, &err) && err.Type == protocol.ErrVerification.Type && strings.Contains(err.DevInfo, "User verification") {
-				errorMessage = fmt.Sprintf("%s: %s: %s", errorMessage, err.Details, err.DevInfo)
+			var perr *protocol.Error
+			ctx.Logger().Error(perr)
+			if errors.As(err, &perr) && perr.Type == protocol.ErrVerification.Type && strings.Contains(perr.DevInfo, "User verification") {
+				errorMessage = fmt.Sprintf("%s: %s: %s", errorMessage, perr.Details, perr.DevInfo)
 				errorStatus = http.StatusUnprocessableEntity
 			}
 
@@ -130,7 +157,7 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		}
 
 		flags := parsedRequest.Response.AttestationObject.AuthData.Flags
-		model := intern.WebauthnCredentialToModel(credential, sessionData.UserId, flags.HasBackupEligible(), flags.HasBackupState())
+		model := intern.WebauthnCredentialToModel(credential, sessionData.UserId, userModel.ID, flags.HasBackupEligible(), flags.HasBackupState())
 		err = r.persister.GetWebauthnCredentialPersister(tx).Create(model)
 		if err != nil {
 			ctx.Logger().Error(err)
@@ -153,8 +180,8 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 	})
 }
 
-func (r *registrationHandler) getSessionByChallenge(challenge string, persister persisters.WebauthnSessionDataPersister) (*models.WebauthnSessionData, error) {
-	sessionData, err := persister.GetByChallenge(challenge)
+func (r *registrationHandler) getSessionByChallenge(challenge string, tenantId uuid.UUID, persister persisters.WebauthnSessionDataPersister) (*models.WebauthnSessionData, error) {
+	sessionData, err := persister.GetByChallenge(challenge, tenantId)
 	if err != nil {
 		return nil, err
 	}
@@ -166,15 +193,15 @@ func (r *registrationHandler) getSessionByChallenge(challenge string, persister 
 	return sessionData, nil
 }
 
-func (r *registrationHandler) GetWebauthnUser(userId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
-	user, err := persister.GetByUserId(userId)
+func (r *registrationHandler) GetWebauthnUser(userId uuid.UUID, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, *models.WebauthnUser, error) {
+	user, err := persister.GetByUserId(userId, tenantId)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if user == nil {
-		return nil, fmt.Errorf("user not found")
+		return nil, nil, nil
 	}
 
-	return intern.NewWebauthnUser(*user), nil
+	return intern.NewWebauthnUser(*user), user, nil
 }

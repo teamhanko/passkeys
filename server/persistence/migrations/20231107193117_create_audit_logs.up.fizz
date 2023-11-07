@@ -6,6 +6,10 @@ create_table("audit_logs") {
     t.Column("meta_source_ip", "string", {})
     t.Column("meta_user_agent", "string", {})
     t.Column("actor_user_id", "uuid", {"null": true})
+    t.Column("tenant_id", "uuid", { "null": false })
+
+    t.ForeignKey("tenant_id", {"tenants": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
     t.Timestamps()
     t.Index("type")
     t.Index("actor_user_id")
