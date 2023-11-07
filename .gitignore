@@ -5,6 +5,8 @@
 *.so
 *.dylib
 
+
+
 #env files
 *.env
 
@@ -24,4 +26,4 @@
 *.iml
 
 # version
-/backend/build_info/version.txt
+server/build_info/version.txt
