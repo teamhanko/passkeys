@@ -469,41 +469,47 @@ components:
           schema:
             type: object
             properties:
-              rp:
-                $ref: '#/components/schemas/relying-party-entity'
-              user:
-                $ref: '#/components/schemas/user-entity'
-              challenge:
-                type: string
-              pubKeyCredParams:
-                type:
-                  - array
-                  - 'null'
-                uniqueItems: true
-                items:
-                  $ref: '#/components/schemas/credential-parameter-entity'
-              timeout:
-                type:
-                  - integer
-                  - 'null'
-              excludeCredentials:
-                type:
-                  - array
-                  - 'null'
-                items:
-                  $ref: '#/components/schemas/credential-descriptor-entity'
-              authenticatorSelection:
-                $ref: '#/components/schemas/authentication-selection-entity'
-              attestation:
-                type: string
-              extensions:
-                type: array
-                items:
-                  type: object
+              publicKey:
+                type: object
+                additionalProperties: false
+                properties:
+                  rp:
+                    $ref: '#/components/schemas/relying-party-entity'
+                  user:
+                    $ref: '#/components/schemas/user-entity'
+                  challenge:
+                    type: string
+                  pubKeyCredParams:
+                    type:
+                      - array
+                      - 'null'
+                    items:
+                      $ref: '#/components/schemas/credential-parameter-entity'
+                  timeout:
+                    type:
+                      - integer
+                      - 'null'
+                  excludeCredentials:
+                    type:
+                      - array
+                      - 'null'
+                    items:
+                      $ref: '#/components/schemas/credential-descriptor-entity'
+                  authenticatorSelection:
+                    $ref: '#/components/schemas/authentication-selection-entity'
+                  attestation:
+                    type: string
+                  extensions:
+                    type: array
+                    uniqueItems: true
+                    items:
+                      type: object
+                required:
+                  - rp
+                  - user
+                  - challenge
             required:
-              - rp
-              - user
-              - challenge
+              - publicKey
     post-login-initialize:
       description: Example response
       content:
