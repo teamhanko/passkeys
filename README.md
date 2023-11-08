@@ -3,8 +3,7 @@
 Passkey Server provides an HTTP API for registration and login with passkeys (WebAuthn) to provide a modern 
 user experience in a world beyond passwords.
 
-Passkey Server can be used on its own or in combination with its frontend sdk or next.js integration that can be easily
-integrated into any web app with as little as two lines of code.
+Passkey Server can be used on its own or in combination with its frontend SDKs to add passkey support to any app.
 
 The API is written in Go and provides the following endpoints:
 
@@ -20,18 +19,18 @@ See the [server readme](/server/README.md) for how to get started.
 
 
 ## Contact us
-Schedule a Hanko demo. Learn how Hanko will speed up your registration and login flows with passkeys.
+Passkey Server is developed and maintained by Hanko. For business inquiries you can book a meeting here:
 
 <a target="_blank" href="https://cal.com/team/hanko/demo"><img alt="Book us with Cal.com"  src="https://cal.com/book-with-cal-light.svg" /></a>
 
 
 ## Community
 ### Questions, bugs, ideas
-If you have any questions or issues, please check this project's [Q&A section in discussions](https://github.com/teamhanko/hanko/discussions/categories/q-a) and the [open issues](https://github.com/teamhanko/hanko/issues). Feel free to comment on existing issues or create a new issue if you encounter any bugs or have a feature request. For yet unanswered questions, feedback, or new ideas, please open a new discussion.
+If you have any questions or issues, please check the [open issues](https://github.com/teamhanko/hanko/issues). Feel free to comment on existing issues or create a new issue if you encounter any bugs or have a feature request. For yet unanswered questions, feedback, or new ideas, please open a new discussion.
 
 ### Discord community & X
 We invite you to join our growing [Discord community](https://www.hanko.io/community) if you want to get the latest updates on passkeys, WebAuthn, and this project, or if you just want to chat with us. You can also [follow us on Twitter](https://x.com/hanko_io).
 
 ## License
 
-The Hanko backend ist licensed under the [GPL-3.0](LICENSE).
+The Hanko Passkey Server ist licensed under the [GPL-3.0](LICENSE).
