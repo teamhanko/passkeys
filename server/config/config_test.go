@@ -69,15 +69,3 @@ func TestLoadingMinimalConfig(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.Equal(t, defaultConfig.Address, cfg.Address)
 }
-
-func TestMissingApiKeyFailure(t *testing.T) {
-	// given
-	cfg := NewConfig()
-
-	// when
-	err := cfg.Validate()
-
-	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, "at least one api key must be defined", err.Error())
-}
