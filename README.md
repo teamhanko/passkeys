@@ -19,7 +19,7 @@ See the [server readme](/server/README.md) for how to get started.
 
 
 ## Contact us
-Passkey Server is developed and maintained by Hanko. For business inquiries you can book a meeting here:
+Passkey Server is developed and maintained by [Hanko](https://www.hanko.io). For business inquiries you can book a meeting here:
 
 <a target="_blank" href="https://cal.com/team/hanko/demo"><img alt="Book us with Cal.com"  src="https://cal.com/book-with-cal-light.svg" /></a>
 
