@@ -20,7 +20,7 @@ var (
 // WebauthnSessionData is used by pop to map your webauthn_session_data database table to your go code.
 type WebauthnSessionData struct {
 	ID                 uuid.UUID                              `db:"id"`
-	UserId             uuid.UUID                              `db:"user_id" json:"-"`
+	UserId             string                                 `db:"user_id" json:"-"`
 	Challenge          string                                 `db:"challenge"`
 	UserVerification   string                                 `db:"user_verification"`
 	CreatedAt          time.Time                              `db:"created_at"`

@@ -154,12 +154,7 @@ func (lh *loginHandler) getSessionDataByChallenge(challenge string, persister pe
 }
 
 func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle []byte, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
-	userId, err := uuid.FromBytes(userHandle)
-	if err != nil {
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "failed to parse userHandle as uuid").SetInternal(err)
-	}
-
-	user, err := persister.GetByUserId(userId, tenantId)
+	user, err := persister.GetByUserId(string(userHandle), tenantId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}

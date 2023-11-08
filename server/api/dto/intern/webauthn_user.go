@@ -2,12 +2,11 @@ package intern
 
 import (
 	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/gofrs/uuid"
 	"github.com/teamhanko/passkey-server/persistence/models"
 )
 
 type WebauthnUser struct {
-	UserId              uuid.UUID
+	UserId              string
 	Name                string
 	Icon                string
 	DisplayName         string
@@ -25,7 +24,7 @@ func NewWebauthnUser(user models.WebauthnUser) *WebauthnUser {
 }
 
 func (u *WebauthnUser) WebAuthnID() []byte {
-	return u.UserId.Bytes()
+	return []byte(u.UserId)
 }
 
 func (u *WebauthnUser) WebAuthnName() string {

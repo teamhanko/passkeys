@@ -193,7 +193,7 @@ func (r *registrationHandler) getSessionByChallenge(challenge string, tenantId u
 	return sessionData, nil
 }
 
-func (r *registrationHandler) GetWebauthnUser(userId uuid.UUID, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, *models.WebauthnUser, error) {
+func (r *registrationHandler) GetWebauthnUser(userId string, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, *models.WebauthnUser, error) {
 	user, err := persister.GetByUserId(userId, tenantId)
 	if err != nil {
 		return nil, nil, err

@@ -16,8 +16,8 @@ import (
 )
 
 type Logger interface {
-	Create(echo.Context, *models.Tenant, models.AuditLogType, *uuid.UUID, error) error
-	CreateWithConnection(*pop.Connection, echo.Context, *models.Tenant, models.AuditLogType, *uuid.UUID, error) error
+	Create(echo.Context, *models.Tenant, models.AuditLogType, *string, error) error
+	CreateWithConnection(*pop.Connection, echo.Context, *models.Tenant, models.AuditLogType, *string, error) error
 }
 
 type logger struct {
@@ -46,11 +46,11 @@ func NewLogger(persister persistence.Persister, cfg models.AuditLogConfig) Logge
 	}
 }
 
-func (l *logger) Create(context echo.Context, tenant *models.Tenant, auditLogType models.AuditLogType, user *uuid.UUID, logError error) error {
+func (l *logger) Create(context echo.Context, tenant *models.Tenant, auditLogType models.AuditLogType, user *string, logError error) error {
 	return l.CreateWithConnection(l.persister.GetConnection(), context, tenant, auditLogType, user, logError)
 }
 
-func (l *logger) CreateWithConnection(tx *pop.Connection, context echo.Context, tenant *models.Tenant, auditLogType models.AuditLogType, user *uuid.UUID, logError error) error {
+func (l *logger) CreateWithConnection(tx *pop.Connection, context echo.Context, tenant *models.Tenant, auditLogType models.AuditLogType, user *string, logError error) error {
 	if l.storageEnabled {
 		err := l.store(tx, context, tenant, auditLogType, user, logError)
 		if err != nil {
@@ -65,7 +65,7 @@ func (l *logger) CreateWithConnection(tx *pop.Connection, context echo.Context, 
 	return nil
 }
 
-func (l *logger) store(tx *pop.Connection, context echo.Context, tenant *models.Tenant, auditLogType models.AuditLogType, user *uuid.UUID, logError error) error {
+func (l *logger) store(tx *pop.Connection, context echo.Context, tenant *models.Tenant, auditLogType models.AuditLogType, user *string, logError error) error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return fmt.Errorf("failed to create id: %w", err)
@@ -94,7 +94,7 @@ func (l *logger) store(tx *pop.Connection, context echo.Context, tenant *models.
 	return l.persister.GetAuditLogPersister(tx).Create(al)
 }
 
-func (l *logger) logToConsole(context echo.Context, tenant *models.Tenant, auditLogType models.AuditLogType, user *uuid.UUID, logError error) {
+func (l *logger) logToConsole(context echo.Context, tenant *models.Tenant, auditLogType models.AuditLogType, user *string, logError error) {
 	now := time.Now()
 	loggerEvent := zeroLogger.Log().
 		Str("audience", "audit").
@@ -108,7 +108,7 @@ func (l *logger) logToConsole(context echo.Context, tenant *models.Tenant, audit
 		Str("time_unix", strconv.FormatInt(now.Unix(), 10))
 
 	if user != nil {
-		loggerEvent.Str("user_id", user.String())
+		loggerEvent.Str("user_id", *user)
 	}
 
 	loggerEvent.Send()

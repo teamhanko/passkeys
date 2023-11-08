@@ -14,7 +14,7 @@ import (
 // WebauthnUser is used by pop to map your webauthn_users database table to your go code.
 type WebauthnUser struct {
 	ID          uuid.UUID `json:"id" db:"id"`
-	UserID      uuid.UUID `json:"user_id" db:"user_id"`
+	UserID      string    `json:"user_id" db:"user_id"`
 	Name        string    `json:"name" db:"name"`
 	Icon        string    `json:"icon" db:"icon"`
 	DisplayName string    `json:"display_name" db:"display_name"`
@@ -29,7 +29,7 @@ type WebauthnUser struct {
 type WebauthnUsers []WebauthnUser
 
 func (webauthnUser *WebauthnUser) WebAuthnID() []byte {
-	return webauthnUser.UserID.Bytes()
+	return []byte(webauthnUser.UserID)
 }
 
 func (webauthnUser *WebauthnUser) WebAuthnName() string {
@@ -49,7 +49,7 @@ func (webauthnUser *WebauthnUser) WebAuthnIcon() string {
 func (webauthnUser *WebauthnUser) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validate.Validate(
 		&validators.UUIDIsPresent{Name: "ID", Field: webauthnUser.ID},
-		&validators.UUIDIsPresent{Name: "UserID", Field: webauthnUser.UserID},
+		&validators.StringIsPresent{Name: "UserID", Field: webauthnUser.UserID},
 		&validators.StringIsPresent{Name: "Name", Field: webauthnUser.Name},
 		&validators.StringIsPresent{Name: "DisplayName", Field: webauthnUser.DisplayName},
 		&validators.TimeIsPresent{Name: "UpdatedAt", Field: webauthnUser.UpdatedAt},
@@ -73,16 +73,11 @@ func FromRegistrationDto(dto *request.InitRegistrationDto) (*WebauthnUser, error
 		return nil, err
 	}
 
-	userId, err := uuid.FromString(dto.UserId)
-	if err != nil {
-		return nil, err
-	}
-
 	now := time.Now()
 
 	return &WebauthnUser{
 		ID:          webauthnId,
-		UserID:      userId,
+		UserID:      dto.UserId,
 		Name:        dto.Username,
 		Icon:        icon,
 		DisplayName: displayName,
