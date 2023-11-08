@@ -3,30 +3,17 @@
 ## Getting started
 
 For a quick start of the passkey server you can use the config and docker compose file in [deploy](../deploy).
-All you have to do to start the server is to add an API key and a secret key in the config file in `secrets.api_keys` like:
+All you have to do to start the server is to run the following commands:
 
-```yaml
-secrets:
-  api_keys:
-    - your-super-secret-api-key
-  keys:
-    - your-super-secret-crypto-key
-```
-> **Note:** You must at least provide 1 API key and 1 secret key.
-> * Each secret key needs to be at least 16 characters long
-> * Each API key needs to be at least 32 characters long
-
-After that you can run the following Docker compose command to start the passkey server for local usage:
-
-```bash
+```shell
 cd deploy
 docker compose -f backend.yaml up -d
 ```
 
-After running the Docker compose command the passkey server will be available at http://localhost:8000
+After running the Docker compose command the passkey server will be available at http://localhost:8000 and the 
+admin API will be available at http://localhost:8001
 
-> **Note:** If you want to use a different origin you have to configure CORS and webauthn. Please see [Step 6](#configure-webauthn)
-> and [Step 7](#configure-cors) for detailed instructions.
+Now you need to [create a tenant](#create-tenant) to use the service.
 
 ## Start the passkey server manually
 
@@ -35,11 +22,8 @@ If you do not want to use our deployment or already have a database you want to 
 1. [Run a database](#run-a-database)
 2. [Configure database access](#configure-database-access)
 3. [Apply database migrations](#apply-database-migrations)
-4. [Configure JSON Web Key Set generation](#configure-json-web-key-set-generation)
-5. [Configure an API key](#configure-an-api-key)
-6. [Configure WebAuthn](#configure-webauthn)
-7. [Configure CORS](#configure-cors)
-8. [Start the backend](#start-the-server)
+4. [Create Tenant](#create-tenant)
+5. [Start the backend](#start-the-server)
 
 ### Run a database
 
@@ -132,93 +116,144 @@ To apply the migrations, run:
 
 > **Note** The path to the config file can be relative or absolute.
 
-### Configure JSON Web Key Set generation
+### Create Tenant
 
-The API uses [JSON Web Tokens](https://www.rfc-editor.org/rfc/rfc7519.html) (JWTs) for authentication.
-JWTs are verified using [JSON Web Keys](https://www.rfc-editor.org/rfc/rfc7517) (JWK).
-JWKs are created internally by setting `secrets.keys` options in the
-configuration file (`server/config/config.yaml` or your own `*.yaml` file):
+Now you need to create a tenant. For this you can import our [admin OpenAPI specification](../spec/passkey-server-admin.yaml)
+into Postman or Insomnia or use the following curl command:
 
-```yaml
-secrets:
-  keys:
-    - <CHANGE-ME>
+```shell
+curl --location 'http://<YOUR DOMAIN>:8001/tenants' \
+--header 'Content-Type: application/json' \
+--header 'Accept: application/json' \
+--data '{
+  "display_name": "<TENANT NAME>",
+  "config": {
+    "cors": {
+      "allowed_origins": [
+        "<CORS ORIGINS>"
+      ],
+      "allow_unsafe_wildcard": false
+    },
+    "webauthn": {
+      "relying_party": {
+        "id": "<YOUR DOMAIN>",
+        "display_name": "Hanko Passkey Server",
+        "origins": [
+          "<WEBAUTHN ORIGINS>"
+        ]
+      },
+      "timeout": 60000,
+      "user_verification": "preferred"
+    }
+  }
+}'
+```
+> **Note**: The result of the curl command will contain your **tenant id** (Field: `id`) and your **API key** (Field: `api_key.secret`)
+
+Let us dissect the command to show how to configure the tenant for your use case.
+
+#### Name of the Tenant
+
+If you want to maintain multiple tenants and build your own dashboard you can change `<TENANT NAME>` to a more descriptive one.
+If you only want to use 1 tenant, just name it like you want.
+
+e.g:
+
+```json
+{
+  "display_name": "My Test Tenant"
+}
 ```
 
-> **Note**  at least one `secrets.keys` entry must be provided and each entry must be a random generated string at least 16 characters long.
+#### Configure Cors
 
-Keys secrets are used to en- and decrypt the JWKs which get used to sign the JWTs.
-For every key a JWK is generated, encrypted with the key and persisted in the database.
+Because the server and your application(s) consuming the server API most likely have different origins, i.e.
+scheme (protocol), hostname (domain), and port part of the URL are different, you need to configure
+Cross-Origin Resource Sharing (CORS) and specify your application(s) as allowed origins:
 
-The Passkey server API publishes public cryptographic keys as a JWK set through the `.well-known/jwks.json` endpoint to enable
-clients to verify token signatures.
-
-### Configure an API key
-
-API keys are used to restrict access to a specific part of the HTTP API (Managing credentials and starting a passkey registration)
-
-```yaml
-secrets:
-  api_keys:
-    - <CHANGE-ME>
+```json
+{
+  "config": {
+    "cors": {
+      "allowed_origins": [
+        "<CORS ORIGINS>"
+      ],
+      "allow_unsafe_wildcard": false
+    }
+  }
+}
 ```
 
-> **Note**  at least one `secrets.api_keys` entry must be provided and each entry must be a random generated string at least 32 characters long.
+Replace `<CORS ORIGINS>` with the origin of your application.
+When you include a wildcard `*` origin you need to set `"allow_unsafe_wildcard": true`:
 
-The Passkey server API publishes public cryptographic keys as a JWK set through the `.well-known/jwks.json`
-endpoint to enable clients to verify token signatures.
+```json
+{
+  "config": {
+    "cors": {
+      "allowed_origins": [
+        "*"
+      ],
+      "allow_unsafe_wildcard": true
+    }
+  }
+}
+```
 
-### Configure WebAuthn
+Wildcard `*` origins can lead to cross-site attacks and when you include a `*` wildcard origin,
+we want to make sure, that you understand what you are doing, hence this flag.
+
+> **Note** In most cases, the `allowed_origins` list here should contain the same entries as the `webauthn.relying_party.origins` list. Only when you have an Android app you will have an extra entry (`android:apk-key-hash:...`) in the `webauthn.relying_party.origins` list.
+
+#### Configure Webauthn
 
 Passkeys are based on the [Web Authentication API](https://www.w3.org/TR/webauthn-2/#web-authentication-api).
 In order to create and login with passkeys, the passkey server must be provided information about
 the [WebAuthn Relying Party](https://www.w3.org/TR/webauthn-2/#webauthn-relying-party).
 
+```json
+{
+  "config": {
+    "webauthn": {
+      "relying_party": {
+        "id": "<YOUR DOMAIN>",
+        "display_name": "Hanko Passkey Server",
+        "origins": [
+          "<WEBAUTHN ORIGINS>"
+        ]
+      },
+      "timeout": 60000,
+      "user_verification": "preferred"
+    }
+  }
+}
+```
+
 For most use cases, you just need the domain of your web application that uses the passkey server. Set
-`webauthn.relying_party.id` to the domain and set `webauthn.relying_party.origin` to the domain _including_ the
+`<YOUR DOMAIN>` to the domain and set `<WEBAUTHN ORIGINS>` to the domain _including_ the
 protocol.
 
 > **Important**: If you are hosting your web application on a non-standard HTTP port (i.e. `80`) you also have to
 > include this in the origin setting.
 
-#### Local development example
+As an example: If the login should be available at `https://login.example.com` instead, then the WebAuthn config would look like this:
 
-When developing locally, the passkey server defaults to:
-
-```yaml
-webauthn:
-  relying_party:
-    id: "localhost"
-    display_name: "Hanko Passkey Service"
-    origins:
-      - "http://localhost"
-```
-
-so no further configuration changes need to be made to your configuration file.
-
-#### Production examples
-
-When you have a website hosted at `example.com` and you want to add a login to it that will be available
-at `https://example.com/login`, the WebAuthn config would look like this:
-
-```yaml
-webauthn:
-  relying_party:
-    id: "example.com"
-    display_name: "Example Project"
-    origins:
-      - "https://example.com"
-```
-
-If the login should be available at `https://login.example.com` instead, then the WebAuthn config would look like this:
-
-```yaml
-webauthn:
-  relying_party:
-    id: "login.example.com"
-    display_name: "Example Project"
-    origins:
-      - "https://login.example.com"
+```json
+{
+  "config": {
+    "webauthn": {
+      "relying_party": {
+        "id": "login.example.com",
+        "display_name": "Hanko Passkey Server",
+        "origins": [
+        "https://login.example.com"
+        ]
+      },
+      "timeout": 60000,
+      "user_verification": "preferred"
+    }
+  }
+}
 ```
 
 Given the above scenario, you still may want to bind your users WebAuthn credentials to `example.com` if you plan to
@@ -226,43 +261,23 @@ add other services on other subdomains later that should be able to use existing
 you want to have the option to move your login from `https://login.example.com` to `https://example.com/login` at some
 point. Then the WebAuthn config would look like this:
 
-```yaml
-webauthn:
-  relying_party:
-    id: "example.com"
-    display_name: "Example Project"
-    origins:
-      - "https://login.example.com"
-
+```json
+{
+  "config": {
+    "webauthn": {
+      "relying_party": {
+        "id": "example.com",
+        "display_name": "Hanko Passkey Server",
+        "origins": [
+        "https://login.example.com"
+        ]
+      },
+      "timeout": 60000,
+      "user_verification": "preferred"
+    }
+  }
+}
 ```
-
-### Configure CORS
-
-Because the server and your application(s) consuming the server API most likely have different origins, i.e.
-scheme (protocol), hostname (domain), and port part of the URL are different, you need to configure
-Cross-Origin Resource Sharing (CORS) and specify your application(s) as allowed origins:
-
-```yaml
-server:
-    cors:
-    allow_origins:
-      - https://example.com
-```
-
-When you include a wildcard `*` origin you need to set `unsafe_wildcard_origin_allowed: true`:
-
-```yaml
-server:
-  cors:
-    allow_origins:
-      - "*"
-    unsafe_wildcard_origin_allowed: true
-```
-
-Wildcard `*` origins can lead to cross-site attacks and when you include a `*` wildcard origin,
-we want to make sure, that you understand what you are doing, hence this flag.
-
-> **Note** In most cases, the `allow_origins` list here should contain the same entries as the `webauthn.relying_party.origins` list. Only when you have an Android app you will have an extra entry (`android:apk-key-hash:...`) in the `webauthn.relying_party.origins` list.
 
 ### Start the server
 
@@ -271,12 +286,12 @@ To serve the API with the passkey-server you can use the following command:
 ##### Docker
 
 ```shell
-docker run --mount type=bind,source=<PATH-TO-CONFIG-FILE>,target=/config/config.yaml -p 8000:8000 -it ghcr.io/teamhanko/passkey-server:latest serve
+docker run --mount type=bind,source=<PATH-TO-CONFIG-FILE>,target=/config/config.yaml -p 8000:8000 -p 8001:8001 -it ghcr.io/teamhanko/passkey-server:latest serve all
 ```
 
 > **Note** The `<PATH-TO-CONFIG-FILE>` must be an absolute path to your config file created above.
 
-The service is now available at `localhost:8000`.
+The service is now available at `localhost:8000` and the admin API at `localhost:8001`
 
 `8000` is the default port for the API. It can be customized via in the configuration through
 the `server.address` option.
@@ -284,6 +299,14 @@ the `server.address` option.
 ```yaml
 server:
   address: "<YOUR_URL>:<YOUR_PORT>"
+```
+
+`8001` is the default port for the admin API. It can be customized via in the configuration through
+the `server.admin_address` option.
+
+```yaml
+server:
+  admin_address: "<YOUR_URL>:<YOUR_PORT>"
 ```
 
 ##### From source
@@ -295,7 +318,7 @@ go build -a -o passkey-server main.go
 
 Then run:
 ```shell
-./passkey-server serve --config <PATH-TO-CONFIG-FILE>
+./passkey-server serve all --config <PATH-TO-CONFIG-FILE>
 ```
 
-The service is now available at `localhost:8000`.
+The service is now available at `localhost:8000` and the admin API at `localhost:8001`
