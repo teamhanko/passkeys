@@ -1,0 +1,11 @@
+create_table("audit_log_configs") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("enable_storage", "boolean", { default: false})
+	t.Column("enable_console", "boolean", { default: true})
+	t.Column("output_stream", "string", { default: "stdout"})
+	t.Column("config_id", "uuid", {"null": false})
+
+	t.ForeignKey("config_id", {"configs": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

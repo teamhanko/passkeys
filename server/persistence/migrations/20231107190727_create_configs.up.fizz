@@ -1,0 +1,8 @@
+create_table("configs") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("tenant_id", "uuid", { "null": false})
+
+	t.ForeignKey("tenant_id", {"tenants": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

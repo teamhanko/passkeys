@@ -1,0 +1,9 @@
+create_table("cors") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("allow_unsafe", "boolean", {default: false})
+	t.Column("config_id", "uuid", { "null": false })
+
+    t.ForeignKey("config_id", {"configs": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

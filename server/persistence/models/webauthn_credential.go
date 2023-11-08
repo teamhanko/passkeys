@@ -12,8 +12,8 @@ import (
 // WebauthnCredential is used by pop to map your webauthn_credentials database table to your go code.
 type WebauthnCredential struct {
 	ID              string     `db:"id" json:"id"`
-	Name            *string    `db:"name" json:"-"`
 	UserId          uuid.UUID  `db:"user_id" json:"-"`
+	Name            *string    `db:"name" json:"-"`
 	PublicKey       string     `db:"public_key" json:"-"`
 	AttestationType string     `db:"attestation_type" json:"-"`
 	AAGUID          uuid.UUID  `db:"aaguid" json:"-"`
@@ -24,7 +24,12 @@ type WebauthnCredential struct {
 	Transports      Transports `has_many:"webauthn_credential_transports" json:"-"`
 	BackupEligible  bool       `db:"backup_eligible" json:"-"`
 	BackupState     bool       `db:"backup_state" json:"-"`
+
+	WebauthnUserID uuid.UUID     `db:"webauthn_user_id"`
+	WebauthnUser   *WebauthnUser `belongs_to:"webauthn_user"`
 }
+
+type WebauthnCredentials []WebauthnCredential
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 func (credential *WebauthnCredential) Validate(tx *pop.Connection) (*validate.Errors, error) {

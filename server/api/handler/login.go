@@ -11,8 +11,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/response"
-	auditlog "github.com/teamhanko/passkey-server/audit_log"
-	"github.com/teamhanko/passkey-server/config"
 	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
@@ -25,8 +23,8 @@ type loginHandler struct {
 	*webauthnHandler
 }
 
-func NewLoginHandler(cfg *config.Config, persister persistence.Persister, logger auditlog.Logger, generator jwt.Generator) (WebauthnHandler, error) {
-	webauthnHandler, err := newWebAuthnHandler(cfg, persister, logger, generator)
+func NewLoginHandler(persister persistence.Persister) (WebauthnHandler, error) {
+	webauthnHandler, err := newWebAuthnHandler(persister)
 	if err != nil {
 		return nil, err
 	}
@@ -37,21 +35,29 @@ func NewLoginHandler(cfg *config.Config, persister persistence.Persister, logger
 }
 
 func (lh *loginHandler) Init(ctx echo.Context) error {
-	options, sessionData, err := lh.webauthn.BeginDiscoverableLogin(
-		webauthn.WithUserVerification(protocol.UserVerificationRequirement(lh.config.Webauthn.UserVerification)),
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	options, sessionData, err := h.webauthn.BeginDiscoverableLogin(
+		webauthn.WithUserVerification(h.config.WebauthnConfig.UserVerification),
 	)
 	if err != nil {
+		ctx.Logger().Error(err)
 		return fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err)
 	}
 
-	err = lh.persister.GetWebauthnSessionDataPersister(nil).Create(*intern.WebauthnSessionDataToModel(sessionData, models.WebauthnOperationAuthentication))
+	err = lh.persister.GetWebauthnSessionDataPersister(nil).Create(*intern.WebauthnSessionDataToModel(sessionData, h.tenant.ID, models.WebauthnOperationAuthentication))
 	if err != nil {
+		ctx.Logger().Error(err)
 		return fmt.Errorf("failed to store webauthn assertion session data: %w", err)
 	}
 
 	// Remove all transports, because of a bug in android and windows where the internal authenticator gets triggered,
 	// when the transports array contains the type 'internal' although the credential is not available on the device.
-	for i, _ := range options.Response.AllowedCredentials {
+	for i := range options.Response.AllowedCredentials {
 		options.Response.AllowedCredentials[i].Transport = nil
 	}
 
@@ -61,7 +67,14 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 func (lh *loginHandler) Finish(ctx echo.Context) error {
 	parsedRequest, err := protocol.ParseCredentialRequestResponse(ctx.Request())
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
 	}
 
 	return lh.persister.Transaction(func(tx *pop.Connection) error {
@@ -69,16 +82,25 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 		webauthnUserPersister := lh.persister.GetWebauthnUserPersister(tx)
 		credentialPersister := lh.persister.GetWebauthnCredentialPersister(tx)
 
-		sessionData, err := lh.getSessionDataByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister)
+		sessionData, err := lh.getSessionDataByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister, h.tenant.ID)
+		if err != nil {
+			ctx.Logger().Error(err)
+			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get session data").SetInternal(err)
+		}
 		sessionDataModel := intern.WebauthnSessionDataFromModel(sessionData)
 
-		webauthnUser, err := lh.getWebauthnUserByUserHandle(parsedRequest.Response.UserHandle, webauthnUserPersister)
+		webauthnUser, err := lh.getWebauthnUserByUserHandle(parsedRequest.Response.UserHandle, h.tenant.ID, webauthnUserPersister)
+		if err != nil {
+			ctx.Logger().Error(err)
+			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
+		}
 
-		credential, err := lh.webauthn.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
+		credential, err := h.webauthn.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
 			return webauthnUser, nil
 		}, *sessionDataModel, parsedRequest)
 
 		if err != nil {
+			ctx.Logger().Error(err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "failed to validate assertion").SetInternal(err)
 		}
 
@@ -92,17 +114,21 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			dbCred.LastUsedAt = &now
 			err = credentialPersister.Update(dbCred)
 			if err != nil {
+				ctx.Logger().Error(err)
 				return fmt.Errorf("failed to update webauthn credential: %w", err)
 			}
 		}
 
 		err = sessionDataPersister.Delete(*sessionData)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to delete assertion session data: %w", err)
 		}
 
-		token, err := lh.jwtGenerator.Generate(webauthnUser.UserId, base64.RawURLEncoding.EncodeToString(credential.ID))
+		generator := ctx.Get("jwt_generator").(jwt.Generator)
+		token, err := generator.Generate(webauthnUser.UserId, base64.RawURLEncoding.EncodeToString(credential.ID))
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to generate jwt: %w", err)
 		}
 
@@ -110,8 +136,8 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 	})
 }
 
-func (lh *loginHandler) getSessionDataByChallenge(challenge string, persister persisters.WebauthnSessionDataPersister) (*models.WebauthnSessionData, error) {
-	sessionData, err := persister.GetByChallenge(challenge)
+func (lh *loginHandler) getSessionDataByChallenge(challenge string, persister persisters.WebauthnSessionDataPersister, tenantId uuid.UUID) (*models.WebauthnSessionData, error) {
+	sessionData, err := persister.GetByChallenge(challenge, tenantId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get webauthn assertion session data: %w", err)
 	}
@@ -127,13 +153,13 @@ func (lh *loginHandler) getSessionDataByChallenge(challenge string, persister pe
 	return sessionData, nil
 }
 
-func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle []byte, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
+func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle []byte, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
 	userId, err := uuid.FromBytes(userHandle)
 	if err != nil {
 		return nil, echo.NewHTTPError(http.StatusBadRequest, "failed to parse userHandle as uuid").SetInternal(err)
 	}
 
-	user, err := persister.GetByUserId(userId)
+	user, err := persister.GetByUserId(userId, tenantId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}

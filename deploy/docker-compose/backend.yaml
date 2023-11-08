@@ -19,9 +19,10 @@ services:
       - type: bind
         source: ./config.yaml
         target: /etc/config/config.yaml
-    command: --config /etc/config/config.yaml serve
+    command: --config /etc/config/config.yaml serve all
     ports:
       - '8000:8000'
+      - '8001:8001'
     restart: unless-stopped
     depends_on:
       passkey-migrate:
@@ -37,7 +38,7 @@ services:
       - POSTGRES_PASSWORD=hanko
       - POSTGRES_DB=passkey
     healthcheck:
-      test: pg_isready -U hanko -d hanko
+      test: pg_isready -U hanko -d passkey
       interval: 10s
       timeout: 10s
       retries: 3

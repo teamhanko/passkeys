@@ -1,0 +1,6 @@
+create_table("tenants") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("display_name", "string", {})
+
+	t.Timestamps()
+}

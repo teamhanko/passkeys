@@ -1,0 +1,9 @@
+create_table("cors_origins") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("origin", "string", { "null": false, "unique": true })
+	t.Column("cors_id", "uuid", { "null": false})
+
+	t.ForeignKey("cors_id", {"cors": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

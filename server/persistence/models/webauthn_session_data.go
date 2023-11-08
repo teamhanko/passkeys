@@ -20,14 +20,17 @@ var (
 // WebauthnSessionData is used by pop to map your webauthn_session_data database table to your go code.
 type WebauthnSessionData struct {
 	ID                 uuid.UUID                              `db:"id"`
+	UserId             uuid.UUID                              `db:"user_id" json:"-"`
 	Challenge          string                                 `db:"challenge"`
-	UserId             uuid.UUID                              `db:"user_id"`
 	UserVerification   string                                 `db:"user_verification"`
 	CreatedAt          time.Time                              `db:"created_at"`
 	UpdatedAt          time.Time                              `db:"updated_at"`
 	Operation          Operation                              `db:"operation"`
 	AllowedCredentials []WebauthnSessionDataAllowedCredential `has_many:"webauthn_session_data_allowed_credentials"`
 	ExpiresAt          nulls.Time                             `db:"expires_at"`
+
+	TenantID uuid.UUID `db:"tenant_id"`
+	Tenant   *Tenant   `belongs_to:"tenants"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.

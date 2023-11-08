@@ -1,0 +1,13 @@
+create_table("webauthn_users") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("user_id", "uuid", { unique:true })
+	t.Column("name", "string", {})
+	t.Column("icon", "string", {})
+	t.Column("display_name", "string", {})
+	t.Column("tenant_id", "uuid", { "null": false})
+
+    t.Index(["user_id", "tenant_id"], {"unique": true})
+    t.ForeignKey("tenant_id", {"tenants": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

@@ -24,6 +24,13 @@ type Persister interface {
 	GetWebauthnSessionDataPersister(tx *pop.Connection) persisters.WebauthnSessionDataPersister
 	GetWebauthnUserPersister(tx *pop.Connection) persisters.WebauthnUserPersister
 	GetJwkPersister(tx *pop.Connection) persisters.JwkPersister
+	GetTenantPersister(tx *pop.Connection) persisters.TenantPersister
+	GetSecretsPersister(tx *pop.Connection) persisters.SecretsPersister
+	GetConfigPersister(tx *pop.Connection) persisters.ConfigPersister
+	GetWebauthnConfigPersister(tx *pop.Connection) persisters.WebauthnConfigPersister
+	GetWebauthnRelyingPartyPersister(tx *pop.Connection) persisters.WebauthnRelyingPartyPersister
+	GetCorsPersister(tx *pop.Connection) persisters.CorsPersister
+	GetAuditLogConfigPersister(tx *pop.Connection) persisters.AuditLogConfigPersister
 }
 
 type Migrator interface {
@@ -140,4 +147,60 @@ func (p *persister) GetJwkPersister(tx *pop.Connection) persisters.JwkPersister 
 	}
 
 	return persisters.NewJwkPersister(tx)
+}
+
+func (p *persister) GetTenantPersister(tx *pop.Connection) persisters.TenantPersister {
+	if tx == nil {
+		return persisters.NewTenantPersister(p.Database)
+	}
+
+	return persisters.NewTenantPersister(tx)
+}
+
+func (p *persister) GetSecretsPersister(tx *pop.Connection) persisters.SecretsPersister {
+	if tx == nil {
+		return persisters.NewSecretsPersister(p.Database)
+	}
+
+	return persisters.NewSecretsPersister(tx)
+}
+
+func (p *persister) GetConfigPersister(tx *pop.Connection) persisters.ConfigPersister {
+	if tx == nil {
+		return persisters.NewConfigPersister(p.Database)
+	}
+
+	return persisters.NewConfigPersister(tx)
+}
+
+func (p *persister) GetWebauthnConfigPersister(tx *pop.Connection) persisters.WebauthnConfigPersister {
+	if tx == nil {
+		return persisters.NewWebauthnConfigPersister(p.Database)
+	}
+
+	return persisters.NewWebauthnConfigPersister(tx)
+}
+
+func (p *persister) GetWebauthnRelyingPartyPersister(tx *pop.Connection) persisters.WebauthnRelyingPartyPersister {
+	if tx == nil {
+		return persisters.NewWebauthnRelyingPartyPersister(p.Database)
+	}
+
+	return persisters.NewWebauthnRelyingPartyPersister(tx)
+}
+
+func (p *persister) GetCorsPersister(tx *pop.Connection) persisters.CorsPersister {
+	if tx == nil {
+		return persisters.NewCorsPersister(p.Database)
+	}
+
+	return persisters.NewCorsPersister(tx)
+}
+
+func (p *persister) GetAuditLogConfigPersister(tx *pop.Connection) persisters.AuditLogConfigPersister {
+	if tx == nil {
+		return persisters.NewAuditLogConfigPersister(p.Database)
+	}
+
+	return persisters.NewAuditLogConfigPersister(tx)
 }

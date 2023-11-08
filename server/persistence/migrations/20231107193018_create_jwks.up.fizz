@@ -1,0 +1,10 @@
+create_table("jwks") {
+    t.Column("id", "int", {primary: true})
+    t.Column("key_data", "text", {})
+    t.Column("created_at", "timestamp", {})
+    t.Column("tenant_id", "uuid", { "null": false })
+
+    t.ForeignKey("tenant_id", {"tenants": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+    t.DisableTimestamps()
+}

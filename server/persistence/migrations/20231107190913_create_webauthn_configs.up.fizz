@@ -1,0 +1,10 @@
+create_table("webauthn_configs") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("timeout", "integer", { "null": false, default: 60000 })
+	t.Column("user_verification", "string", { "null": false, default: "preferred"})
+	t.Column("config_id", "uuid", { "null": false })
+
+	t.ForeignKey("config_id", {"configs": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

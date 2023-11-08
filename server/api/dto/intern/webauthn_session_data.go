@@ -32,7 +32,7 @@ func WebauthnSessionDataFromModel(data *models.WebauthnSessionData) *webauthn.Se
 	}
 }
 
-func WebauthnSessionDataToModel(data *webauthn.SessionData, operation models.Operation) *models.WebauthnSessionData {
+func WebauthnSessionDataToModel(data *webauthn.SessionData, tenantId uuid.UUID, operation models.Operation) *models.WebauthnSessionData {
 	id, _ := uuid.NewV4()
 	userId, _ := uuid.FromBytes(data.UserID)
 	now := time.Now()
@@ -61,5 +61,6 @@ func WebauthnSessionDataToModel(data *webauthn.SessionData, operation models.Ope
 		Operation:          operation,
 		AllowedCredentials: allowedCredentials,
 		ExpiresAt:          nulls.NewTime(data.Expires),
+		TenantID:           tenantId,
 	}
 }

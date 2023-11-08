@@ -67,7 +67,7 @@ type AuditLogOptions struct {
 }
 
 func (p *auditLogPersister) List(options AuditLogOptions) ([]models.AuditLog, error) {
-	auditLogs := []models.AuditLog{}
+	var auditLogs []models.AuditLog
 
 	query := p.database.Q()
 	query = p.addQueryParamsToSqlQuery(query, options)

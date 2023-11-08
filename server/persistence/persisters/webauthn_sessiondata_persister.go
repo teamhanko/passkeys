@@ -12,7 +12,7 @@ import (
 
 type WebauthnSessionDataPersister interface {
 	Get(id uuid.UUID) (*models.WebauthnSessionData, error)
-	GetByChallenge(challenge string) (*models.WebauthnSessionData, error)
+	GetByChallenge(challenge string, tenantId uuid.UUID) (*models.WebauthnSessionData, error)
 	Create(sessionData models.WebauthnSessionData) error
 	Update(sessionData models.WebauthnSessionData) error
 	Delete(sessionData models.WebauthnSessionData) error
@@ -39,9 +39,9 @@ func (w *webauthnSessionDataPersister) Get(id uuid.UUID) (*models.WebauthnSessio
 	return &sessionData, nil
 }
 
-func (w *webauthnSessionDataPersister) GetByChallenge(challenge string) (*models.WebauthnSessionData, error) {
+func (w *webauthnSessionDataPersister) GetByChallenge(challenge string, tenantId uuid.UUID) (*models.WebauthnSessionData, error) {
 	var sessionData []models.WebauthnSessionData
-	err := w.database.Eager().Where("challenge = ?", challenge).All(&sessionData)
+	err := w.database.Eager().Where("challenge = ? AND tenant_id = ?", challenge, tenantId).All(&sessionData)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

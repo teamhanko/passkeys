@@ -1,8 +1,0 @@
-timeout: 1000
-user_verification: preferred
-relying_party:
-  id: localhost
-  display_name: Hanko Passkey Service
-  icon: lorem
-  origins:
-    - "localhost:8000"

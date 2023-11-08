@@ -7,8 +7,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
-	auditlog "github.com/teamhanko/passkey-server/audit_log"
-	"github.com/teamhanko/passkey-server/config"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
@@ -24,9 +22,9 @@ type credentialsHandler struct {
 	*webauthnHandler
 }
 
-func NewCredentialsHandler(cfg *config.Config, persister persistence.Persister, logger auditlog.Logger) (CredentialsHandler, error) {
+func NewCredentialsHandler(persister persistence.Persister) (CredentialsHandler, error) {
 
-	webauthnHandler, err := newWebAuthnHandler(cfg, persister, logger, nil)
+	webauthnHandler, err := newWebAuthnHandler(persister)
 	if err != nil {
 		return nil, err
 	}
@@ -44,17 +42,19 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 
 	userId, err := uuid.FromString(requestDto.UserId)
 	if err != nil {
+		ctx.Logger().Error(err)
 		return err
 	}
 
 	credentialPersister := credHandler.persister.GetWebauthnCredentialPersister(nil)
 	credentialModels, err := credentialPersister.GetFromUser(userId)
 	if err != nil {
+		ctx.Logger().Error(err)
 		return err
 	}
 
 	dtos := make([]*response.CredentialDto, len(credentialModels))
-	for i, _ := range credentialModels {
+	for i := range credentialModels {
 		dtos[i] = response.CredentialDtoFromModel(credentialModels[i])
 	}
 
@@ -71,15 +71,22 @@ func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
 
 	credential, err := credentialPersister.Get(requestDto.CredentialId)
 	if err != nil {
+		ctx.Logger().Error(err)
 		return err
 	}
 
 	if credential == nil {
-		return &echo.HTTPError{
+		return echo.NewHTTPError(http.StatusNotFound, &echo.HTTPError{
 			Code:     http.StatusNotFound,
 			Message:  fmt.Sprintf("credential with id '%s' not found.", requestDto.CredentialId),
 			Internal: nil,
-		}
+		})
+	}
+
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
 	}
 
 	return credHandler.persister.Transaction(func(tx *pop.Connection) error {
@@ -88,10 +95,12 @@ func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
 
 		err = credentialPersister.Update(credential)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return err
 		}
-		err := credHandler.auditLog.CreateWithConnection(tx, ctx, models.AuditLogWebAuthnCredentialUpdated, &credential.UserId, nil)
+		err := h.auditLog.CreateWithConnection(tx, ctx, h.tenant, models.AuditLogWebAuthnCredentialUpdated, &credential.UserId, nil)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return err
 		}
 
@@ -108,6 +117,13 @@ func (credHandler *credentialsHandler) Delete(ctx echo.Context) error {
 	persister := credHandler.persister.GetWebauthnCredentialPersister(nil)
 	credential, err := persister.Get(requestDto.Id)
 	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
 		return err
 	}
 
@@ -115,11 +131,13 @@ func (credHandler *credentialsHandler) Delete(ctx echo.Context) error {
 		persister = credHandler.persister.GetWebauthnCredentialPersister(tx)
 		err := persister.Delete(credential)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return err
 		}
 
-		err = credHandler.auditLog.CreateWithConnection(tx, ctx, models.AuditLogWebAuthnCredentialDeleted, nil, nil)
+		err = h.auditLog.CreateWithConnection(tx, ctx, h.tenant, models.AuditLogWebAuthnCredentialDeleted, nil, nil)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return err
 		}
 

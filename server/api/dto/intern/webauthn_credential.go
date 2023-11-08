@@ -2,6 +2,7 @@ package intern
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/gofrs/uuid"
@@ -9,13 +10,15 @@ import (
 	"time"
 )
 
-func WebauthnCredentialToModel(credential *webauthn.Credential, userId uuid.UUID, backupEligible bool, backupState bool) *models.WebauthnCredential {
+func WebauthnCredentialToModel(credential *webauthn.Credential, userId uuid.UUID, webauthnUserId uuid.UUID, backupEligible bool, backupState bool) *models.WebauthnCredential {
 	now := time.Now().UTC()
 	aaguid, _ := uuid.FromBytes(credential.Authenticator.AAGUID)
 	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
+	name := fmt.Sprintf("cred-%s", credentialID)
 
 	c := &models.WebauthnCredential{
 		ID:              credentialID,
+		Name:            &name,
 		UserId:          userId,
 		PublicKey:       base64.RawURLEncoding.EncodeToString(credential.PublicKey),
 		AttestationType: credential.AttestationType,
@@ -26,6 +29,8 @@ func WebauthnCredentialToModel(credential *webauthn.Credential, userId uuid.UUID
 		UpdatedAt:       now,
 		BackupEligible:  backupEligible,
 		BackupState:     backupState,
+
+		WebauthnUserID: webauthnUserId,
 	}
 
 	for _, name := range credential.Transport {

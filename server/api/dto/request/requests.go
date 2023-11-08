@@ -4,6 +4,10 @@ type CredentialRequest interface {
 	ListCredentialsDto | DeleteCredentialsDto | UpdateCredentialsDto
 }
 
+type TenantDto struct {
+	TenantId string `param:"tenant_id" validate:"required,uuid4"`
+}
+
 type ListCredentialsDto struct {
 	UserId string `query:"user_id" validate:"required,uuid4"`
 }

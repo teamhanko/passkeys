@@ -13,7 +13,7 @@ import (
 type WebauthnUserPersister interface {
 	Create(webauthnUser *models.WebauthnUser) error
 	Get(id uuid.UUID) (*models.WebauthnUser, error)
-	GetByUserId(userId uuid.UUID) (*models.WebauthnUser, error)
+	GetByUserId(userId uuid.UUID, tenantId uuid.UUID) (*models.WebauthnUser, error)
 	Delete(webauthnUser *models.WebauthnUser) error
 }
 
@@ -31,17 +31,13 @@ func (p *webauthnUserPersister) Create(webauthnUser *models.WebauthnUser) error 
 	vErr, err := p.database.ValidateAndCreate(webauthnUser)
 	if err != nil {
 		fmt.Printf("%s", err.Error())
-		fmt.Println("Here5")
 		return fmt.Errorf("failed to store webauthn user: %w", err)
 	}
 	if vErr != nil && vErr.HasAny() {
-		fmt.Println("Here6")
 		fmt.Printf("%s", vErr.Error())
 		fmt.Printf("Debug: %v", webauthnUser)
 		return fmt.Errorf("webauthn user object validation failed: %w", vErr)
 	}
-
-	fmt.Println("here7")
 
 	return nil
 }
@@ -68,9 +64,9 @@ func (p *webauthnUserPersister) Delete(webauthnUser *models.WebauthnUser) error 
 	return nil
 }
 
-func (p *webauthnUserPersister) GetByUserId(userId uuid.UUID) (*models.WebauthnUser, error) {
+func (p *webauthnUserPersister) GetByUserId(userId uuid.UUID, tenantId uuid.UUID) (*models.WebauthnUser, error) {
 	weauthnUser := models.WebauthnUser{}
-	err := p.database.Where("user_id = ?", userId).First(&weauthnUser)
+	err := p.database.Eager().Where("user_id = ? AND tenant_id = ?", userId, tenantId).First(&weauthnUser)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

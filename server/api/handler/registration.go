@@ -11,8 +11,6 @@ import (
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
-	auditlog "github.com/teamhanko/passkey-server/audit_log"
-	"github.com/teamhanko/passkey-server/config"
 	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
@@ -25,8 +23,8 @@ type registrationHandler struct {
 	*webauthnHandler
 }
 
-func NewRegistrationHandler(cfg *config.Config, persister persistence.Persister, logger auditlog.Logger, generator jwt.Generator) (WebauthnHandler, error) {
-	webauthnHandler, err := newWebAuthnHandler(cfg, persister, logger, generator)
+func NewRegistrationHandler(persister persistence.Persister) (WebauthnHandler, error) {
+	webauthnHandler, err := newWebAuthnHandler(persister)
 	if err != nil {
 		return nil, err
 	}
@@ -44,43 +42,58 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 
 	webauthnUser, err := models.FromRegistrationDto(dto)
 	if err != nil {
+		ctx.Logger().Error(err)
 		return err
 	}
 
-	fmt.Println("Here3")
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
 
 	return r.persister.Transaction(func(tx *pop.Connection) error {
 		webauthnUserPersister := r.persister.GetWebauthnUserPersister(tx)
 		webauthnSessionPersister := r.persister.GetWebauthnSessionDataPersister(tx)
 
-		err := webauthnUserPersister.Create(webauthnUser)
+		webauthnUser.Tenant = h.tenant
+		internalUserDto, _, err := r.GetWebauthnUser(webauthnUser.UserID, webauthnUser.Tenant.ID, webauthnUserPersister)
 		if err != nil {
-			fmt.Println("Here4")
-			fmt.Printf("%v\n", err.Error())
+			ctx.Logger().Error(err)
 			return err
 		}
 
-		fmt.Printf("Ipsum")
+		if internalUserDto == nil {
+			err = webauthnUserPersister.Create(webauthnUser)
+			if err != nil {
+				ctx.Logger().Error(err)
+				return err
+			}
+
+			internalUserDto = intern.NewWebauthnUser(*webauthnUser)
+		}
 
 		t := true
-		options, sessionData, err := r.webauthn.BeginRegistration(
-			intern.NewWebauthnUser(*webauthnUser),
+		options, sessionData, err := h.webauthn.BeginRegistration(
+			internalUserDto,
 			webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
 				RequireResidentKey: &t,
 				ResidentKey:        protocol.ResidentKeyRequirementRequired,
-				UserVerification:   protocol.UserVerificationRequirement(r.config.Webauthn.UserVerification),
+				UserVerification:   h.config.WebauthnConfig.UserVerification,
 			}),
 			webauthn.WithConveyancePreference(protocol.PreferNoAttestation),
 			// don't set the excludeCredentials list, so an already registered device can be re-registered
 		)
 
-		err = webauthnSessionPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, models.WebauthnOperationRegistration))
+		err = webauthnSessionPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, h.tenant.ID, models.WebauthnOperationRegistration))
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to create session data: %w", err)
 		}
 
-		err = r.auditLog.CreateWithConnection(tx, ctx, models.AuditLogWebAuthnRegistrationInitSucceeded, &webauthnUser.UserID, nil)
+		err = h.auditLog.CreateWithConnection(tx, ctx, h.tenant, models.AuditLogWebAuthnRegistrationInitSucceeded, &webauthnUser.UserID, nil)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to create audit log: %w", err)
 		}
 
@@ -91,6 +104,13 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 func (r *registrationHandler) Finish(ctx echo.Context) error {
 	parsedRequest, err := protocol.ParseCredentialCreationResponse(ctx.Request())
 	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse credential creation response").SetInternal(err)
+	}
+
+	h, err := GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
 		return err
 	}
 
@@ -98,14 +118,23 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		sessionDataPersister := r.persister.GetWebauthnSessionDataPersister(tx)
 		webauthnUserPersister := r.persister.GetWebauthnUserPersister(tx)
 
-		sessionData, err := r.getSessionByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister)
+		sessionData, err := r.getSessionByChallenge(parsedRequest.Response.CollectedClientData.Challenge, h.tenant.ID, sessionDataPersister)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return err
 		}
 
-		webauthnUser, err := r.GetWebauthnUser(sessionData.UserId, webauthnUserPersister)
+		webauthnUser, userModel, err := r.GetWebauthnUser(sessionData.UserId, h.tenant.ID, webauthnUserPersister)
+		if err != nil {
+			ctx.Logger().Error(err)
+			return err
+		}
 
-		credential, err := r.webauthn.CreateCredential(webauthnUser, *intern.WebauthnSessionDataFromModel(sessionData), parsedRequest)
+		if webauthnUser == nil || userModel == nil {
+			return echo.NewHTTPError(http.StatusNotFound, "user not found")
+		}
+
+		credential, err := h.webauthn.CreateCredential(webauthnUser, *intern.WebauthnSessionDataFromModel(sessionData), parsedRequest)
 		if err != nil {
 			errorMessage := "failed to validate attestation"
 			errorStatus := http.StatusBadRequest
@@ -116,19 +145,22 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 			// need to return an error response distinguishable from other error cases. We use a dedicated/separate HTTP
 			// status code because it seemed a bit more robust than forcing the frontend to check on a matching
 			// (sub-)string in the error message in order to properly display the error.
-			var err *protocol.Error
-			if errors.As(err, &err) && err.Type == protocol.ErrVerification.Type && strings.Contains(err.DevInfo, "User verification") {
-				errorMessage = fmt.Sprintf("%s: %s: %s", errorMessage, err.Details, err.DevInfo)
+			var perr *protocol.Error
+			ctx.Logger().Error(perr)
+			if errors.As(err, &perr) && perr.Type == protocol.ErrVerification.Type && strings.Contains(perr.DevInfo, "User verification") {
+				errorMessage = fmt.Sprintf("%s: %s: %s", errorMessage, perr.Details, perr.DevInfo)
 				errorStatus = http.StatusUnprocessableEntity
 			}
 
+			ctx.Logger().Error(err)
 			return echo.NewHTTPError(errorStatus, errorMessage).SetInternal(err)
 		}
 
 		flags := parsedRequest.Response.AttestationObject.AuthData.Flags
-		model := intern.WebauthnCredentialToModel(credential, sessionData.UserId, flags.HasBackupEligible(), flags.HasBackupState())
+		model := intern.WebauthnCredentialToModel(credential, sessionData.UserId, userModel.ID, flags.HasBackupEligible(), flags.HasBackupState())
 		err = r.persister.GetWebauthnCredentialPersister(tx).Create(model)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to store webauthn credential: %w", err)
 		}
 
@@ -137,8 +169,10 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 			ctx.Logger().Errorf("failed to delete attestation session data: %w", err)
 		}
 
-		token, err := r.jwtGenerator.Generate(webauthnUser.UserId, model.ID)
+		generator := ctx.Get("jwt_generator").(jwt.Generator)
+		token, err := generator.Generate(webauthnUser.UserId, model.ID)
 		if err != nil {
+			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to generate jwt: %w", err)
 		}
 
@@ -146,8 +180,8 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 	})
 }
 
-func (r *registrationHandler) getSessionByChallenge(challenge string, persister persisters.WebauthnSessionDataPersister) (*models.WebauthnSessionData, error) {
-	sessionData, err := persister.GetByChallenge(challenge)
+func (r *registrationHandler) getSessionByChallenge(challenge string, tenantId uuid.UUID, persister persisters.WebauthnSessionDataPersister) (*models.WebauthnSessionData, error) {
+	sessionData, err := persister.GetByChallenge(challenge, tenantId)
 	if err != nil {
 		return nil, err
 	}
@@ -159,15 +193,15 @@ func (r *registrationHandler) getSessionByChallenge(challenge string, persister 
 	return sessionData, nil
 }
 
-func (r *registrationHandler) GetWebauthnUser(userId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
-	user, err := persister.GetByUserId(userId)
+func (r *registrationHandler) GetWebauthnUser(userId uuid.UUID, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, *models.WebauthnUser, error) {
+	user, err := persister.GetByUserId(userId, tenantId)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if user == nil {
-		return nil, fmt.Errorf("user not found")
+		return nil, nil, nil
 	}
 
-	return intern.NewWebauthnUser(*user), nil
+	return intern.NewWebauthnUser(*user), user, nil
 }
