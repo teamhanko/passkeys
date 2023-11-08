@@ -9,7 +9,7 @@ type TenantDto struct {
 }
 
 type ListCredentialsDto struct {
-	UserId string `query:"user_id" validate:"required,uuid4"`
+	UserId string `query:"user_id" validate:"required"`
 }
 
 type DeleteCredentialsDto struct {

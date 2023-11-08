@@ -3,10 +3,10 @@ package handler
 import (
 	"fmt"
 	"github.com/gobuffalo/pop/v6"
-	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
+	"github.com/teamhanko/passkey-server/api/helper"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
@@ -40,14 +40,14 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 		return err
 	}
 
-	userId, err := uuid.FromString(requestDto.UserId)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
 	credentialPersister := credHandler.persister.GetWebauthnCredentialPersister(nil)
-	credentialModels, err := credentialPersister.GetFromUser(userId)
+	credentialModels, err := credentialPersister.GetFromUser(requestDto.UserId, h.Tenant.ID)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -83,7 +83,7 @@ func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
 		})
 	}
 
-	h, err := GetHandlerContext(ctx)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -98,7 +98,7 @@ func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return err
 		}
-		err := h.auditLog.CreateWithConnection(tx, ctx, h.tenant, models.AuditLogWebAuthnCredentialUpdated, &credential.UserId, nil)
+		err := h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnCredentialUpdated, &credential.UserId, nil)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err
@@ -121,7 +121,7 @@ func (credHandler *credentialsHandler) Delete(ctx echo.Context) error {
 		return err
 	}
 
-	h, err := GetHandlerContext(ctx)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -135,7 +135,7 @@ func (credHandler *credentialsHandler) Delete(ctx echo.Context) error {
 			return err
 		}
 
-		err = h.auditLog.CreateWithConnection(tx, ctx, h.tenant, models.AuditLogWebAuthnCredentialDeleted, nil, nil)
+		err = h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnCredentialDeleted, nil, nil)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err

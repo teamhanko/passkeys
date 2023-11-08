@@ -270,15 +270,10 @@ components:
     user_id:
       name: user_id
       in: query
-      description: uuid representation of the user
+      description: representational id of the user
       required: true
       schema:
         type: string
-        format: uuid
-        minLength: 36
-        maxLength: 36
-        examples:
-          - 1f496bcd-49da-4839-a02f-7ce681ccb488
     credential_id:
       name: credential_id
       in: path
@@ -331,9 +326,6 @@ components:
             properties:
               user_id:
                 type: string
-                format: uuid
-                minLength: 36
-                maxLength: 36
               username:
                 type: string
               icon:

@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/response"
+	"github.com/teamhanko/passkey-server/api/helper"
 	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
@@ -35,21 +36,21 @@ func NewLoginHandler(persister persistence.Persister) (WebauthnHandler, error) {
 }
 
 func (lh *loginHandler) Init(ctx echo.Context) error {
-	h, err := GetHandlerContext(ctx)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
-	options, sessionData, err := h.webauthn.BeginDiscoverableLogin(
-		webauthn.WithUserVerification(h.config.WebauthnConfig.UserVerification),
+	options, sessionData, err := h.Webauthn.BeginDiscoverableLogin(
+		webauthn.WithUserVerification(h.Config.WebauthnConfig.UserVerification),
 	)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err)
 	}
 
-	err = lh.persister.GetWebauthnSessionDataPersister(nil).Create(*intern.WebauthnSessionDataToModel(sessionData, h.tenant.ID, models.WebauthnOperationAuthentication))
+	err = lh.persister.GetWebauthnSessionDataPersister(nil).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationAuthentication))
 	if err != nil {
 		ctx.Logger().Error(err)
 		return fmt.Errorf("failed to store webauthn assertion session data: %w", err)
@@ -71,7 +72,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	h, err := GetHandlerContext(ctx)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -82,20 +83,20 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 		webauthnUserPersister := lh.persister.GetWebauthnUserPersister(tx)
 		credentialPersister := lh.persister.GetWebauthnCredentialPersister(tx)
 
-		sessionData, err := lh.getSessionDataByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister, h.tenant.ID)
+		sessionData, err := lh.getSessionDataByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister, h.Tenant.ID)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get session data").SetInternal(err)
 		}
 		sessionDataModel := intern.WebauthnSessionDataFromModel(sessionData)
 
-		webauthnUser, err := lh.getWebauthnUserByUserHandle(parsedRequest.Response.UserHandle, h.tenant.ID, webauthnUserPersister)
+		webauthnUser, err := lh.getWebauthnUserByUserHandle(parsedRequest.Response.UserHandle, h.Tenant.ID, webauthnUserPersister)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
 		}
 
-		credential, err := h.webauthn.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
+		credential, err := h.Webauthn.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
 			return webauthnUser, nil
 		}, *sessionDataModel, parsedRequest)
 

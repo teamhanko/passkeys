@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/gofrs/uuid"
 
 	"github.com/gobuffalo/pop/v6"
-	"github.com/gofrs/uuid"
 	"github.com/teamhanko/passkey-server/persistence/models"
 )
 
@@ -15,7 +15,7 @@ type WebauthnCredentialPersister interface {
 	Create(credential *models.WebauthnCredential) error
 	Update(credential *models.WebauthnCredential) error
 	Delete(credential *models.WebauthnCredential) error
-	GetFromUser(uuid.UUID) ([]models.WebauthnCredential, error)
+	GetFromUser(string, uuid.UUID) ([]models.WebauthnCredential, error)
 }
 
 type webauthnCredentialPersister struct {
@@ -87,9 +87,12 @@ func (w *webauthnCredentialPersister) Delete(credential *models.WebauthnCredenti
 	return nil
 }
 
-func (w *webauthnCredentialPersister) GetFromUser(userId uuid.UUID) ([]models.WebauthnCredential, error) {
+func (w *webauthnCredentialPersister) GetFromUser(userId string, tenantId uuid.UUID) ([]models.WebauthnCredential, error) {
 	var credentials []models.WebauthnCredential
-	err := w.database.Eager().Where("user_id = ?", &userId).Order("created_at asc").All(&credentials)
+	err := w.database.Eager().
+		Where("webauthn_credentials.user_id = ? AND u.tenant_id = ?", &userId, tenantId).
+		LeftJoin("webauthn_users u", "u.id = webauthn_credentials.webauthn_user_id").
+		Order("created_at asc").All(&credentials)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return credentials, nil
 	}
