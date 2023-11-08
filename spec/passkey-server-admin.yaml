@@ -3,11 +3,11 @@ info:
   version: '1.0'
   title: passkey-server-admin
   summary: Admin API for Passkey Server
-  description: 'ADmin API for Hanko Passkey Server. Allows creation and configiration of tenants and api keys, '
+  description: 'Admin API for Hanko Passkey Server. Allows creation and configuration of tenants and api keys.'
   termsOfService: 'https://www.hanko.io/terms'
   contact:
-    name: Developers@hanko.io
-    url: 'https://hanko.io'
+    name: Hanko Dev Team
+    url: 'https://www.hanko.io'
     email: developers@hanko.io
   license:
     url: 'https://www.gnu.org/licenses/gpl-3.0.de.html'
@@ -16,7 +16,7 @@ servers:
   - url: 'http://{host}:8001/{path_prefix}'
     variables:
       host:
-        description: Host-Part of the URL
+        description: Host part of the URL
         default: localhost
       path_prefix:
         description: Path-Prefix
@@ -25,7 +25,7 @@ paths:
   /tenants:
     get:
       summary: Get tenant list
-      description: Get a list of all Tenants
+      description: Get a list of all tenants
       operationId: get-admin-tenant
       responses:
         '200':
@@ -41,7 +41,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -63,7 +63,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -86,7 +86,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -106,7 +106,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -124,7 +124,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -158,7 +158,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -180,14 +180,14 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/api':
     post:
-      summary: Create API Key
+      summary: Create API key
       description: Creates a new API key
       operationId: post-admin-tenant-tenant_id-secrets-api
       parameters:
@@ -214,7 +214,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Hostp part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -236,7 +236,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -251,12 +251,12 @@ paths:
         - $ref: '#/components/parameters/secret_id'
       responses:
         '204':
-          description: No Content
+          description: No content
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -264,7 +264,7 @@ paths:
   '/tenants/{tenant_id}/secrets/api/{secret_id}':
     delete:
       summary: Remove API key
-      description: Remove an api key
+      description: Remove an API key
       operationId: delete-admin-tenant-tenant_id-secrets-api-secret-id
       parameters:
         - $ref: '#/components/parameters/tenant_id'
@@ -276,7 +276,7 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
@@ -297,14 +297,14 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host-Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path-Prefix
               default: ''
 tags:
   - name: admin api
-    description: Hanko Passkey-Server Admin API
+    description: Hanko Passkey Server Admin API
 components:
   parameters:
     tenant_id:
