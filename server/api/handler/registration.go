@@ -12,6 +12,7 @@ import (
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/api/helper"
+	auditlog "github.com/teamhanko/passkey-server/audit_log"
 	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
@@ -88,9 +89,25 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 			webauthn.WithConveyancePreference(protocol.PreferNoAttestation),
 			// don't set the excludeCredentials list, so an already registered device can be re-registered
 		)
+		if err != nil {
+			auditErr := h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnRegistrationInitFailed, &webauthnUser.UserID, nil)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
+
+			ctx.Logger().Error(err)
+			return fmt.Errorf("failed to begin registration: %w", err)
+		}
 
 		err = webauthnSessionPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationRegistration))
 		if err != nil {
+			auditErr := h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnRegistrationInitFailed, &webauthnUser.UserID, nil)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
+
 			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to create session data: %w", err)
 		}
@@ -98,7 +115,7 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 		err = h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnRegistrationInitSucceeded, &webauthnUser.UserID, nil)
 		if err != nil {
 			ctx.Logger().Error(err)
-			return fmt.Errorf("failed to create audit log: %w", err)
+			return fmt.Errorf(auditlog.CreationFailureFormat, err)
 		}
 
 		return ctx.JSON(http.StatusOK, options)
@@ -156,6 +173,12 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 				errorStatus = http.StatusUnprocessableEntity
 			}
 
+			auditErr := h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnRegistrationFinalFailed, &webauthnUser.UserId, nil)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
+
 			ctx.Logger().Error(err)
 			return echo.NewHTTPError(errorStatus, errorMessage).SetInternal(err)
 		}
@@ -164,6 +187,12 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		model := intern.WebauthnCredentialToModel(credential, sessionData.UserId, userModel.ID, flags.HasBackupEligible(), flags.HasBackupState())
 		err = r.persister.GetWebauthnCredentialPersister(tx).Create(model)
 		if err != nil {
+			auditErr := h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnRegistrationFinalFailed, &webauthnUser.UserId, nil)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
+
 			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to store webauthn credential: %w", err)
 		}
@@ -178,6 +207,12 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		if err != nil {
 			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to generate jwt: %w", err)
+		}
+
+		err = h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnRegistrationFinalSucceeded, &webauthnUser.UserId, nil)
+		if err != nil {
+			ctx.Logger().Error(err)
+			return fmt.Errorf(auditlog.CreationFailureFormat, err)
 		}
 
 		return ctx.JSON(http.StatusOK, &response.TokenDto{Token: token})
