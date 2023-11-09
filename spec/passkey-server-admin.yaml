@@ -16,10 +16,8 @@ servers:
   - url: 'http://{host}:8001/{path_prefix}'
     variables:
       host:
-        description: Host part of the URL
         default: localhost
       path_prefix:
-        description: Path-Prefix
         default: ''
 paths:
   /tenants:
@@ -41,10 +39,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     post:
       summary: Create a tenant
@@ -63,10 +59,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}':
     get:
@@ -86,10 +80,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     put:
       summary: Update tenant
@@ -106,10 +98,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     delete:
       summary: Delete tenant
@@ -124,10 +114,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/jwk':
     post:
@@ -158,10 +146,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     get:
       summary: List JWKs
@@ -180,10 +166,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/api':
     post:
@@ -214,10 +198,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     get:
       summary: List API keys
@@ -236,10 +218,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/jwk/{secret_id}':
     delete:
@@ -256,10 +236,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/api/{secret_id}':
     delete:
@@ -276,10 +254,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/config':
     put:
@@ -297,10 +273,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
 tags:
   - name: admin api

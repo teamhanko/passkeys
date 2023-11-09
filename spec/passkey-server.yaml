@@ -16,10 +16,8 @@ servers:
   - url: 'http://{host}:8000/{path_prefix}'
     variables:
       host:
-        description: Host part of the URL
         default: localhost
       path_prefix:
-        description: Path prefix
         default: ''
 paths:
   '/{tenant_id}/credentials':
@@ -50,10 +48,8 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path prefix
               default: ''
   '/{tenant_id}/credentials/{credential_id}':
     patch:
@@ -84,10 +80,8 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path prefix
               default: ''
     delete:
       summary: Remove Credential
@@ -112,10 +106,8 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path prefix
               default: ''
   '/{tenant_id}/registration/initialize':
     post:
@@ -143,10 +135,8 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path prefix
               default: ''
   '/{tenant_id}/registration/finalize':
     post:
@@ -175,10 +165,8 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path prefix
               default: ''
   '/{tenant_id}/login/initialize':
     post:
@@ -203,10 +191,8 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path prefix
               default: ''
   '/{tenant_id}/login/finalize':
     post:
@@ -233,10 +219,8 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path prefix
               default: ''
   '/{tenant_id}/.well-known/jwks.json':
     get:
@@ -255,10 +239,8 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path prefix
               default: ''
 tags:
   - name: credentials
