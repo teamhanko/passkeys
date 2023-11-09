@@ -96,6 +96,10 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
 		}
 
+		// backward compatibility
+		userId := lh.convertUserHandle(parsedRequest.Response.UserHandle)
+		parsedRequest.Response.UserHandle = []byte(userId)
+
 		credential, err := h.Webauthn.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
 			return webauthnUser, nil
 		}, *sessionDataModel, parsedRequest)
@@ -155,7 +159,9 @@ func (lh *loginHandler) getSessionDataByChallenge(challenge string, persister pe
 }
 
 func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle []byte, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
-	user, err := persister.GetByUserId(string(userHandle), tenantId)
+	userId := lh.convertUserHandle(userHandle)
+
+	user, err := persister.GetByUserId(userId, tenantId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -165,4 +171,14 @@ func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle []byte, tenantId 
 	}
 
 	return intern.NewWebauthnUser(*user), nil
+}
+
+func (lh *loginHandler) convertUserHandle(userHandle []byte) string {
+	userId := string(userHandle)
+	userUuid, err := uuid.FromBytes(userHandle)
+	if err == nil {
+		userId = userUuid.String()
+	}
+
+	return userId
 }
