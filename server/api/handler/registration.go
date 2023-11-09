@@ -18,6 +18,7 @@ import (
 	"github.com/teamhanko/passkey-server/persistence/persisters"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type registrationHandler struct {
@@ -58,7 +59,7 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 		webauthnSessionPersister := r.persister.GetWebauthnSessionDataPersister(tx)
 
 		webauthnUser.Tenant = h.Tenant
-		internalUserDto, _, err := r.GetWebauthnUser(webauthnUser.UserID, webauthnUser.Tenant.ID, webauthnUserPersister)
+		internalUserDto, userModel, err := r.GetWebauthnUser(webauthnUser.UserID, webauthnUser.Tenant.ID, webauthnUserPersister)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err
@@ -72,6 +73,8 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 			}
 
 			internalUserDto = intern.NewWebauthnUser(*webauthnUser)
+		} else {
+			internalUserDto, err = r.updateWebauthnUser(userModel, webauthnUser, webauthnUserPersister)
 		}
 
 		t := true
@@ -205,4 +208,18 @@ func (r *registrationHandler) GetWebauthnUser(userId string, tenantId uuid.UUID,
 	}
 
 	return intern.NewWebauthnUser(*user), user, nil
+}
+
+func (r *registrationHandler) updateWebauthnUser(oldUser *models.WebauthnUser, newUser *models.WebauthnUser, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
+	oldUser.Name = newUser.Name
+	oldUser.DisplayName = newUser.DisplayName
+	oldUser.Icon = newUser.Icon
+	oldUser.UpdatedAt = time.Now()
+
+	err := persister.Update(oldUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return intern.NewWebauthnUser(*oldUser), nil
 }
