@@ -2,12 +2,12 @@ openapi: 3.1.0
 info:
   version: '1.0'
   title: passkey-server
-  summary: 'OpenAPI Spec for creating, managing, and using passkeys'
-  description: 'This API shall represent the private and public endpoints for passkey registration, management, and authentication'
+  summary: 'OpenAPI Spec for creating, managing and using passkeys'
+  description: 'This API shall represent the private and public endpoints for passkey registration, management and authentication'
   termsOfService: 'https://www.hanko.io/terms'
   contact:
     email: developers@hanko.io
-    url: hanko.io
+    url: 'https://www.hanko.io'
     name: Hanko Dev Team
   license:
     url: 'https://www.gnu.org/licenses/gpl-3.0.de.html'
@@ -50,7 +50,7 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path prefix
@@ -70,7 +70,7 @@ paths:
         $ref: '#/components/requestBodies/patch-credential'
       responses:
         '204':
-          description: No content
+          description: No Content
         '400':
           $ref: '#/components/responses/error'
         '401':
@@ -84,7 +84,7 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path prefix
@@ -98,7 +98,7 @@ paths:
         - $ref: '#/components/parameters/tenant_id'
       responses:
         '204':
-          description: No content
+          description: No Content
         '400':
           $ref: '#/components/responses/error'
         '401':
@@ -112,7 +112,7 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path prefix
@@ -175,7 +175,7 @@ paths:
         - url: 'http://{host}:8000/{path_prefix}'
           variables:
             host:
-              description: Host Part of the URL
+              description: Host part of the URL
               default: localhost
             path_prefix:
               description: Path prefix
@@ -426,7 +426,7 @@ components:
                 - backup_eligible
                 - backup_state
     error:
-      description: Error response with detailed information
+      description: Error Response with detailed information
       content:
         application/json:
           schema:
