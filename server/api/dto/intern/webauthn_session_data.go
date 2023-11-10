@@ -7,6 +7,7 @@ import (
 	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 	"github.com/teamhanko/passkey-server/persistence/models"
+	"strings"
 	"time"
 )
 
@@ -20,8 +21,8 @@ func WebauthnSessionDataFromModel(data *models.WebauthnSessionData) *webauthn.Se
 		allowedCredentials = append(allowedCredentials, credentialId)
 	}
 	var userId []byte = nil
-	if !data.UserId.IsNil() {
-		userId = data.UserId.Bytes()
+	if strings.TrimSpace(data.UserId) != "" {
+		userId = []byte(data.UserId)
 	}
 	return &webauthn.SessionData{
 		Challenge:            data.Challenge,
@@ -34,7 +35,6 @@ func WebauthnSessionDataFromModel(data *models.WebauthnSessionData) *webauthn.Se
 
 func WebauthnSessionDataToModel(data *webauthn.SessionData, tenantId uuid.UUID, operation models.Operation) *models.WebauthnSessionData {
 	id, _ := uuid.NewV4()
-	userId, _ := uuid.FromBytes(data.UserID)
 	now := time.Now()
 
 	var allowedCredentials []models.WebauthnSessionDataAllowedCredential
@@ -54,7 +54,7 @@ func WebauthnSessionDataToModel(data *webauthn.SessionData, tenantId uuid.UUID, 
 	return &models.WebauthnSessionData{
 		ID:                 id,
 		Challenge:          data.Challenge,
-		UserId:             userId,
+		UserId:             string(data.UserID),
 		UserVerification:   string(data.UserVerification),
 		CreatedAt:          now,
 		UpdatedAt:          now,

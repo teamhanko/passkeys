@@ -9,7 +9,7 @@ type TenantDto struct {
 }
 
 type ListCredentialsDto struct {
-	UserId string `query:"user_id" validate:"required,uuid4"`
+	UserId string `query:"user_id" validate:"required"`
 }
 
 type DeleteCredentialsDto struct {
@@ -22,7 +22,7 @@ type UpdateCredentialsDto struct {
 }
 
 type InitRegistrationDto struct {
-	UserId      string  `json:"user_id" validate:"required,uuid4"`
+	UserId      string  `json:"user_id" validate:"required"`
 	Username    string  `json:"username" validate:"required"`
 	DisplayName *string `json:"display_name"`
 	Icon        *string `json:"icon"`

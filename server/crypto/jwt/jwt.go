@@ -14,7 +14,7 @@ import (
 type Generator interface {
 	Sign(jwt.Token) ([]byte, error)
 	Verify([]byte) (jwt.Token, error)
-	Generate(userId uuid.UUID, crendetialId string) (string, error)
+	Generate(userId string, crendetialId string) (string, error)
 }
 
 // Generator is used to sign and verify JWTs
@@ -66,11 +66,11 @@ func (g *generator) Verify(signed []byte) (jwt.Token, error) {
 	return token, nil
 }
 
-func (g *generator) Generate(userId uuid.UUID, credentialId string) (string, error) {
+func (g *generator) Generate(userId string, credentialId string) (string, error) {
 	issuedAt := time.Now()
 
 	token := jwt.New()
-	_ = token.Set(jwt.SubjectKey, userId.String())
+	_ = token.Set(jwt.SubjectKey, userId)
 	_ = token.Set(jwt.IssuedAtKey, issuedAt)
 	_ = token.Set(jwt.AudienceKey, []string{g.config.RelyingParty.RPId})
 	_ = token.Set("cred", credentialId)

@@ -2,8 +2,6 @@ package persistence
 
 import (
 	"embed"
-	"fmt"
-
 	"github.com/gobuffalo/pop/v6"
 	"github.com/teamhanko/passkey-server/config"
 	"github.com/teamhanko/passkey-server/persistence/persisters"
@@ -117,7 +115,6 @@ func (p *persister) GetAuditLogPersister(tx *pop.Connection) persisters.AuditLog
 }
 
 func (p *persister) GetWebauthnCredentialPersister(tx *pop.Connection) persisters.WebauthnCredentialPersister {
-	fmt.Println("Get Database Connection")
 	if tx == nil {
 		return persisters.NewWebauthnCredentialPersister(p.Database)
 	}

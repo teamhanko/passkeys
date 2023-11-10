@@ -1,0 +1,4 @@
+change_column("webauthn_users", "user_id", "string", {})
+change_column("webauthn_credentials", "user_id", "string", {})
+change_column("webauthn_session_data", "user_id", "string", {})
+change_column("audit_logs", "actor_user_id", "string", { "null": true })

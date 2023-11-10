@@ -3,7 +3,7 @@ info:
   version: '1.0'
   title: passkey-server-admin
   summary: Admin API for Passkey Server
-  description: 'Admin API for Hanko Passkey Server. Allows creation and configuration of tenants and api keys.'
+  description: 'ADmin API for Hanko Passkey Server. Allows creation and configiration of tenants and api keys, '
   termsOfService: 'https://www.hanko.io/terms'
   contact:
     name: Hanko Dev Team
@@ -16,10 +16,8 @@ servers:
   - url: 'http://{host}:8001/{path_prefix}'
     variables:
       host:
-        description: Host part of the URL
         default: localhost
       path_prefix:
-        description: Path-Prefix
         default: ''
 paths:
   /tenants:
@@ -41,10 +39,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     post:
       summary: Create a tenant
@@ -63,10 +59,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}':
     get:
@@ -86,10 +80,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     put:
       summary: Update tenant
@@ -106,10 +98,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     delete:
       summary: Delete tenant
@@ -124,14 +114,12 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/jwk':
     post:
-      summary: Create secret
+      summary: Create JWK
       description: Creates a new JWT encryption key
       operationId: post-admin-tenant-tenant_id-secrets-jwk
       parameters:
@@ -158,13 +146,11 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     get:
-      summary: ''
+      summary: List JWKs
       description: Get all JWKs as list
       operationId: get-path_prefix-tenants-tenant_id-secrets-jwk
       parameters:
@@ -180,10 +166,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/api':
     post:
@@ -214,10 +198,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Hostp part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
     get:
       summary: List API keys
@@ -236,10 +218,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/jwk/{secret_id}':
     delete:
@@ -251,15 +231,13 @@ paths:
         - $ref: '#/components/parameters/secret_id'
       responses:
         '204':
-          description: No content
+          description: No Content
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/secrets/api/{secret_id}':
     delete:
@@ -276,10 +254,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
   '/tenants/{tenant_id}/config':
     put:
@@ -297,10 +273,8 @@ paths:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
             host:
-              description: Host part of the URL
               default: localhost
             path_prefix:
-              description: Path-Prefix
               default: ''
 tags:
   - name: admin api

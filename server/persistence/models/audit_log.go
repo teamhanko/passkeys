@@ -13,7 +13,7 @@ type AuditLog struct {
 	MetaHttpRequestId string       `db:"meta_http_request_id" json:"meta_http_request_id"`
 	MetaSourceIp      string       `db:"meta_source_ip" json:"meta_source_ip"`
 	MetaUserAgent     string       `db:"meta_user_agent" json:"meta_user_agent"`
-	ActorUserId       *uuid.UUID   `db:"actor_user_id" json:"actor_user_id,omitempty"`
+	ActorUserId       *string      `db:"actor_user_id" json:"actor_user_id,omitempty"`
 	CreatedAt         time.Time    `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time    `db:"updated_at" json:"updated_at"`
 	Tenant            *Tenant      `json:"tenant" belongs_to:"tenants"`

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func WebauthnCredentialToModel(credential *webauthn.Credential, userId uuid.UUID, webauthnUserId uuid.UUID, backupEligible bool, backupState bool) *models.WebauthnCredential {
+func WebauthnCredentialToModel(credential *webauthn.Credential, userId string, webauthnUserId uuid.UUID, backupEligible bool, backupState bool) *models.WebauthnCredential {
 	now := time.Now().UTC()
 	aaguid, _ := uuid.FromBytes(credential.Authenticator.AAGUID)
 	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
