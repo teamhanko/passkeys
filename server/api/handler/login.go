@@ -47,7 +47,7 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 		webauthn.WithUserVerification(h.Config.WebauthnConfig.UserVerification),
 	)
 	if err != nil {
-		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitFailed, nil, nil)
+		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitFailed, nil, err)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -59,7 +59,7 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 
 	err = lh.persister.GetWebauthnSessionDataPersister(nil).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationAuthentication))
 	if err != nil {
-		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitFailed, nil, nil)
+		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitFailed, nil, err)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -117,7 +117,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 
 		webauthnUser, err := lh.getWebauthnUserByUserHandle(parsedRequest.Response.UserHandle, h.Tenant.ID, webauthnUserPersister)
 		if err != nil {
-			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, nil)
+			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
 			if auditErr != nil {
 				ctx.Logger().Error(auditErr)
 				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -136,7 +136,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 		}, *sessionDataModel, parsedRequest)
 
 		if err != nil {
-			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, nil)
+			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
 			if auditErr != nil {
 				ctx.Logger().Error(auditErr)
 				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -156,7 +156,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			dbCred.LastUsedAt = &now
 			err = credentialPersister.Update(dbCred)
 			if err != nil {
-				auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, nil)
+				auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
 				if auditErr != nil {
 					ctx.Logger().Error(auditErr)
 					return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
