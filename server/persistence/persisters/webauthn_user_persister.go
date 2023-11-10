@@ -15,6 +15,7 @@ type WebauthnUserPersister interface {
 	Get(id uuid.UUID) (*models.WebauthnUser, error)
 	GetByUserId(userId string, tenantId uuid.UUID) (*models.WebauthnUser, error)
 	Delete(webauthnUser *models.WebauthnUser) error
+	Update(webauthnUser *models.WebauthnUser) error
 }
 
 type webauthnUserPersister struct {
@@ -30,12 +31,9 @@ func NewWebauthnUserPersister(database *pop.Connection) WebauthnUserPersister {
 func (p *webauthnUserPersister) Create(webauthnUser *models.WebauthnUser) error {
 	vErr, err := p.database.ValidateAndCreate(webauthnUser)
 	if err != nil {
-		fmt.Printf("%s", err.Error())
 		return fmt.Errorf("failed to store webauthn user: %w", err)
 	}
 	if vErr != nil && vErr.HasAny() {
-		fmt.Printf("%s", vErr.Error())
-		fmt.Printf("Debug: %v", webauthnUser)
 		return fmt.Errorf("webauthn user object validation failed: %w", vErr)
 	}
 
@@ -75,4 +73,17 @@ func (p *webauthnUserPersister) GetByUserId(userId string, tenantId uuid.UUID) (
 	}
 
 	return &weauthnUser, nil
+}
+
+func (p *webauthnUserPersister) Update(webauthnUser *models.WebauthnUser) error {
+	vErr, err := p.database.ValidateAndUpdate(webauthnUser)
+	if err != nil {
+		return fmt.Errorf("failed to update webauthn user: %w", err)
+	}
+
+	if vErr != nil && vErr.HasAny() {
+		return fmt.Errorf("webauthn user object validation failed: %w", vErr)
+	}
+
+	return nil
 }

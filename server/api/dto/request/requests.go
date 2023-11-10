@@ -23,7 +23,7 @@ type UpdateCredentialsDto struct {
 
 type InitRegistrationDto struct {
 	UserId      string  `json:"user_id" validate:"required"`
-	Username    string  `json:"username" validate:"required"`
-	DisplayName *string `json:"display_name"`
+	Username    string  `json:"username" validate:"required,max=128"`
+	DisplayName *string `json:"display_name,max=128"`
 	Icon        *string `json:"icon"`
 }
