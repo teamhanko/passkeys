@@ -27,6 +27,10 @@ type logger struct {
 	consoleLoggingEnabled bool
 }
 
+const (
+	CreationFailureFormat = "failed to create audit log: %w"
+)
+
 func NewLogger(persister persistence.Persister, cfg models.AuditLogConfig) Logger {
 	var loggerOutput *os.File = nil
 	switch cfg.OutputStream {

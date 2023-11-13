@@ -12,6 +12,7 @@ import (
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/api/helper"
+	auditlog "github.com/teamhanko/passkey-server/audit_log"
 	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
@@ -46,12 +47,24 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 		webauthn.WithUserVerification(h.Config.WebauthnConfig.UserVerification),
 	)
 	if err != nil {
+		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitFailed, nil, err)
+		if auditErr != nil {
+			ctx.Logger().Error(auditErr)
+			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+		}
+
 		ctx.Logger().Error(err)
 		return fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err)
 	}
 
 	err = lh.persister.GetWebauthnSessionDataPersister(nil).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationAuthentication))
 	if err != nil {
+		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitFailed, nil, err)
+		if auditErr != nil {
+			ctx.Logger().Error(auditErr)
+			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+		}
+
 		ctx.Logger().Error(err)
 		return fmt.Errorf("failed to store webauthn assertion session data: %w", err)
 	}
@@ -60,6 +73,12 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 	// when the transports array contains the type 'internal' although the credential is not available on the device.
 	for i := range options.Response.AllowedCredentials {
 		options.Response.AllowedCredentials[i].Transport = nil
+	}
+
+	auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitSucceeded, nil, nil)
+	if auditErr != nil {
+		ctx.Logger().Error(auditErr)
+		return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
 	}
 
 	return ctx.JSON(http.StatusOK, options)
@@ -85,6 +104,12 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 
 		sessionData, err := lh.getSessionDataByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister, h.Tenant.ID)
 		if err != nil {
+			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, nil, err)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
+
 			ctx.Logger().Error(err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get session data").SetInternal(err)
 		}
@@ -92,6 +117,12 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 
 		webauthnUser, err := lh.getWebauthnUserByUserHandle(parsedRequest.Response.UserHandle, h.Tenant.ID, webauthnUserPersister)
 		if err != nil {
+			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
+
 			ctx.Logger().Error(err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
 		}
@@ -105,6 +136,12 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 		}, *sessionDataModel, parsedRequest)
 
 		if err != nil {
+			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
+
 			ctx.Logger().Error(err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "failed to validate assertion").SetInternal(err)
 		}
@@ -119,6 +156,12 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			dbCred.LastUsedAt = &now
 			err = credentialPersister.Update(dbCred)
 			if err != nil {
+				auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
+				if auditErr != nil {
+					ctx.Logger().Error(auditErr)
+					return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+				}
+
 				ctx.Logger().Error(err)
 				return fmt.Errorf("failed to update webauthn credential: %w", err)
 			}
@@ -135,6 +178,12 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 		if err != nil {
 			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to generate jwt: %w", err)
+		}
+
+		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalSucceeded, &webauthnUser.UserId, nil)
+		if auditErr != nil {
+			ctx.Logger().Error(auditErr)
+			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
 		}
 
 		return ctx.JSON(http.StatusOK, &response.TokenDto{Token: token})
