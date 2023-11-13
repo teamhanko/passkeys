@@ -104,7 +104,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 
 		sessionData, err := lh.getSessionDataByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister, h.Tenant.ID)
 		if err != nil {
-			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, nil, nil)
+			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, nil, err)
 			if auditErr != nil {
 				ctx.Logger().Error(auditErr)
 				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
