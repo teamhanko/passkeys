@@ -8,20 +8,14 @@ import (
 )
 
 type HttpError struct {
-	ErrorType  *string            `json:"type,omitempty"`
 	Title      *string            `json:"title,omitempty"`
 	Details    *string            `json:"details,omitempty"`
 	Status     *int               `json:"status,omitempty"`
 	Additional *map[string]string `json:"additional,omitempty"`
 }
 
-const (
-	AboutBlank = "about:blank"
-)
-
-func NewHttpError(errorType string, title string, details string, status int, additional *map[string]string) *HttpError {
+func NewHttpError(title string, details string, status int, additional *map[string]string) *HttpError {
 	return &HttpError{
-		ErrorType:  &errorType,
 		Title:      &title,
 		Details:    &details,
 		Status:     &status,
@@ -32,8 +26,6 @@ func NewHttpError(errorType string, title string, details string, status int, ad
 func ToHttpError(err error) *HttpError {
 	var e *echo.HTTPError
 	var errorMessage string
-
-	errorType := "about:blank"
 
 	switch {
 	case errors.As(err, &e):
@@ -46,7 +38,6 @@ func ToHttpError(err error) *HttpError {
 		}
 
 		return &HttpError{
-			ErrorType:  &errorType,
 			Title:      &errorMessage,
 			Details:    nil,
 			Status:     &e.Code,
@@ -56,9 +47,8 @@ func ToHttpError(err error) *HttpError {
 		errorMessage = http.StatusText(http.StatusInternalServerError)
 		code := http.StatusInternalServerError
 		return &HttpError{
-			ErrorType: &errorType,
-			Title:     &errorMessage,
-			Status:    &code,
+			Title:  &errorMessage,
+			Status: &code,
 		}
 	}
 }

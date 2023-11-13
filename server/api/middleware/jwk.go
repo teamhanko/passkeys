@@ -26,7 +26,6 @@ func JWKMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 			if err != nil {
 				ctx.Logger().Error(err)
 				return ctx.JSON(http.StatusInternalServerError, NewHttpError(
-					"about:blank",
 					"unable to initialize jwt generator",
 					err.Error(),
 					http.StatusInternalServerError,
@@ -39,7 +38,6 @@ func JWKMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 			if err != nil {
 				ctx.Logger().Error(err)
 				return ctx.JSON(http.StatusInternalServerError, NewHttpError(
-					"about:blank",
 					"unable to initialize jwt generator",
 					err.Error(),
 					http.StatusInternalServerError,

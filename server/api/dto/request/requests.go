@@ -13,7 +13,7 @@ type ListCredentialsDto struct {
 }
 
 type DeleteCredentialsDto struct {
-	Id string `param:"credential_id" validate:"required"`
+	CredentialId string `param:"credential_id" validate:"required"`
 }
 
 type UpdateCredentialsDto struct {

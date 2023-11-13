@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/gofrs/uuid"
 	"strings"
 	"time"
 
 	"github.com/gobuffalo/pop/v6"
-	"github.com/gofrs/uuid"
 	"github.com/teamhanko/passkey-server/persistence/models"
 )
 
@@ -56,14 +56,14 @@ func (p *auditLogPersister) Get(id uuid.UUID) (*models.AuditLog, error) {
 }
 
 type AuditLogOptions struct {
-	page    int
-	perPage int
-	start   *time.Time
-	end     *time.Time
-	types   []string
-	userId  string
-	ip      string
-	search  string
+	Page    int
+	PerPage int
+	Start   *time.Time
+	End     *time.Time
+	Types   []string
+	UserId  string
+	Ip      string
+	Search  string
 }
 
 func (p *auditLogPersister) List(options AuditLogOptions) ([]models.AuditLog, error) {
@@ -71,7 +71,7 @@ func (p *auditLogPersister) List(options AuditLogOptions) ([]models.AuditLog, er
 
 	query := p.database.Q()
 	query = p.addQueryParamsToSqlQuery(query, options)
-	err := query.Paginate(options.page, options.perPage).Order("created_at desc").All(&auditLogs)
+	err := query.Paginate(options.Page, options.PerPage).Order("created_at desc").All(&auditLogs)
 
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return auditLogs, nil
@@ -104,33 +104,33 @@ func (p *auditLogPersister) Count(options AuditLogOptions) (int, error) {
 }
 
 func (p *auditLogPersister) addQueryParamsToSqlQuery(query *pop.Query, options AuditLogOptions) *pop.Query {
-	if options.start != nil {
-		query = query.Where("created_at > ?", options.start)
+	if options.Start != nil {
+		query = query.Where("created_at > ?", options.Start)
 	}
-	if options.end != nil {
-		query = query.Where("created_at < ?", options.end)
+	if options.End != nil {
+		query = query.Where("created_at < ?", options.End)
 	}
 
-	if len(options.types) > 0 {
-		joined := "'" + strings.Join(options.types, "','") + "'"
+	if len(options.Types) > 0 {
+		joined := "'" + strings.Join(options.Types, "','") + "'"
 		query = query.Where(fmt.Sprintf("type IN (%s)", joined))
 	}
 
-	if len(options.userId) > 0 {
+	if len(options.UserId) > 0 {
 		switch p.database.Dialect.Name() {
 		case "postgres", "cockroach":
-			query = query.Where("actor_user_id::text LIKE ?", "%"+options.userId+"%")
+			query = query.Where("actor_user_id::text LIKE ?", "%"+options.UserId+"%")
 		case "mysql", "mariadb":
-			query = query.Where("actor_user_id LIKE ?", "%"+options.userId+"%")
+			query = query.Where("actor_user_id LIKE ?", "%"+options.UserId+"%")
 		}
 	}
 
-	if len(options.ip) > 0 {
-		query = query.Where("meta_source_ip LIKE ?", "%"+options.ip+"%")
+	if len(options.Ip) > 0 {
+		query = query.Where("meta_source_ip LIKE ?", "%"+options.Ip+"%")
 	}
 
-	if len(options.search) > 0 {
-		arg := "%" + options.search + "%"
+	if len(options.Search) > 0 {
+		arg := "%" + options.Search + "%"
 		switch p.database.Dialect.Name() {
 		case "postgres", "cockroach":
 			query = query.Where("(actor_email LIKE ? OR meta_source_ip LIKE ? OR actor_user_id::text LIKE ?)", arg, arg, arg)

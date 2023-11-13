@@ -59,6 +59,7 @@ func NewAdminRouter(cfg *config.Config, persister persistence.Persister, prometh
 	singleGroup.PUT("", tenantHandler.Update)
 	singleGroup.DELETE("", tenantHandler.Remove)
 	singleGroup.PUT("/config", tenantHandler.UpdateConfig)
+	singleGroup.GET("/audit_logs", tenantHandler.ListAuditLog)
 
 	secretHandler := admin.NewSecretsHandler(persister)
 	apiKeyGroup := singleGroup.Group("/secrets/api")

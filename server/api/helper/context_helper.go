@@ -18,7 +18,7 @@ type WebauthnContext struct {
 func GetHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
 	ctxTenant := ctx.Get("tenant")
 	if ctxTenant == nil {
-		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Unable to find tenant")
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Unable to find tenant")
 	}
 	tenant := ctxTenant.(*models.Tenant)
 

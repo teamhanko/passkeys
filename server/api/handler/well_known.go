@@ -15,11 +15,15 @@ func NewWellKnownHandler() *WellKnownHandler {
 
 func (h *WellKnownHandler) GetPublicKeys(ctx echo.Context) error {
 	tenant := ctx.Get("tenant").(*models.Tenant)
+	if tenant == nil {
+		return echo.NewHTTPError(http.StatusNotFound, "unable to find tenant")
+	}
+
 	manager := ctx.Get("jwk_manager").(hankoJwk.Manager)
 	keys, err := manager.GetPublicKeys(tenant.ID)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return err
+		return echo.NewHTTPError(http.StatusInternalServerError, "unable to get JWKs").SetInternal(err)
 	}
 
 	ctx.Response().Header().Add("Cache-Control", "max-age=600")

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -25,15 +24,12 @@ type loginHandler struct {
 	*webauthnHandler
 }
 
-func NewLoginHandler(persister persistence.Persister) (WebauthnHandler, error) {
-	webauthnHandler, err := newWebAuthnHandler(persister)
-	if err != nil {
-		return nil, err
-	}
+func NewLoginHandler(persister persistence.Persister) WebauthnHandler {
+	webauthnHandler := newWebAuthnHandler(persister)
 
 	return &loginHandler{
 		webauthnHandler,
-	}, nil
+	}
 }
 
 func (lh *loginHandler) Init(ctx echo.Context) error {
@@ -54,7 +50,10 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 		}
 
 		ctx.Logger().Error(err)
-		return fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err)
+		return echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err),
+		)
 	}
 
 	err = lh.persister.GetWebauthnSessionDataPersister(nil).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationAuthentication))
@@ -216,7 +215,7 @@ func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle []byte, tenantId 
 	}
 
 	if user == nil {
-		return nil, echo.NewHTTPError(http.StatusUnauthorized).SetInternal(errors.New("user not found"))
+		return nil, fmt.Errorf("user not found")
 	}
 
 	return intern.NewWebauthnUser(*user), nil

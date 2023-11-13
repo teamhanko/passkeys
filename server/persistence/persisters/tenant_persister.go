@@ -52,7 +52,6 @@ func (t tenantPersister) Get(tenantId uuid.UUID) (*models.Tenant, error) {
 	}
 
 	if err != nil {
-		fmt.Printf("failed to get Tenant: %v\n", err)
 		return nil, fmt.Errorf("failed to get tenant: %w", err)
 	}
 

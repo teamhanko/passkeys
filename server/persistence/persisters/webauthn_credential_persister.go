@@ -11,7 +11,7 @@ import (
 )
 
 type WebauthnCredentialPersister interface {
-	Get(id string) (*models.WebauthnCredential, error)
+	Get(id string, tenantId uuid.UUID) (*models.WebauthnCredential, error)
 	Create(credential *models.WebauthnCredential) error
 	Update(credential *models.WebauthnCredential) error
 	Delete(credential *models.WebauthnCredential) error
@@ -28,9 +28,13 @@ func NewWebauthnCredentialPersister(database *pop.Connection) WebauthnCredential
 	}
 }
 
-func (w *webauthnCredentialPersister) Get(id string) (*models.WebauthnCredential, error) {
+func (w *webauthnCredentialPersister) Get(id string, tenantId uuid.UUID) (*models.WebauthnCredential, error) {
 	credential := models.WebauthnCredential{}
-	err := w.database.Find(&credential, id)
+	err := w.database.
+		Where("webauthn_credentials.id = ? AND u.tenant_id = ?", id, tenantId).
+		LeftJoin("webauthn_users u", "u.id = webauthn_credentials.webauthn_user_id").
+		First(&credential)
+
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

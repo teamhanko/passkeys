@@ -22,16 +22,13 @@ type credentialsHandler struct {
 	*webauthnHandler
 }
 
-func NewCredentialsHandler(persister persistence.Persister) (CredentialsHandler, error) {
+func NewCredentialsHandler(persister persistence.Persister) CredentialsHandler {
 
-	webauthnHandler, err := newWebAuthnHandler(persister)
-	if err != nil {
-		return nil, err
-	}
+	webauthnHandler := newWebAuthnHandler(persister)
 
 	return &credentialsHandler{
 		webauthnHandler,
-	}, nil
+	}
 }
 
 func (credHandler *credentialsHandler) List(ctx echo.Context) error {
@@ -67,26 +64,22 @@ func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
 		return err
 	}
 
-	credentialPersister := credHandler.persister.GetWebauthnCredentialPersister(nil)
-
-	credential, err := credentialPersister.Get(requestDto.CredentialId)
-	if err != nil {
-		ctx.Logger().Error(err)
-		return err
-	}
-
-	if credential == nil {
-		return echo.NewHTTPError(http.StatusNotFound, &echo.HTTPError{
-			Code:     http.StatusNotFound,
-			Message:  fmt.Sprintf("credential with id '%s' not found.", requestDto.CredentialId),
-			Internal: nil,
-		})
-	}
-
 	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
+	}
+
+	credentialPersister := credHandler.persister.GetWebauthnCredentialPersister(nil)
+
+	credential, err := credentialPersister.Get(requestDto.CredentialId, h.Tenant.ID)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	if credential == nil {
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Errorf("credential with id '%s' not found", requestDto.CredentialId))
 	}
 
 	return credHandler.persister.Transaction(func(tx *pop.Connection) error {
@@ -114,17 +107,21 @@ func (credHandler *credentialsHandler) Delete(ctx echo.Context) error {
 		return err
 	}
 
-	persister := credHandler.persister.GetWebauthnCredentialPersister(nil)
-	credential, err := persister.Get(requestDto.Id)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
-	h, err := helper.GetHandlerContext(ctx)
+	persister := credHandler.persister.GetWebauthnCredentialPersister(nil)
+	credential, err := persister.Get(requestDto.CredentialId, h.Tenant.ID)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
+	}
+
+	if credential == nil {
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Errorf("credential with id '%s' not found", requestDto.CredentialId))
 	}
 
 	return credHandler.persister.Transaction(func(tx *pop.Connection) error {

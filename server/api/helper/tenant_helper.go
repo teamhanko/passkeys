@@ -12,7 +12,7 @@ import (
 func FindTenantByIdString(id string, tenantPersister persisters.TenantPersister) (*models.Tenant, error) {
 	tenantId, err := uuid.FromString(id)
 	if err != nil {
-		return nil, err
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "unable to parse tenant id").SetInternal(err)
 	}
 
 	tenant, err := tenantPersister.Get(tenantId)
