@@ -12,9 +12,7 @@ import (
 
 type WebauthnUserPersister interface {
 	Create(webauthnUser *models.WebauthnUser) error
-	Get(id uuid.UUID) (*models.WebauthnUser, error)
 	GetByUserId(userId string, tenantId uuid.UUID) (*models.WebauthnUser, error)
-	Delete(webauthnUser *models.WebauthnUser) error
 	Update(webauthnUser *models.WebauthnUser) error
 }
 
@@ -35,28 +33,6 @@ func (p *webauthnUserPersister) Create(webauthnUser *models.WebauthnUser) error 
 	}
 	if vErr != nil && vErr.HasAny() {
 		return fmt.Errorf("webauthn user object validation failed: %w", vErr)
-	}
-
-	return nil
-}
-
-func (p *webauthnUserPersister) Get(id uuid.UUID) (*models.WebauthnUser, error) {
-	webauthnUser := models.WebauthnUser{}
-	err := p.database.Eager().Find(&webauthnUser, id)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get webauthn user: %w", err)
-	}
-
-	return &webauthnUser, nil
-}
-
-func (p *webauthnUserPersister) Delete(webauthnUser *models.WebauthnUser) error {
-	err := p.database.Eager().Destroy(webauthnUser)
-	if err != nil {
-		return fmt.Errorf("failed to delete auditlog: %w", err)
 	}
 
 	return nil

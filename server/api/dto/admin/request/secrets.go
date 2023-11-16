@@ -1,6 +1,7 @@
 package request
 
 import (
+	"fmt"
 	"github.com/gofrs/uuid"
 	"github.com/teamhanko/passkey-server/crypto"
 	"github.com/teamhanko/passkey-server/persistence/models"
@@ -17,7 +18,7 @@ func (dto *CreateSecretDto) ToModel(config *models.Config, isApiKey bool) (*mode
 
 	secretKey, err := crypto.GenerateRandomStringURLSafe(64)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to create secret key: %w", err)
 	}
 
 	now := time.Now()

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/persistence"
@@ -16,10 +17,10 @@ type webauthnHandler struct {
 	persister persistence.Persister
 }
 
-func newWebAuthnHandler(persister persistence.Persister) (*webauthnHandler, error) {
+func newWebAuthnHandler(persister persistence.Persister) *webauthnHandler {
 	return &webauthnHandler{
 		persister: persister,
-	}, nil
+	}
 }
 
 func BindAndValidateRequest[I request.CredentialRequest | request.InitRegistrationDto](ctx echo.Context) (*I, error) {
@@ -27,13 +28,13 @@ func BindAndValidateRequest[I request.CredentialRequest | request.InitRegistrati
 	err := ctx.Bind(&requestDto)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("unable to process request: %w", err))
 	}
 
 	err = ctx.Validate(&requestDto)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
+		return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("unable to validate request: %w", err))
 	}
 
 	return &requestDto, nil

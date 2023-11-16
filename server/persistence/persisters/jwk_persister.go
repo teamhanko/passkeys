@@ -11,8 +11,6 @@ import (
 )
 
 type JwkPersister interface {
-	Get(int) (*models.Jwk, error)
-	GetByKeyAndTenantId(keyData string, tenantId uuid.UUID) (*models.Jwk, error)
 	GetAll() ([]models.Jwk, error)
 	GetAllForTenant(tenantId uuid.UUID) ([]models.Jwk, error)
 	GetLast(tenantId uuid.UUID) (*models.Jwk, error)
@@ -29,30 +27,6 @@ type jwkPersister struct {
 
 func NewJwkPersister(db *pop.Connection) JwkPersister {
 	return &jwkPersister{db: db}
-}
-
-func (p *jwkPersister) Get(id int) (*models.Jwk, error) {
-	jwk := models.Jwk{}
-	err := p.db.Find(&jwk, id)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf(GetFailureMessageFormat, err)
-	}
-	return &jwk, nil
-}
-
-func (p *jwkPersister) GetByKeyAndTenantId(keyData string, tenantId uuid.UUID) (*models.Jwk, error) {
-	jwk := models.Jwk{}
-	err := p.db.Eager().Where("key_data = ? AND tenant_id = ?", &keyData, &tenantId).First(&jwk)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf(GetFailureMessageFormat, err)
-	}
-	return &jwk, nil
 }
 
 func (p *jwkPersister) GetAll() ([]models.Jwk, error) {

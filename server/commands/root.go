@@ -3,7 +3,6 @@ package commands
 import (
 	"github.com/spf13/cobra"
 	"github.com/teamhanko/passkey-server/commands/isready"
-	"github.com/teamhanko/passkey-server/commands/jwk"
 	"github.com/teamhanko/passkey-server/commands/migrate"
 	"github.com/teamhanko/passkey-server/commands/serve"
 	"github.com/teamhanko/passkey-server/commands/version"
@@ -19,7 +18,6 @@ func NewCommand() *cobra.Command {
 	migrate.RegisterCommands(cmd)
 	version.RegisterCommands(cmd)
 	serve.RegisterCommands(cmd)
-	jwk.RegisterCommands(cmd)
 
 	return cmd
 }

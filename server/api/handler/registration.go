@@ -26,15 +26,12 @@ type registrationHandler struct {
 	*webauthnHandler
 }
 
-func NewRegistrationHandler(persister persistence.Persister) (WebauthnHandler, error) {
-	webauthnHandler, err := newWebAuthnHandler(persister)
-	if err != nil {
-		return nil, err
-	}
+func NewRegistrationHandler(persister persistence.Persister) WebauthnHandler {
+	webauthnHandler := newWebAuthnHandler(persister)
 
 	return &registrationHandler{
 		webauthnHandler,
-	}, nil
+	}
 }
 
 func (r *registrationHandler) Init(ctx echo.Context) error {
@@ -46,7 +43,7 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 	webauthnUser, err := models.FromRegistrationDto(dto)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return err
+		return fmt.Errorf("unable to parse user object: %w", err)
 	}
 
 	h, err := helper.GetHandlerContext(ctx)

@@ -11,37 +11,22 @@ import (
 )
 
 type WebauthnSessionDataPersister interface {
-	Get(id uuid.UUID) (*models.WebauthnSessionData, error)
 	GetByChallenge(challenge string, tenantId uuid.UUID) (*models.WebauthnSessionData, error)
 	Create(sessionData models.WebauthnSessionData) error
-	Update(sessionData models.WebauthnSessionData) error
 	Delete(sessionData models.WebauthnSessionData) error
 }
 
-type webauthnSessionDataPersister struct {
+type sessionDataPersister struct {
 	database *pop.Connection
 }
 
 func NewWebauthnSessionDataPersister(db *pop.Connection) WebauthnSessionDataPersister {
-	return &webauthnSessionDataPersister{database: db}
+	return &sessionDataPersister{database: db}
 }
 
-func (w *webauthnSessionDataPersister) Get(id uuid.UUID) (*models.WebauthnSessionData, error) {
-	sessionData := models.WebauthnSessionData{}
-	err := w.database.Eager().Find(&sessionData, id)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get sessionData: %w", err)
-	}
-
-	return &sessionData, nil
-}
-
-func (w *webauthnSessionDataPersister) GetByChallenge(challenge string, tenantId uuid.UUID) (*models.WebauthnSessionData, error) {
+func (ws *sessionDataPersister) GetByChallenge(challenge string, tenantId uuid.UUID) (*models.WebauthnSessionData, error) {
 	var sessionData []models.WebauthnSessionData
-	err := w.database.Eager().Where("challenge = ? AND tenant_id = ?", challenge, tenantId).All(&sessionData)
+	err := ws.database.Eager().Where("challenge = ? AND tenant_id = ?", challenge, tenantId).All(&sessionData)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -56,8 +41,8 @@ func (w *webauthnSessionDataPersister) GetByChallenge(challenge string, tenantId
 	return &sessionData[0], nil
 }
 
-func (w *webauthnSessionDataPersister) Create(sessionData models.WebauthnSessionData) error {
-	vErr, err := w.database.Eager().ValidateAndCreate(&sessionData)
+func (ws *sessionDataPersister) Create(sessionData models.WebauthnSessionData) error {
+	vErr, err := ws.database.Eager().ValidateAndCreate(&sessionData)
 	if err != nil {
 		return fmt.Errorf("failed to store sessionData: %w", err)
 	}
@@ -69,21 +54,8 @@ func (w *webauthnSessionDataPersister) Create(sessionData models.WebauthnSession
 	return nil
 }
 
-func (w *webauthnSessionDataPersister) Update(sessionData models.WebauthnSessionData) error {
-	vErr, err := w.database.Eager().ValidateAndUpdate(&sessionData)
-	if err != nil {
-		return fmt.Errorf("failed to update sessionData: %w", err)
-	}
-
-	if vErr != nil && vErr.HasAny() {
-		return fmt.Errorf("sessionData object validation failed: %w", vErr)
-	}
-
-	return nil
-}
-
-func (w *webauthnSessionDataPersister) Delete(sessionData models.WebauthnSessionData) error {
-	err := w.database.Destroy(&sessionData)
+func (ws *sessionDataPersister) Delete(sessionData models.WebauthnSessionData) error {
+	err := ws.database.Destroy(&sessionData)
 	if err != nil {
 		return fmt.Errorf("failed to delete sessionData: %w", err)
 	}

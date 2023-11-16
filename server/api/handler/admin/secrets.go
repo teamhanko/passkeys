@@ -102,7 +102,7 @@ func (s *SecretsHandler) removeKey(ctx echo.Context, isApiKey bool) error {
 	secretId, err := uuid.FromString(dto.SecretId)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse key id").SetInternal(err)
 	}
 
 	var foundSecret *models.Secret
@@ -113,7 +113,7 @@ func (s *SecretsHandler) removeKey(ctx echo.Context, isApiKey bool) error {
 	}
 
 	if foundSecret == nil {
-		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("secret with ID '%s' not found", dto.SecretId))
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Errorf("secret with ID '%s' not found", dto.SecretId))
 	}
 
 	err = s.persister.GetSecretsPersister(nil).Delete(foundSecret)

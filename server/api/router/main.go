@@ -62,10 +62,7 @@ func RouteWellKnown(parent *echo.Group) {
 }
 
 func RouteCredentials(parent *echo.Group, persister persistence.Persister) {
-	credentialsHandler, err := handler.NewCredentialsHandler(persister)
-	if err != nil {
-		panic(err)
-	}
+	credentialsHandler := handler.NewCredentialsHandler(persister)
 
 	group := parent.Group("/credentials", passkeyMiddleware.ApiKeyMiddleware())
 	group.GET("", credentialsHandler.List)
@@ -76,10 +73,7 @@ func RouteCredentials(parent *echo.Group, persister persistence.Persister) {
 }
 
 func RouteRegistration(parent *echo.Group, persister persistence.Persister) {
-	registrationHandler, err := handler.NewRegistrationHandler(persister)
-	if err != nil {
-		panic(err)
-	}
+	registrationHandler := handler.NewRegistrationHandler(persister)
 
 	group := parent.Group("/registration", passkeyMiddleware.WebauthnMiddleware())
 	group.POST("/initialize", registrationHandler.Init, passkeyMiddleware.ApiKeyMiddleware())
@@ -87,10 +81,7 @@ func RouteRegistration(parent *echo.Group, persister persistence.Persister) {
 }
 
 func RouteLogin(parent *echo.Group, persister persistence.Persister) {
-	loginHandler, err := handler.NewLoginHandler(persister)
-	if err != nil {
-		panic(err)
-	}
+	loginHandler := handler.NewLoginHandler(persister)
 
 	group := parent.Group("/login", passkeyMiddleware.WebauthnMiddleware())
 	group.POST("/initialize", loginHandler.Init)

@@ -45,13 +45,8 @@ func WebauthnMiddleware() echo.MiddlewareFunc {
 			})
 
 			if err != nil {
-				return ctx.JSON(http.StatusInternalServerError, NewHttpError(
-					AboutBlank,
-					"unable to create webauthn client",
-					err.Error(),
-					http.StatusInternalServerError,
-					nil,
-				))
+				ctx.Logger().Error(err)
+				return echo.NewHTTPError(http.StatusInternalServerError, "unable to create webauthn client").SetInternal(err)
 			}
 			ctx.Set("webauthn_client", webauthnClient)
 
