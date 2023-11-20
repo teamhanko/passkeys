@@ -26,7 +26,7 @@ func (dto *CreateTenantDto) ToModel() models.Tenant {
 }
 
 type GetTenantDto struct {
-	Id string `param:"tenant_id" validate:"required,uuid4"`
+	TenantId string `param:"tenant_id" validate:"required,uuid4"`
 }
 
 type UpdateTenantDto struct {

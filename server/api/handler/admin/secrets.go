@@ -28,7 +28,13 @@ func (s *SecretsHandler) listKeys(ctx echo.Context, isApiKey bool) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to list keys").SetInternal(err)
 	}
 
-	tenant, err := s.findTenantByIdString(dto.Id)
+	err = ctx.Validate(&dto)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to list keys").SetInternal(err)
+	}
+
+	tenant, err := s.findTenantByIdString(dto.TenantId)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -60,7 +66,13 @@ func (s *SecretsHandler) createKey(ctx echo.Context, isApiKey bool) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to create key").SetInternal(err)
 	}
 
-	tenant, err := s.findTenantByIdString(dto.Id)
+	err = ctx.Validate(&dto)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to create key").SetInternal(err)
+	}
+
+	tenant, err := s.findTenantByIdString(dto.TenantId)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -93,7 +105,13 @@ func (s *SecretsHandler) removeKey(ctx echo.Context, isApiKey bool) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to remove key").SetInternal(err)
 	}
 
-	tenant, err := s.findTenantByIdString(dto.Id)
+	err = ctx.Validate(&dto)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to remove key").SetInternal(err)
+	}
+
+	tenant, err := s.findTenantByIdString(dto.TenantId)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err

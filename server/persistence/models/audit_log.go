@@ -16,7 +16,7 @@ type AuditLog struct {
 	ActorUserId       *string      `db:"actor_user_id" json:"actor_user_id,omitempty"`
 	CreatedAt         time.Time    `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time    `db:"updated_at" json:"updated_at"`
-	Tenant            *Tenant      `json:"tenant" belongs_to:"tenants"`
+	Tenant            *Tenant      `json:"-" belongs_to:"tenants"`
 	TenantID          uuid.UUID    `json:"tenant_id" db:"tenant_id"`
 }
 
