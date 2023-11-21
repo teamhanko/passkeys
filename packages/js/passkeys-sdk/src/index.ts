@@ -1,0 +1,131 @@
+import createClient from "openapi-fetch";
+import { components, paths } from "./schema";
+
+export const DEFAULT_BASE_URL = "https://passkeys.hanko.io";
+
+interface BaseConfig {
+	baseUrl?: string;
+	apiKey?: string;
+}
+
+class PasskeyError extends Error {
+	constructor(message: string, public originalError?: unknown) {
+		super(message);
+	}
+}
+
+type PublicKeyCredential = components["schemas"]["public-key-credential"];
+
+type RequestBody<T extends keyof components["requestBodies"]> = Exclude<
+	components["requestBodies"][T],
+	undefined
+>["content"]["application/json"];
+
+type PostLoginFinalizeBody = RequestBody<"post-login-finalize">;
+type PostRegistrationFinalizeBody = RequestBody<"post-registration-finalize">;
+
+export type Tenant = ReturnType<typeof tenant>;
+
+export function tenant(_config: { baseUrl?: string; apiKey: string; tenantId: string }) {
+	const { apiKey, tenantId } = _config;
+
+	if (!tenantId) throw new PasskeyError("No tenant ID provided");
+
+	let baseUrl: string;
+	try {
+		baseUrl = new URL(_config.baseUrl ?? DEFAULT_BASE_URL).href;
+	} catch (err) {
+		throw new PasskeyError("Invalid base URL", err);
+	}
+
+	const client = createClient<paths>({ baseUrl });
+
+	// Default params
+	const header = { apiKey, "Content-Type": "application/json" };
+	const path = { tenant_id: tenantId };
+	const params = { path, header };
+
+	async function wrap<P extends Promise<{ error?: unknown; data?: unknown }>>(
+		p: P
+	): Promise<Exclude<Awaited<P>["data"], undefined>> {
+		const { error, data } = await p;
+
+		if (error) {
+			throw new PasskeyError(
+				"Request failed: " + (error instanceof Error ? error.message : JSON.stringify(error)),
+				error
+			);
+		}
+
+		return data as any;
+	}
+
+	return {
+		config: {
+			// Getters (for now) since you can't change the config of `client` after it's created
+			get baseUrl() {
+				return baseUrl;
+			},
+			get tenantId() {
+				return tenantId;
+			},
+		},
+		user(user_id: string) {
+			return {
+				credentials() {
+					return wrap(
+						client.GET("/{tenant_id}/credentials", {
+							params: {
+								path,
+								header,
+								query: { user_id },
+							},
+						})
+					);
+				},
+			};
+		},
+		jwks() {
+			return wrap(client.GET("/{tenant_id}/.well-known/jwks.json", { params }));
+		},
+		login: {
+			initialize() {
+				return wrap(client.POST("/{tenant_id}/login/initialize", { params }));
+			},
+			/**
+			 * Finalize the login process. The first argument should be the credential returned by the user's browser (from `navigator.credentials.get()`)
+			 */
+			finalize(credential: PostLoginFinalizeBody) {
+				return wrap(client.POST("/{tenant_id}/login/finalize", { params, body: credential }));
+			},
+		},
+		registration: {
+			initialize(data: {
+				user_id: string;
+				username: string;
+				icon?: string | null;
+				display_name?: string | null;
+			}) {
+				return wrap(client.POST("/{tenant_id}/registration/initialize", { params, body: data }));
+			},
+			/**
+			 * Finalize the registration process. The first argument should be the credential returned by the user's browser (from `navigator.credentials.create()`)
+			 */
+			finalize(credential: PostRegistrationFinalizeBody) {
+				return wrap(client.POST("/{tenant_id}/registration/finalize", { params, body: credential }));
+			},
+		},
+		credential(credential_id: string) {
+			const params = { header, path: { ...path, credential_id } };
+			return {
+				remove() {
+					return wrap(client.DELETE("/{tenant_id}/credentials/{credential_id}", { params }));
+				},
+				// TODO no query, no response (always 204) ???
+				// update() {
+				// 	return wrap(client.PATCH("/{tenant_id}/credentials/{credential_id}", { params }));
+				// },
+			};
+		},
+	};
+}

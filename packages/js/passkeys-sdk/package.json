@@ -1,0 +1,18 @@
+{
+	"name": "@teamhanko/passkeys-sdk",
+	"module": "src/index.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "npm run build:js & npm run build:dts",
+		"build:js": "bun build --target=node ./src/index.ts --outfile=dist/index.js",
+		"build:dts": "tsc --emitDeclarationOnly --project tsconfig.dts.json"
+	},
+	"devDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"type": "module",
+	"dependencies": {
+		"openapi-fetch": "^0.8.1"
+	}
+}
