@@ -533,12 +533,6 @@ components:
           schema:
             type: object
             properties:
-              type:
-                type:
-                  - string
-                  - 'null'
-                examples:
-                  - 'http://link-to-documentation'
               title:
                 type:
                   - string
