@@ -549,6 +549,10 @@ components:
                 type:
                   - integer
                   - 'null'
+              additional:
+                type:
+                  - object
+                  - 'null'
   schemas:
     tenant_list:
       type: object
@@ -677,8 +681,7 @@ components:
           examples:
             - Hanko Passkey Server
         icon:
-          type:
-            - string
+          type: string
           format: uri
           examples:
             - 'http://link.to/icon'
