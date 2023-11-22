@@ -2,6 +2,8 @@ import { Tenant } from "@teamhanko/passkeys-sdk";
 import { JWTPayload, JWTVerifyResult, createRemoteJWKSet, jwtVerify } from "jose";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+export * from "@teamhanko/passkeys-sdk";
+
 const TOKEN_MAX_AGE_SECONDS = 60;
 export const DEFAULT_PROVIDER_ID = "passkeys";
 
