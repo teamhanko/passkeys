@@ -153,10 +153,10 @@ export interface components {
     error: {
       content: {
         "application/json": {
-          type?: string | null;
           title?: string | null;
           details?: string | null;
           status?: number | null;
+          additional?: Record<string, never> | null;
         };
       };
     };

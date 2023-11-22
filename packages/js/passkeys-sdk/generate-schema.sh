@@ -1,3 +1,5 @@
 #!/bin/bash
 
-bunx openapi-typescript https://raw.githubusercontent.com/teamhanko/passkey-server/main/spec/passkey-server.yaml -o src/schema.ts
+dirname=$(dirname "$0")
+
+bunx openapi-typescript "$dirname/../../../spec/passkey-server.yaml" -o "$dirname/src/schema.ts"
