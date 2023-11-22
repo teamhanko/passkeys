@@ -50,7 +50,7 @@ export async function clientFirstPasskeyLogin(config: { baseUrl?: string; tenant
 	// Passkey API as-is.
 	return fetch(new URL(`${config.tenantId}/login/finalize`, baseUrl), {
 		method: "POST",
-		headers: { "Content-Type": "application/json" },
+		headers,
 		body: JSON.stringify(credential),
 	})
 		.then((res) => res.json())
