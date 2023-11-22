@@ -2,7 +2,20 @@ import { Tenant } from "@teamhanko/passkeys-sdk";
 import { JWTPayload, JWTVerifyResult, createRemoteJWKSet, jwtVerify } from "jose";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+const TOKEN_MAX_AGE_SECONDS = 60;
 export const DEFAULT_PROVIDER_ID = "passkeys";
+
+export class PasskeyProviderError extends Error {
+	constructor(message: string, public readonly code: ErrorCode, public originalError?: unknown) {
+		super(message);
+	}
+}
+
+export enum ErrorCode {
+	JWTSubClaimMissing = "jwtSubClaimMissing",
+	JWTVerificationFailed = "jwtVerificationFailed",
+	JWTExpired = "jwtExpired",
+}
 
 export function PasskeyProvider({
 	tenant,
@@ -49,14 +62,20 @@ export function PasskeyProvider({
 			try {
 				token = await jwtVerify(jwt, JWKS);
 			} catch (e) {
-				console.warn("JWT verification failed", e);
-				return null;
+				throw new PasskeyProviderError("JWT verification failed", ErrorCode.JWTVerificationFailed, e);
 			}
 
 			const userId = token.payload.sub;
 			if (!userId) {
-				console.error('JWT does not contain a "sub" claim');
-				return null;
+				throw new PasskeyProviderError("JWT does not contain a `sub` claim", ErrorCode.JWTSubClaimMissing);
+			}
+
+			// Make sure token is not older than TOKEN_MAX_AGE_SECONDS
+			// This can be removed in the future, when the JWT issued by the Passkey Server gets an `exp` claim.
+			// As of now, it only has aud, cred, iat, and sub, so jwtVerify() does not check for expiration.
+			const now = Date.now() / 1000;
+			if (token.payload.iat == null || now > token.payload.iat + TOKEN_MAX_AGE_SECONDS) {
+				throw new PasskeyProviderError("JWT has expired", ErrorCode.JWTExpired);
 			}
 
 			let user = { id: userId };
