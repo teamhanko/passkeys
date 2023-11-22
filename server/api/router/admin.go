@@ -53,7 +53,7 @@ func NewAdminRouter(cfg *config.Config, persister persistence.Persister, prometh
 	health.GET("/ready", healthHandler.Ready)
 
 	tenantHandler := admin.NewTenantHandler(persister)
-	tenantsGroup := main.Group("/tenants")
+	tenantsGroup := rootGroup.Group("/tenants")
 	tenantsGroup.GET("", tenantHandler.List)
 	tenantsGroup.POST("", tenantHandler.Create)
 
