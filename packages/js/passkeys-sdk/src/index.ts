@@ -63,7 +63,7 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 				return tenantId;
 			},
 		},
-		user(user_id: string) {
+		user(userId: string) {
 			return {
 				credentials() {
 					return wrap(
@@ -71,7 +71,7 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 							params: {
 								path,
 								header,
-								query: { user_id },
+								query: { user_id: userId },
 							},
 						})
 					);
@@ -93,13 +93,18 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 			},
 		},
 		registration: {
-			initialize(data: {
-				user_id: string;
-				username: string;
-				icon?: string | null;
-				display_name?: string | null;
-			}) {
-				return wrap(client.POST("/{tenant_id}/registration/initialize", { params, body: data }));
+			initialize(data: { userId: string; username: string; icon?: string | null; displayName?: string | null }) {
+				return wrap(
+					client.POST("/{tenant_id}/registration/initialize", {
+						params,
+						body: {
+							user_id: data.userId,
+							username: data.username,
+							icon: data.icon,
+							display_name: data.displayName,
+						},
+					})
+				);
 			},
 			/**
 			 * Finalize the registration process. The first argument should be the credential returned by the user's browser (from `navigator.credentials.create()`)
@@ -108,8 +113,8 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 				return wrap(client.POST("/{tenant_id}/registration/finalize", { params, body: credential }));
 			},
 		},
-		credential(credential_id: string) {
-			const params = { header, path: { ...path, credential_id } };
+		credential(credentialId: string) {
+			const params = { header, path: { ...path, credential_id: credentialId } };
 			return {
 				remove() {
 					return wrap(client.DELETE("/{tenant_id}/credentials/{credential_id}", { params }));
