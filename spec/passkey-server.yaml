@@ -414,12 +414,6 @@ components:
           schema:
             type: object
             properties:
-              type:
-                type:
-                  - string
-                  - 'null'
-                examples:
-                  - 'http://link-to-documentation'
               title:
                 type:
                   - string
@@ -435,6 +429,10 @@ components:
               status:
                 type:
                   - integer
+                  - 'null'
+              additional:
+                type:
+                  - object
                   - 'null'
     post-registration-initialize:
       description: Example response

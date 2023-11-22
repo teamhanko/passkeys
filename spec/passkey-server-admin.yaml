@@ -35,6 +35,8 @@ paths:
                 uniqueItems: true
                 items:
                   $ref: '#/components/schemas/tenant_list'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -55,6 +57,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/tenant_api_key'
+        '400':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -76,6 +82,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/tenant'
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -94,6 +106,12 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -110,6 +128,12 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -142,6 +166,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/secret'
                 description: The created secret
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -162,6 +192,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/secret_list'
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -194,6 +230,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/secret'
                 description: The created secret
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -214,6 +256,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/secret_list'
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -232,6 +280,12 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -250,6 +304,12 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -269,6 +329,140 @@ paths:
       responses:
         '204':
           description: No Content
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+  '/tenants/{tenant_id}/audit_logs':
+    get:
+      summary: List audit log entries
+      description: Get a list of audit logs for a specific tenant
+      operationId: get-tenants-tenant_id-audit_logs
+      parameters:
+        - name: page
+          in: query
+          description: Page to start from
+          schema:
+            type: number
+            default: 1
+        - name: per_page
+          in: query
+          description: How many logs should be displayed per page
+          schema:
+            type: number
+            default: 20
+        - name: start_time
+          in: query
+          description: timestamp from where to start the list
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          description: timestamp on which to end the list
+          schema:
+            type: string
+            format: date-time
+        - name: type
+          in: query
+          description: comma separated list of types to query for
+          schema:
+            type: string
+        - name: actor_user_id
+          in: query
+          description: id of the user who performed the action
+          schema:
+            type: string
+        - name: meta_source_ip
+          in: query
+          description: ip address from which the action was performed
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: the search string
+          schema:
+            type: string
+        - $ref: '#/components/parameters/tenant_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/audit_log'
+          headers:
+            Link:
+              schema:
+                type: string
+              description: links to pages
+            X-Total-Count:
+              schema:
+                type: number
+              description: Total number of log entries
+        '400':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+  /health/alive:
+    get:
+      summary: Get alive status
+      description: Checks if the API is alive
+      operationId: get-health
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alive:
+                    type: boolean
+                required:
+                  - alive
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+  /health/ready:
+    get:
+      summary: Get ready status
+      description: Checks if the API is ready for usage
+      operationId: get-health-ready
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                required:
+                  - ready
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -331,6 +525,34 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/config'
+  responses:
+    error:
+      description: Error Response with detailed information
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type:
+                  - string
+                  - 'null'
+                examples:
+                  - explanatory title
+              details:
+                type:
+                  - string
+                  - 'null'
+                examples:
+                  - Information which helps resolving the problem
+              status:
+                type:
+                  - integer
+                  - 'null'
+              additional:
+                type:
+                  - object
+                  - 'null'
   schemas:
     tenant_list:
       type: object
@@ -459,9 +681,7 @@ components:
           examples:
             - Hanko Passkey Server
         icon:
-          type:
-            - string
-            - 'null'
+          type: string
           format: uri
           examples:
             - 'http://link.to/icon'
@@ -480,3 +700,40 @@ components:
       uniqueItems: true
       items:
         $ref: '#/components/schemas/secret'
+    audit_log:
+      type: object
+      title: audit_log
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        error:
+          type: string
+        meta_http_request_id:
+          type: string
+        meta_source_ip:
+          type: string
+        meta_user_agent:
+          type: string
+        actor_user_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+          format: uuid
+      required:
+        - id
+        - type
+        - meta_http_request_id
+        - meta_source_ip
+        - meta_user_agent
+        - created_at
+        - updated_at
+        - tenant_id
