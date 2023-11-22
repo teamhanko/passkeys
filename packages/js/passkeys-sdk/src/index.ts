@@ -3,18 +3,11 @@ import { components, paths } from "./schema";
 
 export const DEFAULT_BASE_URL = "https://passkeys.hanko.io";
 
-interface BaseConfig {
-	baseUrl?: string;
-	apiKey?: string;
-}
-
 class PasskeyError extends Error {
 	constructor(message: string, public originalError?: unknown) {
 		super(message);
 	}
 }
-
-type PublicKeyCredential = components["schemas"]["public-key-credential"];
 
 type RequestBody<T extends keyof components["requestBodies"]> = Exclude<
 	components["requestBodies"][T],
@@ -26,14 +19,14 @@ type PostRegistrationFinalizeBody = RequestBody<"post-registration-finalize">;
 
 export type Tenant = ReturnType<typeof tenant>;
 
-export function tenant(_config: { baseUrl?: string; apiKey: string; tenantId: string }) {
-	const { apiKey, tenantId } = _config;
+export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: string }) {
+	const { apiKey, tenantId } = config;
 
 	if (!tenantId) throw new PasskeyError("No tenant ID provided");
 
 	let baseUrl: string;
 	try {
-		baseUrl = new URL(_config.baseUrl ?? DEFAULT_BASE_URL).href;
+		baseUrl = new URL(config.baseUrl ?? DEFAULT_BASE_URL).href;
 	} catch (err) {
 		throw new PasskeyError("Invalid base URL", err);
 	}
