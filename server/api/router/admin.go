@@ -31,6 +31,9 @@ func NewAdminRouter(cfg *config.Config, persister persistence.Persister, prometh
 		rootGroup.Use(passkeyMiddleware.LoggerMiddleware())
 	}
 
+	// add CORS for all
+	main.Use(middleware.CORS())
+
 	// Validator
 	main.Validator = validators.NewCustomValidator()
 

@@ -113,7 +113,13 @@ func (th *TenantHandler) Get(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to get tenant").SetInternal(err)
 	}
 
-	tenant, err := th.findTenantByIdString(dto.Id)
+	err = ctx.Validate(&dto)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to get tenant").SetInternal(err)
+	}
+
+	tenant, err := th.findTenantByIdString(dto.TenantId)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -134,7 +140,13 @@ func (th *TenantHandler) Update(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to update tenant").SetInternal(err)
 	}
 
-	tenant, err := th.findTenantByIdString(dto.Id)
+	err = ctx.Validate(&dto)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to update tenant").SetInternal(err)
+	}
+
+	tenant, err := th.findTenantByIdString(dto.TenantId)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -160,7 +172,13 @@ func (th *TenantHandler) Remove(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to remove tenant").SetInternal(err)
 	}
 
-	tenant, err := th.findTenantByIdString(dto.Id)
+	err = ctx.Validate(&dto)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to remove tenant").SetInternal(err)
+	}
+
+	tenant, err := th.findTenantByIdString(dto.TenantId)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -183,7 +201,13 @@ func (th *TenantHandler) UpdateConfig(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to update tenant config").SetInternal(err)
 	}
 
-	tenant, err := th.findTenantByIdString(dto.Id)
+	err = ctx.Validate(&dto)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to update tenant config").SetInternal(err)
+	}
+
+	tenant, err := th.findTenantByIdString(dto.TenantId)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -261,9 +285,16 @@ func (th *TenantHandler) persistConfig(tx *pop.Connection, config *models.Config
 
 func (th *TenantHandler) ListAuditLog(ctx echo.Context) error {
 	var dto request.ListAuditLogDto
-	err := (&echo.DefaultBinder{}).BindQueryParams(ctx, &dto)
+	err := ctx.Bind(&dto)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse query parameters").SetInternal(err)
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to list audit logs").SetInternal(err)
+	}
+
+	err = ctx.Validate(&dto)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to list audit logs").SetInternal(err)
 	}
 
 	if dto.Page == 0 {
@@ -275,23 +306,26 @@ func (th *TenantHandler) ListAuditLog(ctx echo.Context) error {
 	}
 
 	options := persisters.AuditLogOptions{
-		Page:    dto.Page,
-		PerPage: dto.PerPage,
-		Start:   dto.StartTime,
-		End:     dto.EndTime,
-		Types:   dto.Types,
-		UserId:  dto.UserId,
-		Ip:      dto.IP,
-		Search:  dto.SearchString,
+		Page:     dto.Page,
+		PerPage:  dto.PerPage,
+		Start:    dto.StartTime,
+		End:      dto.EndTime,
+		Types:    dto.Types,
+		UserId:   dto.UserId,
+		Ip:       dto.IP,
+		Search:   dto.SearchString,
+		TenantId: dto.TenantId,
 	}
 
 	auditLogs, err := th.persister.GetAuditLogPersister(nil).List(options)
 	if err != nil {
+		ctx.Logger().Error(err)
 		return fmt.Errorf("failed to get list of audit logs: %w", err)
 	}
 
 	logCount, err := th.persister.GetAuditLogPersister(nil).Count(options)
 	if err != nil {
+		ctx.Logger().Error(err)
 		return fmt.Errorf("failed to get total count of audit logs: %w", err)
 	}
 
