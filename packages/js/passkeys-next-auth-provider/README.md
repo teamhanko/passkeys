@@ -1,5 +1,7 @@
 # Hanko Passkeys Auth.js Provider
 
+[View docs on docs.hanko.io](https://docs.hanko.io/passkey-api/next-auth)
+
 If you already have a Next.js set up with Auth.js, you can easily passkeys to your app using `@teamhanko/passkeys-next-auth-provider`.
 
 ```bash

@@ -1,5 +1,7 @@
 # Hanko Passkeys JavaScript SDK
 
+[View docs on docs.hanko.io](https://docs.hanko.io/passkey-api/js-sdk)
+
 The `@teamhanko/passkeys-sdk` package lets you call the Hanko Passkey API from JavaScript/TypeScript that supports `fetch`.
 
 This includes Node.js, Browsers, Deno, Bun, and frameworks like Next.js, Astro, and SvelteKit.
