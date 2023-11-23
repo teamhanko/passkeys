@@ -2,16 +2,16 @@
 	"name": "@teamhanko/passkeys-sdk",
 	"private": false,
 	"type": "module",
+	"version": "0.1.3",
+	"module": "src/index.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"exports": {
 		".": {
 			"import": "./dist/index.js",
 			"require": "./dist/index.js"
 		}
 	},
-	"version": "0.1.2",
-	"module": "src/index.ts",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "bun run build:js && bun run build:dts",
 		"build:js": "bun build --target=node --outdir dist src/index.ts",
