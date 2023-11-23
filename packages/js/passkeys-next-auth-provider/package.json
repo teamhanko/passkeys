@@ -1,6 +1,7 @@
 {
 	"name": "@teamhanko/passkeys-next-auth-provider",
 	"private": false,
+	"version": "0.1.0",
 	"type": "module",
 	"module": "src/index.ts",
 	"main": "dist/index.js",
