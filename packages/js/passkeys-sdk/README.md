@@ -30,7 +30,7 @@ pnpm add @teamhanko/passkeys-sdk
 
 A `tenant` is an API client instance for one tenant of the Hanko Passkey API.
 
-[👉 See multitenancy](/passkey-api/faq#tenant-id-and-multitenancy)
+[👉 See multitenancy](https://docs.hanko.io/passkey-api/faq#tenant-id-and-multitenancy)
 
 Create a new tenant instance:
 
@@ -40,6 +40,8 @@ const passkeyApi = tenant({
 	apiKey: "<your secret api key>",
 });
 ```
+
+Make sure the API key stays secret. It should never be exposed to the client/frontend. If you're using a framework that handles both frontend and backend (like Next.js, for example), create two separate `tenant` instances, each in their own file (e.g. `tenant-server.ts` and `tenant-client.ts`).
 
 -   If you only use public API methods, like `/login/initialize`, you can omit the `apiKey`.
 -   If you're self-hosting the Passkey API, make sure to pass the `baseUrl` as well.

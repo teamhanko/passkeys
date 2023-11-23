@@ -47,9 +47,9 @@ export default LoginButton() {
 }
 ```
 
-**If you're using Hanko Cloud,** you can <a href="https://cloud.hanko.io/" target="_blank">get your tenant ID from your dashboard</a>.
+<!-- **If you're using Hanko Cloud,** you can <a href="https://cloud.hanko.io/" target="_blank">get your tenant ID from your dashboard</a>.
 
-If you're not using Hanko Cloud:
+If you're not using Hanko Cloud: -->
 
 1. make sure to pass the `baseUrl` to both  
    `tenant` (in `[...nextauth].ts`) and  
