@@ -45,7 +45,8 @@ export function PasskeyProvider({
 	const url = new URL(`${tenant.config.tenantId}/.well-known/jwks.json`, tenant.config.baseUrl);
 	const JWKS = createRemoteJWKSet(url);
 
-	return CredentialsProvider({
+	// TODO call normally when this is fixed: https://github.com/nextauthjs/next-auth/issues/572
+	return ((CredentialsProvider as any).default as typeof CredentialsProvider)({
 		id,
 		credentials: {
 			/**

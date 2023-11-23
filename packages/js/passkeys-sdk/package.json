@@ -1,18 +1,17 @@
 {
 	"name": "@teamhanko/passkeys-sdk",
+	"license": "MIT",
 	"private": false,
 	"type": "module",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"module": "src/index.ts",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"exports": {
-		".": "./dist/index.js"
+		".": "./dist/src/index.js"
 	},
 	"scripts": {
-		"build": "bun run build:js && bun run build:dts",
-		"build:js": "bun build --outdir dist src/index.ts",
-		"build:dts": "tsc --emitDeclarationOnly --project tsconfig.dts.json"
+		"build": "tsc"
 	},
 	"devDependencies": {
 		"typescript": "^5.0.0"

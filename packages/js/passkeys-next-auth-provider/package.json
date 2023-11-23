@@ -1,29 +1,28 @@
 {
 	"name": "@teamhanko/passkeys-next-auth-provider",
+	"license": "MIT",
 	"private": false,
 	"type": "module",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"module": "src/index.ts",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
+	"main": "dist/src/index.js",
+	"types": "dist/src/index.d.ts",
 	"exports": {
-		".": "./dist/index.js",
-		"./client": "./dist/client.js"
+		".": "./dist/src/index.js",
+		"./client": "./dist/src/client.js"
 	},
 	"scripts": {
-		"build": "bun run build:js && bun run build:dts",
-		"build:js": "bun build --outdir dist src/index.ts src/client.ts",
-		"build:dts": "tsc --emitDeclarationOnly --project tsconfig.dts.json"
+		"build": "tsc"
 	},
 	"devDependencies": {
 		"typescript": "^5.0.0"
 	},
 	"dependencies": {
+		"@teamhanko/passkeys-sdk": "^0.1.5",
 		"@github/webauthn-json": "^2.1.1",
-		"@teamhanko/passkeys-sdk": "^0.1.4",
 		"jose": "^5.1.1"
 	},
 	"peerDependencies": {
-		"next-auth": "^4.0.0"
+		"next-auth": "^4.24.5"
 	}
 }
