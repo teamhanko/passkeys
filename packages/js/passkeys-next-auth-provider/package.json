@@ -1,11 +1,21 @@
 {
 	"name": "@teamhanko/passkeys-next-auth-provider",
 	"private": false,
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "module",
 	"module": "src/index.ts",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.js"
+		},
+		"./client": {
+			"import": "./dist/client.js",
+			"require": "./dist/client.js"
+		}
+	},
 	"scripts": {
 		"build": "bun run build:js & bun run build:dts",
 		"build:js": "bun build --target=node ./src/index.ts --outfile=dist/index.js",
