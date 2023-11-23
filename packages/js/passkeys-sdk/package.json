@@ -1,5 +1,6 @@
 {
 	"name": "@teamhanko/passkeys-sdk",
+	"private": false,
 	"type": "module",
 	"version": "0.1.0",
 	"module": "src/index.ts",
