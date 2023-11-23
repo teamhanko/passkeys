@@ -2,7 +2,7 @@ name: Release JS package @teamhanko/passkeys-next-auth-provider
 
 on:
   workflow_run:
-    workflows: "Release JS package @teamhanko/passkeys-sdk"
+    workflows: ["Release JS package @teamhanko/passkeys-sdk"]
     branches: "main"
     types:
       - completed
