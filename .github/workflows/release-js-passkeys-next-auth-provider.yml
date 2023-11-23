@@ -1,9 +1,11 @@
 name: Release JS package @teamhanko/passkeys-next-auth-provider
 
 on:
-  push:
-    tags:
-      - "@teamhanko/passkeys-next-auth-provider@*"
+  workflow_run:
+    workflows: "Release JS package @teamhanko/passkeys-sdk"
+    branches: "main"
+    types:
+      - completed
 
 defaults:
   run:

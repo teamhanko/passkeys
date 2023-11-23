@@ -3,7 +3,7 @@ name: Release JS package @teamhanko/passkeys-sdk
 on:
   push:
     tags:
-      - "@teamhanko/passkeys-sdk@*"
+      - "js-packages@*"
 
 defaults:
   run:
