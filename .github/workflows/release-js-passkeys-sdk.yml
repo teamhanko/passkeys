@@ -9,6 +9,7 @@ defaults:
   run:
     working-directory: packages/js/passkeys-sdk
 
+jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:

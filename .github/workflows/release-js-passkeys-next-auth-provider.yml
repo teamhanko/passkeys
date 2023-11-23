@@ -11,6 +11,7 @@ defaults:
   run:
     working-directory: packages/js/passkeys-next-auth-provider
 
+jobs:
   build-and-publish:
     needs: check-matching-versions
     runs-on: ubuntu-latest
