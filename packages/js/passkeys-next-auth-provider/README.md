@@ -38,7 +38,7 @@ export default NextAuth({
 In one of your components:
 
 ```jsx
-import { signInWithPasskey } from "@teamhanko/passkeys-next-auth-provider";
+import { signInWithPasskey } from "@teamhanko/passkeys-next-auth-provider/client";
 
 export default LoginButton() {
 	return (
