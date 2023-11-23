@@ -16,8 +16,8 @@
 	},
 	"dependencies": {
 		"@github/webauthn-json": "^2.1.1",
-		"jose": "^5.1.1",
-		"@teamhanko/passkeys-sdk": "^0.1.0"
+		"@teamhanko/passkeys-sdk": "^0.1.0",
+		"jose": "^5.1.1"
 	},
 	"peerDependencies": {
 		"next-auth": "^4.0.0"
