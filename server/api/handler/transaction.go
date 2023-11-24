@@ -82,10 +82,6 @@ func (t *transactionHandler) Init(ctx echo.Context) error {
 
 		// workaround: go-webauthn changes only the assertion challenge when giving LoginOptions
 		sessionData.Challenge = assertion.Response.Challenge.String()
-
-		ctx.Logger().Printf("SessionData Challenge: %s", sessionData.Challenge)
-		ctx.Logger().Printf("Assertion Challenge: %s", assertion.Response.Challenge)
-
 		transactionModel.Challenge = sessionData.Challenge
 		transactionModel.WebauthnUserID = webauthnUser.ID
 		transactionModel.TenantID = h.Tenant.ID
@@ -145,8 +141,6 @@ func (t *transactionHandler) Finish(ctx echo.Context) error {
 	}
 
 	return t.persister.Transaction(func(tx *pop.Connection) error {
-		ctx.Logger().Printf("Response Challenge: %s", parsedRequest.Response.CollectedClientData.Challenge)
-
 		challenge := parsedRequest.Response.CollectedClientData.Challenge
 
 		sessionDataPersister := t.persister.GetWebauthnSessionDataPersister(tx)
