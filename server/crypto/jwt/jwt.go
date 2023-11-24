@@ -14,8 +14,13 @@ import (
 type Generator interface {
 	Sign(jwt.Token) ([]byte, error)
 	Verify([]byte) (jwt.Token, error)
-	Generate(userId string, crendetialId string) (string, error)
+	Generate(userId string, credentialId string) (string, error)
+	GenerateForTransaction(userId string, credentialId string, transactionIdentifier string) (string, error)
 }
+
+const (
+	JwtExpirationDuration = 300 // 5 Min from Creation to Expire
+)
 
 // Generator is used to sign and verify JWTs
 type generator struct {
@@ -66,19 +71,37 @@ func (g *generator) Verify(signed []byte) (jwt.Token, error) {
 	return token, nil
 }
 
-func (g *generator) Generate(userId string, credentialId string) (string, error) {
+func (g *generator) generateDefaultToken(userId string, credentialId string) jwt.Token {
 	issuedAt := time.Now()
+	expiresAt := issuedAt.Add(time.Second * JwtExpirationDuration)
 
 	token := jwt.New()
 	_ = token.Set(jwt.SubjectKey, userId)
 	_ = token.Set(jwt.IssuedAtKey, issuedAt)
+	_ = token.Set(jwt.ExpirationKey, expiresAt)
 	_ = token.Set(jwt.AudienceKey, []string{g.config.RelyingParty.RPId})
 	_ = token.Set("cred", credentialId)
 
+	return token
+}
+
+func (g *generator) signToken(token jwt.Token) (string, error) {
 	signed, err := g.Sign(token)
 	if err != nil {
 		return "", err
 	}
 
 	return string(signed), nil
+}
+
+func (g *generator) Generate(userId string, credentialId string) (string, error) {
+	token := g.generateDefaultToken(userId, credentialId)
+	return g.signToken(token)
+}
+
+func (g *generator) GenerateForTransaction(userId string, credentialId string, transactionIdentifier string) (string, error) {
+	token := g.generateDefaultToken(userId, credentialId)
+	_ = token.Set("trans", transactionIdentifier)
+
+	return g.signToken(token)
 }

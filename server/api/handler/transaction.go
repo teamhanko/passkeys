@@ -235,7 +235,7 @@ func (t *transactionHandler) Finish(ctx echo.Context) error {
 		}
 
 		generator := ctx.Get("jwt_generator").(jwt.Generator)
-		token, err := generator.Generate(webauthnUser.UserId, base64.RawURLEncoding.EncodeToString(credential.ID))
+		token, err := generator.GenerateForTransaction(webauthnUser.UserId, base64.RawURLEncoding.EncodeToString(credential.ID), transaction.Identifier)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return fmt.Errorf("failed to generate jwt: %w", err)
