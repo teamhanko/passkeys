@@ -19,6 +19,7 @@ type Tenant struct {
 	Jwks          Jwks                  `json:"jwks,omitempty" has_many:"jwks"`
 	SessionData   []WebauthnSessionData `has_many:"webauthn_session_data"`
 	WebauthnUsers WebauthnUsers         `json:"webauthn_users,omitempty" has_many:"webauthn_users"`
+	Transactions  Transactions          `json:"transactions,omitempty" has_many:"transactions"`
 
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`

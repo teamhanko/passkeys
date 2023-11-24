@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/persistence"
@@ -23,7 +24,17 @@ func newWebAuthnHandler(persister persistence.Persister) *webauthnHandler {
 	}
 }
 
-func BindAndValidateRequest[I request.CredentialRequest | request.InitRegistrationDto](ctx echo.Context) (*I, error) {
+func (w *webauthnHandler) convertUserHandle(userHandle []byte) string {
+	userId := string(userHandle)
+	userUuid, err := uuid.FromBytes(userHandle)
+	if err == nil {
+		userId = userUuid.String()
+	}
+
+	return userId
+}
+
+func BindAndValidateRequest[I request.CredentialRequests | request.WebauthnRequests](ctx echo.Context) (*I, error) {
 	var requestDto I
 	err := ctx.Bind(&requestDto)
 	if err != nil {

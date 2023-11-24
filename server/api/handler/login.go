@@ -39,48 +39,50 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 		return err
 	}
 
-	options, sessionData, err := h.Webauthn.BeginDiscoverableLogin(
-		webauthn.WithUserVerification(h.Config.WebauthnConfig.UserVerification),
-	)
-	if err != nil {
-		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitFailed, nil, err)
-		if auditErr != nil {
-			ctx.Logger().Error(auditErr)
-			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-		}
-
-		ctx.Logger().Error(err)
-		return echo.NewHTTPError(
-			http.StatusBadRequest,
-			fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err),
+	return lh.persister.GetConnection().Transaction(func(tx *pop.Connection) error {
+		options, sessionData, err := h.Webauthn.BeginDiscoverableLogin(
+			webauthn.WithUserVerification(h.Config.WebauthnConfig.UserVerification),
 		)
-	}
+		if err != nil {
+			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitFailed, nil, nil, err)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
 
-	err = lh.persister.GetWebauthnSessionDataPersister(nil).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationAuthentication))
-	if err != nil {
-		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitFailed, nil, err)
+			ctx.Logger().Error(err)
+			return echo.NewHTTPError(
+				http.StatusBadRequest,
+				fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err),
+			)
+		}
+
+		err = lh.persister.GetWebauthnSessionDataPersister(tx).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationAuthentication))
+		if err != nil {
+			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitFailed, nil, nil, err)
+			if auditErr != nil {
+				ctx.Logger().Error(auditErr)
+				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
+			}
+
+			ctx.Logger().Error(err)
+			return fmt.Errorf("failed to store webauthn assertion session data: %w", err)
+		}
+
+		// Remove all transports, because of a bug in android and windows where the internal authenticator gets triggered,
+		// when the transports array contains the type 'internal' although the credential is not available on the device.
+		for i := range options.Response.AllowedCredentials {
+			options.Response.AllowedCredentials[i].Transport = nil
+		}
+
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitSucceeded, nil, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
 		}
 
-		ctx.Logger().Error(err)
-		return fmt.Errorf("failed to store webauthn assertion session data: %w", err)
-	}
-
-	// Remove all transports, because of a bug in android and windows where the internal authenticator gets triggered,
-	// when the transports array contains the type 'internal' although the credential is not available on the device.
-	for i := range options.Response.AllowedCredentials {
-		options.Response.AllowedCredentials[i].Transport = nil
-	}
-
-	auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationInitSucceeded, nil, nil)
-	if auditErr != nil {
-		ctx.Logger().Error(auditErr)
-		return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-	}
-
-	return ctx.JSON(http.StatusOK, options)
+		return ctx.JSON(http.StatusOK, options)
+	})
 }
 
 func (lh *loginHandler) Finish(ctx echo.Context) error {
@@ -101,9 +103,13 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 		webauthnUserPersister := lh.persister.GetWebauthnUserPersister(tx)
 		credentialPersister := lh.persister.GetWebauthnCredentialPersister(tx)
 
+		// backward compatibility
+		userHandle := lh.convertUserHandle(parsedRequest.Response.UserHandle)
+		parsedRequest.Response.UserHandle = []byte(userHandle)
+
 		sessionData, err := lh.getSessionDataByChallenge(parsedRequest.Response.CollectedClientData.Challenge, sessionDataPersister, h.Tenant.ID)
 		if err != nil {
-			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, nil, err)
+			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationFinalFailed, nil, nil, err)
 			if auditErr != nil {
 				ctx.Logger().Error(auditErr)
 				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -114,28 +120,24 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 		}
 		sessionDataModel := intern.WebauthnSessionDataFromModel(sessionData)
 
-		webauthnUser, err := lh.getWebauthnUserByUserHandle(parsedRequest.Response.UserHandle, h.Tenant.ID, webauthnUserPersister)
+		webauthnUser, err := lh.getWebauthnUserByUserHandle(userHandle, h.Tenant.ID, webauthnUserPersister)
 		if err != nil {
-			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
+			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, nil, err)
 			if auditErr != nil {
 				ctx.Logger().Error(auditErr)
 				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
 			}
 
 			ctx.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
+			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle")
 		}
-
-		// backward compatibility
-		userId := lh.convertUserHandle(parsedRequest.Response.UserHandle)
-		parsedRequest.Response.UserHandle = []byte(userId)
 
 		credential, err := h.Webauthn.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
 			return webauthnUser, nil
 		}, *sessionDataModel, parsedRequest)
 
 		if err != nil {
-			auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
+			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, nil, err)
 			if auditErr != nil {
 				ctx.Logger().Error(auditErr)
 				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -155,7 +157,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			dbCred.LastUsedAt = &now
 			err = credentialPersister.Update(dbCred)
 			if err != nil {
-				auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, err)
+				auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationFinalFailed, &webauthnUser.UserId, nil, err)
 				if auditErr != nil {
 					ctx.Logger().Error(auditErr)
 					return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -179,7 +181,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			return fmt.Errorf("failed to generate jwt: %w", err)
 		}
 
-		auditErr := h.AuditLog.Create(ctx, h.Tenant, models.AuditLogWebAuthnAuthenticationFinalSucceeded, &webauthnUser.UserId, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationFinalSucceeded, &webauthnUser.UserId, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -206,10 +208,8 @@ func (lh *loginHandler) getSessionDataByChallenge(challenge string, persister pe
 	return sessionData, nil
 }
 
-func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle []byte, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
-	userId := lh.convertUserHandle(userHandle)
-
-	user, err := persister.GetByUserId(userId, tenantId)
+func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle string, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
+	user, err := persister.GetByUserId(userHandle, tenantId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -219,14 +219,4 @@ func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle []byte, tenantId 
 	}
 
 	return intern.NewWebauthnUser(*user), nil
-}
-
-func (lh *loginHandler) convertUserHandle(userHandle []byte) string {
-	userId := string(userHandle)
-	userUuid, err := uuid.FromBytes(userHandle)
-	if err == nil {
-		userId = userUuid.String()
-	}
-
-	return userId
 }

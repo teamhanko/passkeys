@@ -2,6 +2,7 @@ package persisters
 
 import (
 	"fmt"
+
 	"github.com/gobuffalo/pop/v6"
 	"github.com/teamhanko/passkey-server/persistence/models"
 )

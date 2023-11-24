@@ -91,7 +91,7 @@ func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
 			ctx.Logger().Error(err)
 			return err
 		}
-		err := h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnCredentialUpdated, &credential.UserId, nil)
+		err := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnCredentialUpdated, &credential.UserId, nil, nil)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err
@@ -132,7 +132,7 @@ func (credHandler *credentialsHandler) Delete(ctx echo.Context) error {
 			return err
 		}
 
-		err = h.AuditLog.CreateWithConnection(tx, ctx, h.Tenant, models.AuditLogWebAuthnCredentialDeleted, nil, nil)
+		err = h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnCredentialDeleted, nil, nil, nil)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err

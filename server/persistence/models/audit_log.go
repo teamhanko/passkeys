@@ -18,6 +18,7 @@ type AuditLog struct {
 	UpdatedAt         time.Time    `db:"updated_at" json:"updated_at"`
 	Tenant            *Tenant      `json:"-" belongs_to:"tenants"`
 	TenantID          uuid.UUID    `json:"tenant_id" db:"tenant_id"`
+	TransactionId     *string      `json:"transaction_id" db:"transaction_id"`
 }
 
 type AuditLogs []AuditLog
@@ -37,4 +38,10 @@ var (
 
 	AuditLogWebAuthnCredentialUpdated AuditLogType = "webauthn_credential_updated"
 	AuditLogWebAuthnCredentialDeleted AuditLogType = "webauthn_credential_deleted"
+
+	AuditLogWebAuthnTransactionInitFailed    AuditLogType = "webauthn_transaction_init_failed"
+	AuditLogWebAuthnTransactionInitSucceeded AuditLogType = "webauthn_transaction_init_succeeded"
+
+	AuditLogWebAuthnTransactionFinalFailed    AuditLogType = "webauthn_transaction_final_failed"
+	AuditLogWebAuthnTransactionFinalSucceeded AuditLogType = "webauthn_transaction_final_succeeded"
 )
