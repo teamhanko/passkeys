@@ -3,7 +3,7 @@
 	"license": "MIT",
 	"private": false,
 	"type": "module",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"module": "src/index.ts",
 	"main": "dist/src/index.js",
 	"types": "dist/src/index.d.ts",
@@ -18,7 +18,7 @@
 		"typescript": "^5.0.0"
 	},
 	"dependencies": {
-		"@teamhanko/passkeys-sdk": "^0.1.7",
+		"@teamhanko/passkeys-sdk": "^0.1.8",
 		"@github/webauthn-json": "^2.1.1",
 		"jose": "^5.1.1"
 	},
