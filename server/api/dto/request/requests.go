@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gofrs/uuid"
 	"github.com/teamhanko/passkey-server/persistence/models"
+	"strings"
 	"time"
 )
 
@@ -35,7 +36,7 @@ type WebauthnRequests interface {
 type InitRegistrationDto struct {
 	UserId      string  `json:"user_id" validate:"required"`
 	Username    string  `json:"username" validate:"required,max=128"`
-	DisplayName *string `json:"display_name,max=128"`
+	DisplayName *string `json:"display_name" validate:"omitempty,max=128"`
 	Icon        *string `json:"icon"`
 }
 
@@ -46,7 +47,7 @@ func (initRegistration *InitRegistrationDto) ToModel() *models.WebauthnUser {
 	}
 
 	displayName := initRegistration.Username
-	if initRegistration.DisplayName != nil {
+	if initRegistration.DisplayName != nil && len(strings.TrimSpace(*initRegistration.DisplayName)) > 0 {
 		displayName = *initRegistration.DisplayName
 	}
 
@@ -67,7 +68,7 @@ func (initRegistration *InitRegistrationDto) ToModel() *models.WebauthnUser {
 
 type InitTransactionDto struct {
 	UserId          string      `json:"user_id" validate:"required"`
-	TransactionId   string      `json:"transaction_id" validate:"required"`
+	TransactionId   string      `json:"transaction_id" validate:"required,max=128"`
 	TransactionData interface{} `json:"transaction_data" validate:"required"`
 }
 

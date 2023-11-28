@@ -129,7 +129,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			}
 
 			ctx.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle")
+			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
 		}
 
 		credential, err := h.Webauthn.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
@@ -206,17 +206,4 @@ func (lh *loginHandler) getSessionDataByChallenge(challenge string, persister pe
 	}
 
 	return sessionData, nil
-}
-
-func (lh *loginHandler) getWebauthnUserByUserHandle(userHandle string, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
-	user, err := persister.GetByUserId(userHandle, tenantId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-
-	if user == nil {
-		return nil, fmt.Errorf("user not found")
-	}
-
-	return intern.NewWebauthnUser(*user), nil
 }

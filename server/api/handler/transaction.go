@@ -98,7 +98,7 @@ func (t *transactionHandler) Init(ctx echo.Context) error {
 			return fmt.Errorf("failed to store webauthn transaction data: %w", err)
 		}
 
-		err = t.persister.GetWebauthnSessionDataPersister(tx).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationAuthentication))
+		err = t.persister.GetWebauthnSessionDataPersister(tx).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationTransaction))
 		if err != nil {
 			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitFailed, &webauthnUser.UserID, transactionModel, err)
 			if auditErr != nil {
@@ -276,7 +276,7 @@ func (t *transactionHandler) getSessionDataByChallenge(challenge string, persist
 		return nil, fmt.Errorf("failed to get webauthn assertion session data: %w", err)
 	}
 
-	if sessionData != nil && sessionData.Operation != models.WebauthnOperationAuthentication {
+	if sessionData != nil && sessionData.Operation != models.WebauthnOperationTransaction {
 		sessionData = nil
 	}
 
@@ -285,17 +285,4 @@ func (t *transactionHandler) getSessionDataByChallenge(challenge string, persist
 	}
 
 	return sessionData, nil
-}
-
-func (t *transactionHandler) getWebauthnUserByUserHandle(userHandle string, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
-	user, err := persister.GetByUserId(userHandle, tenantId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-
-	if user == nil {
-		return nil, fmt.Errorf("user not found")
-	}
-
-	return intern.NewWebauthnUser(*user), nil
 }

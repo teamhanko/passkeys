@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/persistence"
+	"github.com/teamhanko/passkey-server/persistence/persisters"
 	"net/http"
 )
 
@@ -22,6 +24,19 @@ func newWebAuthnHandler(persister persistence.Persister) *webauthnHandler {
 	return &webauthnHandler{
 		persister: persister,
 	}
+}
+
+func (w *webauthnHandler) getWebauthnUserByUserHandle(userHandle string, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
+	user, err := persister.GetByUserId(userHandle, tenantId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	return intern.NewWebauthnUser(*user), nil
 }
 
 func (w *webauthnHandler) convertUserHandle(userHandle []byte) string {
