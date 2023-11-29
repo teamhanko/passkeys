@@ -1,0 +1,16 @@
+create_table("transactions") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("identifier", "string", {})
+	t.Column("data", "text", {})
+	t.Column("challenge", "string", {})
+
+	t.Column("webauthn_user_id", "uuid", {})
+	t.ForeignKey("webauthn_user_id", {"webauthn_users": ["id"]}, {"on_delete": "CASCADE", "on_update": "CASCADE"})
+
+	t.Column("tenant_id", "uuid", {})
+	t.ForeignKey("tenant_id", { "tenants": ["id"]}, { "on_delete": "CASCADE", "on_update": "CASCADE" })
+
+    t.Index(["identifier", "tenant_id"], { "unique": true })
+
+	t.Timestamps()
+}

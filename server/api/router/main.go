@@ -11,6 +11,11 @@ import (
 	"github.com/teamhanko/passkey-server/persistence"
 )
 
+const (
+	InitEndpoint   = "/initialize"
+	FinishEndpoint = "/finalize"
+)
+
 func NewMainRouter(cfg *config.Config, persister persistence.Persister) *echo.Echo {
 	main := echo.New()
 	main.Renderer = template.NewTemplateRenderer()
@@ -42,6 +47,7 @@ func NewMainRouter(cfg *config.Config, persister persistence.Persister) *echo.Ec
 	RouteCredentials(tenantGroup, persister)
 	RouteRegistration(tenantGroup, persister)
 	RouteLogin(tenantGroup, persister)
+	RouteTransaction(tenantGroup, persister)
 
 	return main
 }
@@ -76,14 +82,22 @@ func RouteRegistration(parent *echo.Group, persister persistence.Persister) {
 	registrationHandler := handler.NewRegistrationHandler(persister)
 
 	group := parent.Group("/registration", passkeyMiddleware.WebauthnMiddleware())
-	group.POST("/initialize", registrationHandler.Init, passkeyMiddleware.ApiKeyMiddleware())
-	group.POST("/finalize", registrationHandler.Finish)
+	group.POST(InitEndpoint, registrationHandler.Init, passkeyMiddleware.ApiKeyMiddleware())
+	group.POST(FinishEndpoint, registrationHandler.Finish)
 }
 
 func RouteLogin(parent *echo.Group, persister persistence.Persister) {
 	loginHandler := handler.NewLoginHandler(persister)
 
 	group := parent.Group("/login", passkeyMiddleware.WebauthnMiddleware())
-	group.POST("/initialize", loginHandler.Init)
-	group.POST("/finalize", loginHandler.Finish)
+	group.POST(InitEndpoint, loginHandler.Init)
+	group.POST(FinishEndpoint, loginHandler.Finish)
+}
+
+func RouteTransaction(parent *echo.Group, persister persistence.Persister) {
+	transactionHandler := handler.NewTransactionHandler(persister)
+
+	group := parent.Group("/transaction", passkeyMiddleware.WebauthnMiddleware(), passkeyMiddleware.ApiKeyMiddleware())
+	group.POST(InitEndpoint, transactionHandler.Init)
+	group.POST(FinishEndpoint, transactionHandler.Finish)
 }

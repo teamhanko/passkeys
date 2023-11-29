@@ -1,6 +1,14 @@
 package request
 
-type CredentialRequest interface {
+import (
+	"encoding/json"
+	"github.com/gofrs/uuid"
+	"github.com/teamhanko/passkey-server/persistence/models"
+	"strings"
+	"time"
+)
+
+type CredentialRequests interface {
 	ListCredentialsDto | DeleteCredentialsDto | UpdateCredentialsDto
 }
 
@@ -21,9 +29,65 @@ type UpdateCredentialsDto struct {
 	Name         string `json:"name" validate:"required"`
 }
 
+type WebauthnRequests interface {
+	InitRegistrationDto | InitTransactionDto
+}
+
 type InitRegistrationDto struct {
 	UserId      string  `json:"user_id" validate:"required"`
 	Username    string  `json:"username" validate:"required,max=128"`
-	DisplayName *string `json:"display_name,max=128"`
+	DisplayName *string `json:"display_name" validate:"omitempty,max=128"`
 	Icon        *string `json:"icon"`
+}
+
+func (initRegistration *InitRegistrationDto) ToModel() *models.WebauthnUser {
+	icon := ""
+	if initRegistration.Icon != nil {
+		icon = *initRegistration.Icon
+	}
+
+	displayName := initRegistration.Username
+	if initRegistration.DisplayName != nil && len(strings.TrimSpace(*initRegistration.DisplayName)) > 0 {
+		displayName = *initRegistration.DisplayName
+	}
+
+	webauthnId, _ := uuid.NewV4()
+
+	now := time.Now()
+
+	return &models.WebauthnUser{
+		ID:          webauthnId,
+		UserID:      initRegistration.UserId,
+		Name:        initRegistration.Username,
+		Icon:        icon,
+		DisplayName: displayName,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+}
+
+type InitTransactionDto struct {
+	UserId          string      `json:"user_id" validate:"required"`
+	TransactionId   string      `json:"transaction_id" validate:"required,max=128"`
+	TransactionData interface{} `json:"transaction_data" validate:"required"`
+}
+
+func (initTransaction *InitTransactionDto) ToModel() (*models.Transaction, error) {
+	transactionUuid, _ := uuid.NewV4()
+
+	byteArray, err := json.Marshal(initTransaction.TransactionData)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+
+	return &models.Transaction{
+		ID:         transactionUuid,
+		Identifier: initTransaction.TransactionId,
+		Data:       string(byteArray),
+
+		CreatedAt: now,
+		UpdatedAt: now,
+	}, nil
 }

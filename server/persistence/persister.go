@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"embed"
+
 	"github.com/gobuffalo/pop/v6"
 	"github.com/teamhanko/passkey-server/config"
 	"github.com/teamhanko/passkey-server/persistence/persisters"
@@ -29,6 +30,7 @@ type Persister interface {
 	GetWebauthnRelyingPartyPersister(tx *pop.Connection) persisters.WebauthnRelyingPartyPersister
 	GetCorsPersister(tx *pop.Connection) persisters.CorsPersister
 	GetAuditLogConfigPersister(tx *pop.Connection) persisters.AuditLogConfigPersister
+	GetTransactionPersister(tx *pop.Connection) persisters.TransactionPersister
 }
 
 type Migrator interface {
@@ -200,4 +202,12 @@ func (p *persister) GetAuditLogConfigPersister(tx *pop.Connection) persisters.Au
 	}
 
 	return persisters.NewAuditLogConfigPersister(tx)
+}
+
+func (p *persister) GetTransactionPersister(tx *pop.Connection) persisters.TransactionPersister {
+	if tx == nil {
+		return persisters.NewTransactionPersister(p.Database)
+	}
+
+	return persisters.NewTransactionPersister(tx)
 }

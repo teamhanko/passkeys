@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/gobuffalo/validate/v3/validators"
-	"github.com/teamhanko/passkey-server/api/dto/request"
 
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
@@ -24,6 +23,7 @@ type WebauthnUser struct {
 	TenantID    uuid.UUID `json:"tenant_id" db:"tenant_id"`
 
 	WebauthnCredentials WebauthnCredentials `json:"webauthn_credentials,omitempty" has_many:"webauthn_credentials"`
+	Transactions        Transactions        `json:"transactions,omitempty" has_many:"transactions"`
 }
 
 type WebauthnUsers []WebauthnUser
@@ -55,33 +55,4 @@ func (webauthnUser *WebauthnUser) Validate(tx *pop.Connection) (*validate.Errors
 		&validators.TimeIsPresent{Name: "UpdatedAt", Field: webauthnUser.UpdatedAt},
 		&validators.TimeIsPresent{Name: "CreatedAt", Field: webauthnUser.CreatedAt},
 	), nil
-}
-
-func FromRegistrationDto(dto *request.InitRegistrationDto) (*WebauthnUser, error) {
-	icon := ""
-	if dto.Icon != nil {
-		icon = *dto.Icon
-	}
-
-	displayName := dto.Username
-	if dto.DisplayName != nil {
-		displayName = *dto.DisplayName
-	}
-
-	webauthnId, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
-
-	now := time.Now()
-
-	return &WebauthnUser{
-		ID:          webauthnId,
-		UserID:      dto.UserId,
-		Name:        dto.Username,
-		Icon:        icon,
-		DisplayName: displayName,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}, nil
 }

@@ -15,6 +15,7 @@ type Operation string
 var (
 	WebauthnOperationRegistration   Operation = "registration"
 	WebauthnOperationAuthentication Operation = "authentication"
+	WebauthnOperationTransaction    Operation = "transaction"
 )
 
 // WebauthnSessionData is used by pop to map your webauthn_session_data database table to your go code.

@@ -242,6 +242,62 @@ paths:
               default: localhost
             path_prefix:
               default: ''
+  '/{tenant_id}/transaction/initialize':
+    post:
+      summary: Initialize a transaction
+      description: Initializes a new transaction for an existing user
+      operationId: post-tenant_id-transaction-initialize
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - $ref: '#/components/parameters/tenant_id'
+      requestBody:
+        $ref: '#/components/requestBodies/post-transaction-initialize'
+      responses:
+        '200':
+          $ref: '#/components/responses/post-login-initialize'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      servers:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+  '/{tenant_id}/transaction/finalize':
+    post:
+      summary: Finalize transaction
+      description: Finalize a transaction
+      operationId: post-tenant_id-transaction-finalize
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - $ref: '#/components/parameters/tenant_id'
+      requestBody:
+        $ref: '#/components/requestBodies/post-login-finalize'
+      responses:
+        '200':
+          $ref: '#/components/responses/token'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      servers:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
 tags:
   - name: credentials
     description: Represents all objects which are related to WebAuthn credentials
@@ -310,6 +366,7 @@ components:
                 type: string
               username:
                 type: string
+                maxLength: 128
               icon:
                 type:
                   - string
@@ -318,6 +375,7 @@ components:
                 type:
                   - string
                   - 'null'
+                maxLength: 128
             required:
               - user_id
               - username
@@ -352,6 +410,23 @@ components:
                     $ref: '#/components/schemas/autenticator-assertion-response'
                 required:
                   - response
+    post-transaction-initialize:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: string
+              transaction_id:
+                type: string
+                maxLength: 128
+              transaction_data:
+                type: object
+            required:
+              - user_id
+              - transaction_id
+              - transaction_data
   responses:
     get-credentials:
       description: Example response
