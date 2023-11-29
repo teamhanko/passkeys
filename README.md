@@ -1,4 +1,4 @@
-This monorepo contains a complete solution for adding passkey support to your existing app and auth system.
+This monorepo contains all required infrastructure for adding passkey support to apps with an existing auth system and user base.
 
 It features:
 
