@@ -8,7 +8,7 @@ import (
 
 type CreateCorsDto struct {
 	AllowedOrigins      []string `json:"allowed_origins" validate:"required,min=1"`
-	AllowUnsafeWildcard bool     `json:"allow_unsafe_wildcard" validate:"required,boolean"`
+	AllowUnsafeWildcard *bool    `json:"allow_unsafe_wildcard" validate:"required,boolean"`
 }
 
 func (dto *CreateCorsDto) ToModel(config models.Config) models.Cors {
@@ -32,7 +32,7 @@ func (dto *CreateCorsDto) ToModel(config models.Config) models.Cors {
 	cors := models.Cors{
 		ID:          corsId,
 		ConfigID:    config.ID,
-		AllowUnsafe: dto.AllowUnsafeWildcard,
+		AllowUnsafe: *dto.AllowUnsafeWildcard,
 		Origins:     origins,
 		CreatedAt:   now,
 		UpdatedAt:   now,
