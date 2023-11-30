@@ -1,5 +1,13 @@
 {
+	"name": "@teamhanko/passkeys-next-auth-provider",
+	"license": "MIT",
+	"private": false,
 	"type": "module",
+	"version": "0.1.8",
+	"exports": {
+		".": "./index.js",
+		"./client": "./client.js"
+	},
 	"scripts": {
 		"build": "tsc"
 	},
@@ -7,7 +15,7 @@
 		"typescript": "^5.0.0"
 	},
 	"dependencies": {
-		"@teamhanko/passkeys-sdk": "^0.1.8",
+		"@teamhanko/passkeys-sdk": "^0.1.7",
 		"@github/webauthn-json": "^2.1.1",
 		"jose": "^5.1.1"
 	},

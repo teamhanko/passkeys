@@ -14,5 +14,5 @@
 		"allowJs": true,
 		"outDir": "dist"
 	},
-	"include": ["src/**/*"]
+	"include": ["client.ts", "index.ts"]
 }
