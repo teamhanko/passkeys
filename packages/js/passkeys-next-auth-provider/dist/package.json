@@ -1,5 +1,13 @@
 {
+	"name": "@teamhanko/passkeys-next-auth-provider",
+	"license": "MIT",
+	"private": false,
 	"type": "module",
+	"version": "0.1.8",
+	"exports": {
+		".": "./index.js",
+		"./client": "./client.js"
+	},
 	"scripts": {
 		"build": "tsc"
 	},

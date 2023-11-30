@@ -22,6 +22,6 @@ jobs:
       - run: bun i
       - run: bun run build
       - name: publish passkeys-next-auth-provider
-        run: npm publish --access=public
+        run: cd ./dist && npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISHING_SECRET }}
