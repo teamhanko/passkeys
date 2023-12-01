@@ -4,12 +4,18 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/teamhanko/passkey-server/persistence/models"
+	"net/http"
 )
 
 func CORSWithTenant() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			corsConfig := c.Get("tenant").(*models.Tenant).Config.Cors
+			tenant := c.Get("tenant").(*models.Tenant)
+			if tenant == nil {
+				return echo.NewHTTPError(http.StatusNotFound, "tenant for api key not found")
+			}
+
+			corsConfig := tenant.Config.Cors
 
 			var origins []string
 			for _, origin := range corsConfig.Origins {

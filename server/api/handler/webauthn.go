@@ -1,12 +1,16 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
+	"github.com/gobuffalo/pop/v6"
 	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/request"
+	auditlog "github.com/teamhanko/passkey-server/audit_log"
 	"github.com/teamhanko/passkey-server/persistence"
+	"github.com/teamhanko/passkey-server/persistence/models"
 	"github.com/teamhanko/passkey-server/persistence/persisters"
 	"net/http"
 )
@@ -24,6 +28,25 @@ func newWebAuthnHandler(persister persistence.Persister) *webauthnHandler {
 	return &webauthnHandler{
 		persister: persister,
 	}
+}
+
+func (w *webauthnHandler) handleError(logger auditlog.Logger, logType models.AuditLogType, tx *pop.Connection, ctx echo.Context, userId *string, transaction *models.Transaction, logError error) error {
+	if logError != nil {
+		auditErr := logger.CreateWithConnection(tx, logType, userId, transaction, logError)
+		if auditErr != nil {
+			ctx.Logger().Error(auditErr)
+			return auditErr
+		}
+
+		var httpError *echo.HTTPError
+		if errors.As(logError, &httpError) {
+			return logError
+		}
+
+		return errors.New("unable to process request")
+	}
+
+	return nil
 }
 
 func (w *webauthnHandler) getWebauthnUserByUserHandle(userHandle string, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
@@ -54,13 +77,13 @@ func BindAndValidateRequest[I request.CredentialRequests | request.WebauthnReque
 	err := ctx.Bind(&requestDto)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("unable to process request: %w", err))
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "unable to process request").SetInternal(err)
 	}
 
 	err = ctx.Validate(&requestDto)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("unable to validate request: %w", err))
+		return nil, echo.NewHTTPError(http.StatusBadRequest, "unable to validate request").SetInternal(err)
 	}
 
 	return &requestDto, nil

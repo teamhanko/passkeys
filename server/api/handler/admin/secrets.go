@@ -1,14 +1,11 @@
 package admin
 
 import (
-	"fmt"
-	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
 	adminRequest "github.com/teamhanko/passkey-server/api/dto/admin/request"
-	"github.com/teamhanko/passkey-server/api/dto/admin/response"
 	"github.com/teamhanko/passkey-server/api/helper"
+	"github.com/teamhanko/passkey-server/api/services/admin"
 	"github.com/teamhanko/passkey-server/persistence"
-	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
 )
 
@@ -21,37 +18,14 @@ func (s *SecretsHandler) ListAPIKeys(ctx echo.Context) error {
 }
 
 func (s *SecretsHandler) listKeys(ctx echo.Context, isApiKey bool) error {
-	var dto adminRequest.GetTenantDto
-	err := ctx.Bind(&dto)
-	if err != nil {
-		ctx.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusBadRequest, "unable to list keys").SetInternal(err)
-	}
-
-	err = ctx.Validate(&dto)
-	if err != nil {
-		ctx.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusBadRequest, "unable to list keys").SetInternal(err)
-	}
-
-	tenant, err := s.findTenantByIdString(dto.TenantId)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
-	secrets := make([]response.SecretResponseDto, 0)
-	for _, secret := range tenant.Config.Secrets {
-		if secret.IsAPISecret == isApiKey {
-			secrets = append(secrets, response.ToSecretResponse(&secret))
-		}
-	}
-
-	return ctx.JSON(http.StatusOK, secrets)
-}
-
-func (s *SecretsHandler) findTenantByIdString(id string) (*models.Tenant, error) {
-	return helper.FindTenantByIdString(id, s.persister.GetTenantPersister(nil))
+	service := admin.NewSecretService(ctx, *h.Tenant, nil)
+	return ctx.JSON(http.StatusOK, service.List(isApiKey))
 }
 
 func (s *SecretsHandler) CreateAPIKey(ctx echo.Context) error {
@@ -72,25 +46,19 @@ func (s *SecretsHandler) createKey(ctx echo.Context, isApiKey bool) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to create key").SetInternal(err)
 	}
 
-	tenant, err := s.findTenantByIdString(dto.TenantId)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
-	secret, err := dto.ToModel(&tenant.Config, isApiKey)
+	service := admin.NewSecretService(ctx, *h.Tenant, s.persister.GetSecretsPersister(nil))
+	secretDto, err := service.Create(dto, isApiKey)
 	if err != nil {
-		ctx.Logger().Error(err)
 		return err
 	}
 
-	err = s.persister.GetSecretsPersister(nil).Create(secret)
-	if err != nil {
-		ctx.Logger().Error(err)
-		return err
-	}
-
-	return ctx.JSON(http.StatusCreated, response.ToSecretResponse(secret))
+	return ctx.JSON(http.StatusCreated, secretDto)
 }
 
 func (s *SecretsHandler) RemoveAPIKey(ctx echo.Context) error {
@@ -111,33 +79,15 @@ func (s *SecretsHandler) removeKey(ctx echo.Context, isApiKey bool) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to remove key").SetInternal(err)
 	}
 
-	tenant, err := s.findTenantByIdString(dto.TenantId)
+	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
-	secretId, err := uuid.FromString(dto.SecretId)
+	service := admin.NewSecretService(ctx, *h.Tenant, s.persister.GetSecretsPersister(nil))
+	err = service.Remove(dto, isApiKey)
 	if err != nil {
-		ctx.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse key id").SetInternal(err)
-	}
-
-	var foundSecret *models.Secret
-	for _, secret := range tenant.Config.Secrets {
-		if secret.ID == secretId && secret.IsAPISecret == isApiKey {
-			s := secret
-			foundSecret = &s
-		}
-	}
-
-	if foundSecret == nil {
-		return echo.NewHTTPError(http.StatusNotFound, fmt.Errorf("secret with ID '%s' not found", dto.SecretId))
-	}
-
-	err = s.persister.GetSecretsPersister(nil).Delete(foundSecret)
-	if err != nil {
-		ctx.Logger().Error(err)
 		return err
 	}
 

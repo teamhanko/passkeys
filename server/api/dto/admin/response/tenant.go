@@ -10,6 +10,8 @@ type ListTenantResponse struct {
 	DisplayName string    `json:"display_name"`
 }
 
+type ListTenantResponses = []ListTenantResponse
+
 func ToListTenantResponse(tenant *models.Tenant) ListTenantResponse {
 	return ListTenantResponse{
 		Id:          tenant.ID,

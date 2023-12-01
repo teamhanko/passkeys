@@ -8,19 +8,9 @@ import (
 )
 
 type HttpError struct {
-	Title      *string            `json:"title,omitempty"`
-	Details    *string            `json:"details,omitempty"`
-	Status     *int               `json:"status,omitempty"`
-	Additional *map[string]string `json:"additional,omitempty"`
-}
-
-func NewHttpError(title string, details string, status int, additional *map[string]string) *HttpError {
-	return &HttpError{
-		Title:      &title,
-		Details:    &details,
-		Status:     &status,
-		Additional: additional,
-	}
+	Title   *string `json:"title,omitempty"`
+	Details *string `json:"details,omitempty"`
+	Status  *int    `json:"status,omitempty"`
 }
 
 func ToHttpError(err error) *HttpError {
@@ -30,22 +20,26 @@ func ToHttpError(err error) *HttpError {
 	switch {
 	case errors.As(err, &e):
 		errorMessage = fmt.Sprintf("%v", e.Message)
-		var additional *map[string]string
-		internalErrors := make(map[string]string)
+		var errorDetails string
 		if e.Internal != nil {
-			internalErrors["internal"] = fmt.Sprintf("%v", e.Internal)
-			additional = &internalErrors
+			var ie *echo.HTTPError
+			if errors.As(e.Internal, &ie) {
+				errorDetails = fmt.Sprintf("%v", ie.Message)
+			} else {
+				errorDetails = fmt.Sprintf("%v", e.Internal.Error())
+			}
+
 		}
 
 		return &HttpError{
-			Title:      &errorMessage,
-			Details:    nil,
-			Status:     &e.Code,
-			Additional: additional,
+			Title:   &errorMessage,
+			Details: &errorDetails,
+			Status:  &e.Code,
 		}
 	default:
 		errorMessage = http.StatusText(http.StatusInternalServerError)
 		code := http.StatusInternalServerError
+
 		return &HttpError{
 			Title:  &errorMessage,
 			Status: &code,

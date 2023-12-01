@@ -13,6 +13,10 @@ func WebauthnMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			tenant := ctx.Get("tenant").(*models.Tenant)
+			if tenant == nil {
+				return echo.NewHTTPError(http.StatusNotFound, "tenant for api key not found")
+			}
+
 			cfg := tenant.Config
 
 			var origins []string
@@ -46,7 +50,7 @@ func WebauthnMiddleware() echo.MiddlewareFunc {
 
 			if err != nil {
 				ctx.Logger().Error(err)
-				return echo.NewHTTPError(http.StatusInternalServerError, "unable to create webauthn client").SetInternal(err)
+				return err
 			}
 			ctx.Set("webauthn_client", webauthnClient)
 

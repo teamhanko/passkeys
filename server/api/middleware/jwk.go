@@ -13,6 +13,10 @@ func JWKMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			tenant := ctx.Get("tenant").(*models.Tenant)
+			if tenant == nil {
+				return echo.NewHTTPError(http.StatusNotFound, "tenant for api key not found")
+			}
+
 			secrets := tenant.Config.Secrets
 
 			var keys []string
@@ -22,32 +26,31 @@ func JWKMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 				}
 			}
 
-			jwkManager, err := hankoJwk.NewDefaultManager(keys, tenant.ID, persister.GetJwkPersister(nil))
+			err := instantiateJwtGenerator(ctx, keys, *tenant, persister)
 			if err != nil {
-				ctx.Logger().Error(err)
-				return ctx.JSON(http.StatusInternalServerError, NewHttpError(
-					"unable to initialize jwt generator",
-					err.Error(),
-					http.StatusInternalServerError,
-					nil,
-				))
+				return err
 			}
-			ctx.Set("jwk_manager", jwkManager)
-
-			generator, err := jwt.NewGenerator(&tenant.Config.WebauthnConfig, jwkManager, tenant.ID)
-			if err != nil {
-				ctx.Logger().Error(err)
-				return ctx.JSON(http.StatusInternalServerError, NewHttpError(
-					"unable to initialize jwt generator",
-					err.Error(),
-					http.StatusInternalServerError,
-					nil,
-				))
-			}
-
-			ctx.Set("jwt_generator", generator)
 
 			return next(ctx)
 		}
 	}
+}
+
+func instantiateJwtGenerator(ctx echo.Context, keys []string, tenant models.Tenant, persister persistence.Persister) error {
+	jwkManager, err := hankoJwk.NewDefaultManager(keys, tenant.ID, persister.GetJwkPersister(nil))
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+	ctx.Set("jwk_manager", jwkManager)
+
+	generator, err := jwt.NewGenerator(&tenant.Config.WebauthnConfig, jwkManager, tenant.ID)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	ctx.Set("jwt_generator", generator)
+
+	return nil
 }

@@ -9,8 +9,7 @@ import (
 )
 
 type CreateSecretDto struct {
-	GetTenantDto
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
 }
 
 func (dto *CreateSecretDto) ToModel(config *models.Config, isApiKey bool) (*models.Secret, error) {
@@ -35,6 +34,5 @@ func (dto *CreateSecretDto) ToModel(config *models.Config, isApiKey bool) (*mode
 }
 
 type RemoveSecretDto struct {
-	GetTenantDto
 	SecretId string `param:"secret_id" validate:"required,uuid4"`
 }

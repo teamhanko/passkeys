@@ -2,24 +2,21 @@ package handler
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/api/helper"
+	"github.com/teamhanko/passkey-server/api/services"
 	auditlog "github.com/teamhanko/passkey-server/audit_log"
-	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"github.com/teamhanko/passkey-server/persistence/persisters"
 	"net/http"
-	"time"
 )
 
 type transactionHandler struct {
@@ -47,82 +44,38 @@ func (t *transactionHandler) Init(ctx echo.Context) error {
 	transactionModel, err := dto.ToModel()
 	if err != nil {
 		ctx.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "unable to process request")
+		return err
 	}
 
 	return t.persister.GetConnection().Transaction(func(tx *pop.Connection) error {
-		webauthnUser, err := t.persister.GetWebauthnUserPersister(tx).GetByUserId(dto.UserId, h.Tenant.ID)
+		sessionDataPersister := t.persister.GetWebauthnSessionDataPersister(tx)
+		webauthnUserPersister := t.persister.GetWebauthnUserPersister(tx)
+		transactionPersister := t.persister.GetTransactionPersister(tx)
+
+		service := services.NewTransactionService(services.TransactionServiceCreateParams{
+			WebauthnServiceCreateParams: &services.WebauthnServiceCreateParams{
+				Ctx:              ctx,
+				Tenant:           *h.Tenant,
+				WebauthnClient:   *h.Webauthn,
+				UserPersister:    webauthnUserPersister,
+				SessionPersister: sessionDataPersister,
+			},
+			TransactionPersister: transactionPersister,
+		})
+
+		credentialAssertion, err := service.Initialize(dto.UserId, transactionModel)
+		err = t.handleError(h.AuditLog, models.AuditLogWebAuthnTransactionInitFailed, tx, ctx, &dto.UserId, transactionModel, err)
 		if err != nil {
-			ctx.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusNotFound, "Unable to find user")
+			return err
 		}
 
-		if webauthnUser == nil {
-			return echo.NewHTTPError(http.StatusNotFound, "Unable to find user")
-		}
-
-		assertion, sessionData, err := h.Webauthn.BeginLogin(
-			intern.NewWebauthnUser(*webauthnUser),
-			webauthn.WithUserVerification(h.Config.WebauthnConfig.UserVerification),
-			t.withTransaction(transactionModel.Identifier, transactionModel.Data),
-		)
-		if err != nil {
-			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionInitFailed, &webauthnUser.UserID, transactionModel, err)
-			if auditErr != nil {
-				ctx.Logger().Error(auditErr)
-				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-			}
-
-			ctx.Logger().Error(err)
-			return echo.NewHTTPError(
-				http.StatusBadRequest,
-				fmt.Errorf("failed to create webauthn assertion options for transaction: %w", err),
-			)
-		}
-
-		// workaround: go-webauthn changes only the assertion challenge when giving LoginOptions
-		sessionData.Challenge = assertion.Response.Challenge.String()
-		transactionModel.Challenge = sessionData.Challenge
-		transactionModel.WebauthnUserID = webauthnUser.ID
-		transactionModel.TenantID = h.Tenant.ID
-
-		err = t.persister.GetTransactionPersister(tx).Create(transactionModel)
-		if err != nil {
-			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitFailed, &webauthnUser.UserID, transactionModel, err)
-			if auditErr != nil {
-				ctx.Logger().Error(auditErr)
-				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-			}
-
-			ctx.Logger().Error(err)
-			return fmt.Errorf("failed to store webauthn transaction data: %w", err)
-		}
-
-		err = t.persister.GetWebauthnSessionDataPersister(tx).Create(*intern.WebauthnSessionDataToModel(sessionData, h.Tenant.ID, models.WebauthnOperationTransaction))
-		if err != nil {
-			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitFailed, &webauthnUser.UserID, transactionModel, err)
-			if auditErr != nil {
-				ctx.Logger().Error(auditErr)
-				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-			}
-
-			ctx.Logger().Error(err)
-			return fmt.Errorf("failed to store webauthn assertion session data: %w", err)
-		}
-
-		// Remove all transports, because of a bug in android and windows where the internal authenticator gets triggered,
-		// when the transports array contains the type 'internal' although the credential is not available on the device.
-		for i := range assertion.Response.AllowedCredentials {
-			assertion.Response.AllowedCredentials[i].Transport = nil
-		}
-
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionInitSucceeded, &webauthnUser.UserID, transactionModel, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionInitSucceeded, &dto.UserId, transactionModel, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
 		}
 
-		return ctx.JSON(http.StatusOK, assertion)
+		return ctx.JSON(http.StatusOK, credentialAssertion)
 	})
 
 }
@@ -131,7 +84,7 @@ func (t *transactionHandler) Finish(ctx echo.Context) error {
 	parsedRequest, err := protocol.ParseCredentialRequestResponse(ctx.Request())
 	if err != nil {
 		ctx.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to finish transaction").SetInternal(err)
 	}
 
 	h, err := helper.GetHandlerContext(ctx)
@@ -141,101 +94,31 @@ func (t *transactionHandler) Finish(ctx echo.Context) error {
 	}
 
 	return t.persister.Transaction(func(tx *pop.Connection) error {
-		challenge := parsedRequest.Response.CollectedClientData.Challenge
-
 		sessionDataPersister := t.persister.GetWebauthnSessionDataPersister(tx)
 		webauthnUserPersister := t.persister.GetWebauthnUserPersister(tx)
 		credentialPersister := t.persister.GetWebauthnCredentialPersister(tx)
 		transactionPersister := t.persister.GetTransactionPersister(tx)
 
-		userHandle := t.convertUserHandle(parsedRequest.Response.UserHandle)
-		// backward compatibility
-		parsedRequest.Response.UserHandle = []byte(userHandle)
+		service := services.NewTransactionService(services.TransactionServiceCreateParams{
+			WebauthnServiceCreateParams: &services.WebauthnServiceCreateParams{
+				Ctx:                 ctx,
+				Tenant:              *h.Tenant,
+				WebauthnClient:      *h.Webauthn,
+				UserPersister:       webauthnUserPersister,
+				SessionPersister:    sessionDataPersister,
+				CredentialPersister: credentialPersister,
+				Generator:           h.Generator,
+			},
+			TransactionPersister: transactionPersister,
+		})
 
-		transaction, err := t.getTransactionByChallenge(challenge, transactionPersister, h.Tenant.ID)
+		token, userHandle, transaction, err := service.Finalize(parsedRequest)
+		err = t.handleError(h.AuditLog, models.AuditLogWebAuthnTransactionFinalFailed, tx, ctx, &userHandle, transaction, err)
 		if err != nil {
-			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionFinalFailed, &userHandle, transaction, err)
-			if auditErr != nil {
-				ctx.Logger().Error(auditErr)
-				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-			}
-
-			ctx.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get transaction data").SetInternal(err)
+			return err
 		}
 
-		sessionData, err := t.getSessionDataByChallenge(challenge, sessionDataPersister, h.Tenant.ID)
-		if err != nil {
-			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionFinalFailed, &userHandle, transaction, err)
-			if auditErr != nil {
-				ctx.Logger().Error(auditErr)
-				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-			}
-
-			ctx.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get session data").SetInternal(err)
-		}
-		sessionDataModel := intern.WebauthnSessionDataFromModel(sessionData)
-
-		webauthnUser, err := t.getWebauthnUserByUserHandle(userHandle, h.Tenant.ID, webauthnUserPersister)
-		if err != nil {
-			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionFinalFailed, &userHandle, transaction, err)
-			if auditErr != nil {
-				ctx.Logger().Error(auditErr)
-				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-			}
-
-			ctx.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle")
-		}
-
-		credential, err := h.Webauthn.ValidateLogin(webauthnUser, *sessionDataModel, parsedRequest)
-		if err != nil {
-			auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionFinalFailed, &webauthnUser.UserId, transaction, err)
-			if auditErr != nil {
-				ctx.Logger().Error(auditErr)
-				return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-			}
-
-			ctx.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusUnauthorized, "failed to validate assertion").SetInternal(err)
-		}
-
-		dbCred := webauthnUser.FindCredentialById(base64.RawURLEncoding.EncodeToString(credential.ID))
-		if dbCred != nil {
-			flags := parsedRequest.Response.AuthenticatorData.Flags
-			now := time.Now().UTC()
-
-			dbCred.BackupState = flags.HasBackupState()
-			dbCred.BackupEligible = flags.HasBackupEligible()
-			dbCred.LastUsedAt = &now
-			err = credentialPersister.Update(dbCred)
-			if err != nil {
-				auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionFinalFailed, &webauthnUser.UserId, transaction, err)
-				if auditErr != nil {
-					ctx.Logger().Error(auditErr)
-					return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
-				}
-
-				ctx.Logger().Error(err)
-				return fmt.Errorf("failed to update webauthn credential: %w", err)
-			}
-		}
-
-		err = sessionDataPersister.Delete(*sessionData)
-		if err != nil {
-			ctx.Logger().Error(err)
-			return fmt.Errorf("failed to delete assertion session data: %w", err)
-		}
-
-		generator := ctx.Get("jwt_generator").(jwt.Generator)
-		token, err := generator.GenerateForTransaction(webauthnUser.UserId, base64.RawURLEncoding.EncodeToString(credential.ID), transaction.Identifier)
-		if err != nil {
-			ctx.Logger().Error(err)
-			return fmt.Errorf("failed to generate jwt: %w", err)
-		}
-
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionFinalSucceeded, &webauthnUser.UserId, transaction, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnTransactionFinalSucceeded, &userHandle, transaction, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)

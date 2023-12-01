@@ -88,6 +88,7 @@ paths:
       description: Endpoint for removing a webauthn credential
       operationId: delete-credentials-credentialId
       parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
         - $ref: '#/components/parameters/credential_id'
         - $ref: '#/components/parameters/tenant_id'
       responses:
@@ -504,10 +505,6 @@ components:
               status:
                 type:
                   - integer
-                  - 'null'
-              additional:
-                type:
-                  - object
                   - 'null'
     post-registration-initialize:
       description: Example response

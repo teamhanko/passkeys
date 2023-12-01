@@ -23,7 +23,7 @@ func (h *WellKnownHandler) GetPublicKeys(ctx echo.Context) error {
 	keys, err := manager.GetPublicKeys(tenant.ID)
 	if err != nil {
 		ctx.Logger().Error(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "unable to get JWKs").SetInternal(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "unable to get JWKs")
 	}
 
 	ctx.Response().Header().Add("Cache-Control", "max-age=600")

@@ -40,6 +40,5 @@ func (dto *CreateConfigDto) ToModel(tenant models.Tenant) models.Config {
 }
 
 type UpdateConfigDto struct {
-	GetTenantDto
 	CreateConfigDto
 }

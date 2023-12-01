@@ -13,6 +13,8 @@ type SecretResponseDto struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type SecretResponseListDto = []SecretResponseDto
+
 func ToSecretResponse(secret *models.Secret) SecretResponseDto {
 	return SecretResponseDto{
 		Id:        secret.ID,
