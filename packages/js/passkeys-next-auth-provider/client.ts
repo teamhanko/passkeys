@@ -1,21 +1,33 @@
-import { get } from "@github/webauthn-json";
+import { type CredentialRequestOptionsJSON, get } from "@github/webauthn-json";
 import { type JWTPayload } from "jose";
 import { signIn } from "next-auth/react";
 import { DEFAULT_PROVIDER_ID } from ".";
 
 const headers = { "Content-Type": "application/json" };
 
-/**
- * Sign in with a passkey. Requires `PasskeyProvider` to be configured in `pages/api/auth/[...nextauth].ts`
- */
-export async function signInWithPasskey(config: {
+interface Common {
+	mediation?: CredentialRequestOptionsJSON["mediation"];
+	signal?: AbortSignal;
+}
+
+interface SignInConfig extends Common {
 	tenantId: string;
 
 	baseUrl?: string;
 	provider?: string;
 	callbackUrl?: string;
 	redirect?: boolean;
-}) {
+}
+
+interface ClientFirstLoginConfig extends Common {
+	baseUrl?: string;
+	tenantId: string;
+}
+
+/**
+ * Sign in with a passkey. Requires `PasskeyProvider` to be configured in `pages/api/auth/[...nextauth].ts`
+ */
+export async function signInWithPasskey(config: SignInConfig) {
 	const finalizeJWT = await clientFirstPasskeyLogin(config);
 
 	await signIn(config.provider ?? DEFAULT_PROVIDER_ID, {
@@ -25,6 +37,13 @@ export async function signInWithPasskey(config: {
 	});
 }
 
+signInWithPasskey.autofill = async function (config: SignInConfig, signal?: AbortSignal) {
+	return signInWithPasskey({
+		...config,
+		mediation: "conditional",
+	});
+};
+
 /**
  * You likely want to use {@link signInWithPasskey} instead.
  *
@@ -33,13 +52,21 @@ export async function signInWithPasskey(config: {
  * @returns a JWT that can be exchanged for a session on the backend.
  *          To verify the JWT, use the JWKS endpoint of the tenant. (`{tenantId}/.well-known/jwks.json`)
  */
-export async function clientFirstPasskeyLogin(config: { baseUrl?: string; tenantId: string }): Promise<JWTPayload> {
+export async function clientFirstPasskeyLogin(config: ClientFirstLoginConfig): Promise<JWTPayload> {
 	const baseUrl = config.baseUrl ?? "https://passkeys.hanko.io";
 
 	const loginOptions = await fetch(new URL(`${config.tenantId}/login/initialize`, baseUrl), {
 		method: "POST",
 		headers,
 	}).then((res) => res.json());
+
+	if (config.mediation) {
+		loginOptions.mediation = config.mediation;
+	}
+
+	if (config.signal) {
+		loginOptions.signal = config.signal;
+	}
 
 	// Open "select passkey" dialog
 	const credential = await get(loginOptions);
