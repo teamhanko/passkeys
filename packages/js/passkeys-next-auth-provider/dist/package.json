@@ -3,7 +3,7 @@
 	"license": "MIT",
 	"private": false,
 	"type": "module",
-	"version": "0.1.10",
+	"version": "0.1.11",
 	"exports": {
 		".": "./index.js",
 		"./client": "./client.js"
