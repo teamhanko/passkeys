@@ -37,6 +37,7 @@ export async function signInWithPasskey(config: SignInConfig) {
 	});
 }
 
+const noop = () => {};
 let warnedConditionalNotAvailable = false;
 
 signInWithPasskey.conditional = async function (config: SignInConfig, signal?: AbortSignal) {
@@ -45,7 +46,7 @@ signInWithPasskey.conditional = async function (config: SignInConfig, signal?: A
 			console.error("Conditional mediation is not available on this device.");
 			warnedConditionalNotAvailable = true;
 		}
-		return;
+		return noop;
 	}
 
 	let controller: AbortController | undefined;
