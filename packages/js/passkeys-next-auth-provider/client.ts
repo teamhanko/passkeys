@@ -40,7 +40,7 @@ export async function signInWithPasskey(config: SignInConfig) {
 const noop = () => {};
 let warnedConditionalNotAvailable = false;
 
-signInWithPasskey.conditional = async function (config: SignInConfig, signal?: AbortSignal) {
+signInWithPasskey.conditional = function (config: SignInConfig, signal?: AbortSignal) {
 	if (!isConditionalMediationAvailable()) {
 		if (!warnedConditionalNotAvailable) {
 			console.error("Conditional mediation is not available on this device.");
