@@ -48,10 +48,19 @@ signInWithPasskey.conditional = async function (config: SignInConfig, signal?: A
 		return;
 	}
 
-	return signInWithPasskey({
+	let controller: AbortController | undefined;
+	if (!signal) {
+		controller = new AbortController();
+		signal = controller.signal;
+	}
+
+	signInWithPasskey({
 		...config,
 		mediation: "conditional",
+		signal,
 	});
+
+	return () => controller?.abort();
 };
 
 /**
