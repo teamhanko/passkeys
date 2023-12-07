@@ -37,7 +37,17 @@ export async function signInWithPasskey(config: SignInConfig) {
 	});
 }
 
-signInWithPasskey.autofill = async function (config: SignInConfig, signal?: AbortSignal) {
+let warnedConditionalNotAvailable = false;
+
+signInWithPasskey.conditional = async function (config: SignInConfig, signal?: AbortSignal) {
+	if (!isConditionalMediationAvailable()) {
+		if (!warnedConditionalNotAvailable) {
+			console.error("Conditional mediation is not available on this device.");
+			warnedConditionalNotAvailable = true;
+		}
+		return;
+	}
+
 	return signInWithPasskey({
 		...config,
 		mediation: "conditional",
@@ -87,4 +97,8 @@ export async function clientFirstPasskeyLogin(config: ClientFirstLoginConfig): P
 			}
 			return data.token;
 		});
+}
+
+function isConditionalMediationAvailable() {
+	return typeof window !== "undefined" && window.PublicKeyCredential?.isConditionalMediationAvailable?.();
 }
