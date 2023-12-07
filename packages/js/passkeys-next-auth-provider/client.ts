@@ -61,7 +61,7 @@ signInWithPasskey.conditional = function (config: SignInConfig, signal?: AbortSi
 		signal,
 	});
 
-	return () => controller?.abort();
+	return (reason = "Manually aborted") => controller?.abort();
 };
 
 /**
