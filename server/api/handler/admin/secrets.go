@@ -126,7 +126,8 @@ func (s *SecretsHandler) removeKey(ctx echo.Context, isApiKey bool) error {
 	var foundSecret *models.Secret
 	for _, secret := range tenant.Config.Secrets {
 		if secret.ID == secretId && secret.IsAPISecret == isApiKey {
-			foundSecret = &secret
+			s := secret
+			foundSecret = &s
 		}
 	}
 
