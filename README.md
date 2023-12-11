@@ -23,6 +23,7 @@ The API is written in Go and provides the following endpoints:
 -   /credential - For managing already registered credentials (Listing, Updating or Removing Credentials)
 -   /registration - For registering new passkeys
 -   /login - For an authentication flow with passkeys
+-   /transaction - Sign transactions with passkeys
 
 The detailed OpenAPI Specification can be found [here](/spec/passkey-server.yaml)
 
@@ -44,7 +45,7 @@ If you have any questions or issues, please check the [open issues](https://gith
 
 ### Discord community & X
 
-We invite you to join our growing [Discord community](https://www.hanko.io/community) if you want to get the latest updates on passkeys, WebAuthn, and this project, or if you just want to chat with us. You can also [follow us on Twitter](https://x.com/hanko_io).
+We invite you to join our growing [Discord community](https://www.hanko.io/community) if you want to get the latest updates on passkeys, WebAuthn, and this project, or if you just want to chat with us. You can also [follow us on X](https://x.com/hanko_io).
 
 # License
 
