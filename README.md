@@ -41,7 +41,7 @@ Passkey Server is developed and maintained by [Hanko](https://www.hanko.io). For
 
 ### Questions, bugs, ideas
 
-If you have any questions or issues, please check the [open issues](https://github.com/teamhanko/hanko/issues). Feel free to comment on existing issues or create a new issue if you encounter any bugs or have a feature request. For yet unanswered questions, feedback, or new ideas, please open a new discussion.
+If you have any questions or issues, please check the [open issues](https://github.com/teamhanko/passkeys/issues). Feel free to comment on existing issues or create a new issue if you encounter any bugs or have a feature request. For yet unanswered questions, feedback, or new ideas, please open a new discussion.
 
 ### Discord community & X
 
