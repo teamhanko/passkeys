@@ -15,8 +15,11 @@ type SecretResponseDto struct {
 
 type SecretResponseListDto = []SecretResponseDto
 
-func ToSecretResponse(secret *models.Secret) SecretResponseDto {
-	return SecretResponseDto{
+func ToSecretResponse(secret *models.Secret) *SecretResponseDto {
+	if secret == nil {
+		return nil
+	}
+	return &SecretResponseDto{
 		Id:        secret.ID,
 		Name:      secret.Name,
 		Secret:    secret.Key,

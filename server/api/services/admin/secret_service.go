@@ -37,7 +37,7 @@ func (ses *secretService) List(isApiSecret bool) response.SecretResponseListDto 
 	secrets := make(response.SecretResponseListDto, 0)
 	for _, secret := range ses.tenant.Config.Secrets {
 		if secret.IsAPISecret == isApiSecret {
-			secrets = append(secrets, response.ToSecretResponse(&secret))
+			secrets = append(secrets, *response.ToSecretResponse(&secret))
 		}
 	}
 
@@ -58,7 +58,7 @@ func (ses *secretService) Create(dto request.CreateSecretDto, isApiSecret bool) 
 	}
 
 	responseDto := response.ToSecretResponse(secret)
-	return &responseDto, nil
+	return responseDto, nil
 }
 
 func (ses *secretService) Remove(dto request.RemoveSecretDto, isApiKey bool) error {

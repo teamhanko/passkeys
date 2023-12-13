@@ -105,10 +105,13 @@ func (ts *tenantService) Create(dto request.CreateTenantDto) (*response.CreateTe
 		&relyingPartyModel,
 	)
 
-	apiSecretModel, err := ts.createSecret("Initial API Key", configModel.ID, true)
-	if err != nil {
-		ts.logger.Error(err)
-		return nil, fmt.Errorf("unable to create new api key: %w", err)
+	var apiSecretModel *models.Secret = nil
+	if dto.CreateApiKey {
+		apiSecretModel, err = ts.createSecret("Initial API Key", configModel.ID, true)
+		if err != nil {
+			ts.logger.Error(err)
+			return nil, fmt.Errorf("unable to create new api key: %w", err)
+		}
 	}
 
 	jwkSecretModel, err := ts.createSecret("Initial JWK Key", configModel.ID, false)
