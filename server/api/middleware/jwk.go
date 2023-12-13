@@ -14,7 +14,8 @@ func JWKMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			tenant := ctx.Get("tenant").(*models.Tenant)
 			if tenant == nil {
-				return echo.NewHTTPError(http.StatusNotFound, "tenant for api key not found")
+				ctx.Logger().Errorf("tenant for JWK middleware net found")
+				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
 			}
 
 			secrets := tenant.Config.Secrets

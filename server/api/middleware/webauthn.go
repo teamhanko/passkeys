@@ -14,7 +14,8 @@ func WebauthnMiddleware() echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			tenant := ctx.Get("tenant").(*models.Tenant)
 			if tenant == nil {
-				return echo.NewHTTPError(http.StatusNotFound, "tenant for api key not found")
+				ctx.Logger().Errorf("tenant for webauthn middleware net found")
+				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
 			}
 
 			cfg := tenant.Config

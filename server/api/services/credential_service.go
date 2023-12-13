@@ -50,7 +50,7 @@ func (cs *credentialService) Update(dto request.UpdateCredentialsDto) (*models.W
 	credential, err := cs.credentialPersister.Get(dto.CredentialId, cs.tenant.ID)
 	if err != nil {
 		cs.logger.Error(err)
-		return nil, echo.NewHTTPError(http.StatusBadRequest, err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	if credential == nil {
@@ -71,7 +71,7 @@ func (cs *credentialService) Delete(dto request.DeleteCredentialsDto) error {
 	credential, err := cs.credentialPersister.Get(dto.CredentialId, cs.tenant.ID)
 	if err != nil {
 		cs.logger.Error(err)
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 
 	if credential == nil {

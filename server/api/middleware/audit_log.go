@@ -13,7 +13,8 @@ func AuditLogger(persister persistence.Persister) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			tenant := ctx.Get("tenant").(*models.Tenant)
 			if tenant == nil {
-				return echo.NewHTTPError(http.StatusNotFound, "tenant for audit log not found")
+				ctx.Logger().Errorf("tenant for audit log middleware net found")
+				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
 			}
 
 			auditLogConfig := tenant.Config.AuditLogConfig

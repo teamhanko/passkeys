@@ -10,12 +10,13 @@ import (
 
 func ApiKeyMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			apiKey := c.Request().Header.Get("apiKey")
-			tenant := c.Get("tenant").(*models.Tenant)
+		return func(ctx echo.Context) error {
+			apiKey := ctx.Request().Header.Get("apiKey")
+			tenant := ctx.Get("tenant").(*models.Tenant)
 
 			if tenant == nil {
-				return echo.NewHTTPError(http.StatusNotFound, "tenant for api key not found")
+				ctx.Logger().Errorf("tenant for api key middleware net found")
+				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
 			}
 
 			var foundKey *models.Secret
@@ -31,7 +32,7 @@ func ApiKeyMiddleware() echo.MiddlewareFunc {
 				return err
 			}
 
-			return next(c)
+			return next(ctx)
 		}
 	}
 }

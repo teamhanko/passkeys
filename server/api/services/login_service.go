@@ -44,7 +44,7 @@ func (ls *loginService) Initialize() (*protocol.CredentialAssertion, error) {
 	if err != nil {
 		ls.logger.Error(err)
 		return nil, echo.NewHTTPError(
-			http.StatusBadRequest,
+			http.StatusInternalServerError,
 			fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err),
 		)
 	}

@@ -9,10 +9,11 @@ import (
 
 func CORSWithTenant() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			tenant := c.Get("tenant").(*models.Tenant)
+		return func(ctx echo.Context) error {
+			tenant := ctx.Get("tenant").(*models.Tenant)
 			if tenant == nil {
-				return echo.NewHTTPError(http.StatusNotFound, "tenant for api key not found")
+				ctx.Logger().Errorf("tenant for cors middleware net found")
+				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
 			}
 
 			corsConfig := tenant.Config.Cors
@@ -29,7 +30,7 @@ func CORSWithTenant() echo.MiddlewareFunc {
 				AllowCredentials:                         true,
 				// Based on: Chromium (starting in v76) caps at 2 hours (7200 seconds).
 				MaxAge: 7200,
-			})(next)(c)
+			})(next)(ctx)
 		}
 	}
 }

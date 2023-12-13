@@ -53,11 +53,19 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 	webauthnUser, err := ts.userPersister.GetByUserId(userId, ts.tenant.ID)
 	if err != nil {
 		ts.logger.Error(err)
-		return nil, echo.NewHTTPError(http.StatusNotFound, "Unable to find user")
+		return nil, echo.NewHTTPError(http.StatusNotFound, "unable to find user")
 	}
 
 	if webauthnUser == nil {
-		return nil, echo.NewHTTPError(http.StatusNotFound, "Unable to find user")
+		return nil, echo.NewHTTPError(http.StatusNotFound, "unable to find user")
+	}
+
+	// check for better error handling as BeginLogin can throw a BadRequestError AND normal errors (but same type)
+	if len(webauthnUser.WebauthnCredentials) == 0 {
+		return nil, echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Errorf("user has no suitable credentials for this operation"),
+		)
 	}
 
 	credentialAssertion, sessionData, err := ts.webauthnClient.BeginLogin(
@@ -66,9 +74,8 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 		ts.withTransaction(transaction.Identifier, transaction.Data),
 	)
 	if err != nil {
-		ts.logger.Error(err)
 		return nil, echo.NewHTTPError(
-			http.StatusBadRequest,
+			http.StatusInternalServerError,
 			fmt.Errorf("failed to create webauthn assertion options for transaction: %w", err),
 		)
 	}
