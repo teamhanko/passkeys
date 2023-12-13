@@ -4,12 +4,19 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/teamhanko/passkey-server/persistence/models"
+	"net/http"
 )
 
 func CORSWithTenant() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			corsConfig := c.Get("tenant").(*models.Tenant).Config.Cors
+		return func(ctx echo.Context) error {
+			tenant := ctx.Get("tenant").(*models.Tenant)
+			if tenant == nil {
+				ctx.Logger().Errorf("tenant for cors middleware net found")
+				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
+			}
+
+			corsConfig := tenant.Config.Cors
 
 			var origins []string
 			for _, origin := range corsConfig.Origins {
@@ -23,7 +30,7 @@ func CORSWithTenant() echo.MiddlewareFunc {
 				AllowCredentials:                         true,
 				// Based on: Chromium (starting in v76) caps at 2 hours (7200 seconds).
 				MaxAge: 7200,
-			})(next)(c)
+			})(next)(ctx)
 		}
 	}
 }

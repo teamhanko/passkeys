@@ -57,13 +57,12 @@ func NewAdminRouter(cfg *config.Config, persister persistence.Persister, prometh
 	tenantsGroup.GET("", tenantHandler.List)
 	tenantsGroup.POST("", tenantHandler.Create)
 
-	singleGroup := tenantsGroup.Group("/:tenant_id")
+	singleGroup := tenantsGroup.Group("/:tenant_id", passkeyMiddleware.TenantMiddleware(persister))
 	singleGroup.GET("", tenantHandler.Get)
 	singleGroup.PUT("", tenantHandler.Update)
 	singleGroup.DELETE("", tenantHandler.Remove)
 	singleGroup.PUT("/config", tenantHandler.UpdateConfig)
 	singleGroup.GET("/audit_logs", tenantHandler.ListAuditLog)
-
 	secretHandler := admin.NewSecretsHandler(persister)
 	apiKeyGroup := singleGroup.Group("/secrets/api")
 	apiKeyGroup.GET("", secretHandler.ListAPIKeys)

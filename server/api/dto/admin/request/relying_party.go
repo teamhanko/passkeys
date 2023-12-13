@@ -9,8 +9,8 @@ import (
 type CreateRelyingPartyDto struct {
 	Id          string   `json:"id" validate:"required"`
 	DisplayName string   `json:"display_name" validate:"required"`
-	Icon        *string  `json:"icon"`
-	Origins     []string `json:"origins"`
+	Icon        *string  `json:"icon" validate:"omitempty,url"`
+	Origins     []string `json:"origins" validate:"required,min=1"`
 }
 
 func (dto *CreateRelyingPartyDto) ToModel(config models.WebauthnConfig) models.RelyingParty {

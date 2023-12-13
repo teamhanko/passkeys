@@ -37,7 +37,7 @@ type InitRegistrationDto struct {
 	UserId      string  `json:"user_id" validate:"required"`
 	Username    string  `json:"username" validate:"required,max=128"`
 	DisplayName *string `json:"display_name" validate:"omitempty,max=128"`
-	Icon        *string `json:"icon"`
+	Icon        *string `json:"icon" validate:"omitempty,url"`
 }
 
 func (initRegistration *InitRegistrationDto) ToModel() *models.WebauthnUser {

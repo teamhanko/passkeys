@@ -3,7 +3,6 @@ package request
 import "time"
 
 type ListAuditLogDto struct {
-	GetTenantDto
 	Page         int        `query:"page"`
 	PerPage      int        `query:"per_page"`
 	StartTime    *time.Time `query:"start_time"`

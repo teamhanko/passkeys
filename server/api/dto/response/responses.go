@@ -19,12 +19,14 @@ type CredentialDto struct {
 	BackupState     bool       `json:"backup_state"`
 }
 
+type CredentialDtoList []CredentialDto
+
 type TokenDto struct {
 	Token string `json:"token"`
 }
 
-func CredentialDtoFromModel(credential models.WebauthnCredential) *CredentialDto {
-	return &CredentialDto{
+func CredentialDtoFromModel(credential models.WebauthnCredential) CredentialDto {
+	return CredentialDto{
 		ID:              credential.ID,
 		Name:            credential.Name,
 		PublicKey:       credential.PublicKey,

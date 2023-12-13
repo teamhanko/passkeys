@@ -4,15 +4,17 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/labstack/echo/v4"
 	auditlog "github.com/teamhanko/passkey-server/audit_log"
+	"github.com/teamhanko/passkey-server/crypto/jwt"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
 )
 
 type WebauthnContext struct {
-	Tenant   *models.Tenant
-	Webauthn *webauthn.WebAuthn
-	Config   models.Config
-	AuditLog auditlog.Logger
+	Tenant    *models.Tenant
+	Webauthn  *webauthn.WebAuthn
+	Config    models.Config
+	AuditLog  auditlog.Logger
+	Generator jwt.Generator
 }
 
 func GetHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
@@ -34,10 +36,17 @@ func GetHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
 		auditLogger = ctxAuditLog.(auditlog.Logger)
 	}
 
+	ctxGenerator := ctx.Get("jwt_generator")
+	var generator jwt.Generator
+	if ctxGenerator != nil {
+		generator = ctxGenerator.(jwt.Generator)
+	}
+
 	return &WebauthnContext{
-		Tenant:   tenant,
-		Webauthn: webauthnClient,
-		Config:   tenant.Config,
-		AuditLog: auditLogger,
+		Tenant:    tenant,
+		Webauthn:  webauthnClient,
+		Config:    tenant.Config,
+		AuditLog:  auditLogger,
+		Generator: generator,
 	}, nil
 }

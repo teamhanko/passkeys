@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
@@ -9,9 +10,14 @@ import (
 
 func ApiKeyMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			apiKey := c.Request().Header.Get("apiKey")
-			tenant := c.Get("tenant").(*models.Tenant)
+		return func(ctx echo.Context) error {
+			apiKey := ctx.Request().Header.Get("apiKey")
+			tenant := ctx.Get("tenant").(*models.Tenant)
+
+			if tenant == nil {
+				ctx.Logger().Errorf("tenant for api key middleware net found")
+				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
+			}
 
 			var foundKey *models.Secret
 			for _, key := range tenant.Config.Secrets {
@@ -21,31 +27,30 @@ func ApiKeyMiddleware() echo.MiddlewareFunc {
 				}
 			}
 
-			if foundKey == nil {
-				title := "The api key is invalid"
-				details := "api keys needs to be an apiKey Header and 32 byte long"
-				status := http.StatusUnauthorized
-
-				return c.JSON(http.StatusUnauthorized, &HttpError{
-					Title:   &title,
-					Details: &details,
-					Status:  &status,
-				})
+			err := createApiKeyError(foundKey)
+			if err != nil {
+				return err
 			}
 
-			if !foundKey.IsAPISecret {
-				title := "The api key is invalid"
-				details := "provided key is not an api key"
-				status := http.StatusUnauthorized
-
-				return c.JSON(http.StatusUnauthorized, &HttpError{
-					Title:   &title,
-					Details: &details,
-					Status:  &status,
-				})
-			}
-
-			return next(c)
+			return next(ctx)
 		}
 	}
+}
+
+func createApiKeyError(key *models.Secret) error {
+	if key == nil {
+		title := "The api key is invalid"
+		details := "api keys needs to be an apiKey Header and 32 byte long"
+
+		return echo.NewHTTPError(http.StatusUnauthorized, title).SetInternal(fmt.Errorf(details))
+	}
+
+	if !key.IsAPISecret {
+		title := "The api key is invalid"
+		details := "provided key is not an api key"
+
+		return echo.NewHTTPError(http.StatusUnauthorized, title).SetInternal(fmt.Errorf(details))
+	}
+
+	return nil
 }

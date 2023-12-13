@@ -52,6 +52,12 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 					vErrs[i] = fmt.Sprintf("length of %s must be greater or equal to %v", err.Field(), err.Param())
 				case "unique":
 					vErrs[i] = fmt.Sprintf("%s entries are not unique", err.Field())
+				case "oneof":
+					vErrs[i] = fmt.Sprintf("%s must be one of '%s'", err.Field(), err.Param())
+				case "min":
+					vErrs[i] = cv.minMessage(err.Field(), err.Param())
+				case "max":
+					vErrs[i] = cv.maxMessage(err.Field(), err.Param())
 				default:
 					vErrs[i] = fmt.Sprintf("something wrong on %s; %s", err.Field(), err.Tag())
 				}
@@ -62,4 +68,20 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	}
 
 	return nil
+}
+
+func (cv *CustomValidator) minMessage(field string, param string) string {
+	if param == "1" {
+		return fmt.Sprintf("%s must at least have %s entry", field, param)
+	} else {
+		return fmt.Sprintf("%s must at least have %s entries", field, param)
+	}
+}
+
+func (cv *CustomValidator) maxMessage(field string, param string) string {
+	if param == "1" {
+		return fmt.Sprintf("%s cannot have more than %s entry", field, param)
+	} else {
+		return fmt.Sprintf("%s cannot have more than %s entries", field, param)
+	}
 }

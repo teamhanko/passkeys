@@ -694,6 +694,7 @@ components:
       required:
         - id
         - display_name
+        - origins
     secret_list:
       type: array
       title: secret_list
