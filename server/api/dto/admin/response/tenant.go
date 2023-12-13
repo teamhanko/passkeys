@@ -32,8 +32,8 @@ func ToGetTenantResponse(tenant *models.Tenant) GetTenantResponse {
 }
 
 type CreateTenantResponse struct {
-	Id     uuid.UUID         `json:"id"`
-	ApiKey SecretResponseDto `json:"api_key"`
+	Id     uuid.UUID          `json:"id"`
+	ApiKey *SecretResponseDto `json:"api_key,omitempty"`
 }
 
 func ToCreateTenantResponse(tenant *models.Tenant, apiKey *models.Secret) CreateTenantResponse {

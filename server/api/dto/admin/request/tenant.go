@@ -7,8 +7,9 @@ import (
 )
 
 type CreateTenantDto struct {
-	DisplayName string          `json:"display_name" validate:"required"`
-	Config      CreateConfigDto `json:"config" validate:"required"`
+	DisplayName  string          `json:"display_name" validate:"required"`
+	Config       CreateConfigDto `json:"config" validate:"required"`
+	CreateApiKey bool            `json:"create_api_key"`
 }
 
 func (dto *CreateTenantDto) ToModel() models.Tenant {
