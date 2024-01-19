@@ -1,6 +1,7 @@
 # Generated OpenAPI client
 src/generated/
 dist/
+!dist/README.md
 
 # Based on https://raw.githubusercontent.com/github/gitignore/main/Node.gitignore
 
