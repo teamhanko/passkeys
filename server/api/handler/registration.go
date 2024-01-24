@@ -8,6 +8,7 @@ import (
 	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/api/helper"
 	"github.com/teamhanko/passkey-server/api/services"
+	"github.com/teamhanko/passkey-server/mapper"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
@@ -15,13 +16,15 @@ import (
 
 type registrationHandler struct {
 	*webauthnHandler
+	mapper.AuthenticatorMetadata
 }
 
-func NewRegistrationHandler(persister persistence.Persister) WebauthnHandler {
+func NewRegistrationHandler(persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata) WebauthnHandler {
 	webauthnHandler := newWebAuthnHandler(persister)
 
 	return &registrationHandler{
 		webauthnHandler,
+		authenticatorMetadata,
 	}
 }
 
@@ -88,13 +91,14 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		credentialPersister := r.persister.GetWebauthnCredentialPersister(tx)
 
 		service := services.NewRegistrationService(services.WebauthnServiceCreateParams{
-			Ctx:                 ctx,
-			Tenant:              *h.Tenant,
-			WebauthnClient:      *h.Webauthn,
-			UserPersister:       userPersister,
-			SessionPersister:    sessionPersister,
-			CredentialPersister: credentialPersister,
-			Generator:           h.Generator,
+			Ctx:                   ctx,
+			Tenant:                *h.Tenant,
+			WebauthnClient:        *h.Webauthn,
+			UserPersister:         userPersister,
+			SessionPersister:      sessionPersister,
+			CredentialPersister:   credentialPersister,
+			Generator:             h.Generator,
+			AuthenticatorMetadata: r.AuthenticatorMetadata,
 		})
 
 		token, userId, err := service.Finalize(parsedRequest)

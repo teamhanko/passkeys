@@ -4,9 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/yaml"
-	"github.com/knadh/koanf/providers/file"
+	"github.com/teamhanko/passkey-server/utils"
 	"log"
 	"net"
 	"strings"
@@ -49,16 +48,16 @@ func (c *Config) Validate() error {
 }
 
 func Load(configFile *string) (*Config, error) {
-	k := koanf.New(".")
-
-	var err error
-
 	if configFile == nil || strings.TrimSpace(*configFile) == "" {
 		*configFile = DefaultConfigFilePath
 	}
 
-	if err = k.Load(file.Provider(*configFile), yaml.Parser()); err != nil {
-		return nil, fmt.Errorf("failed to load config from: %s: %w", *configFile, err)
+	k, err := utils.LoadFile(configFile, yaml.Parser())
+	if err != nil {
+		if *configFile != DefaultConfigFilePath {
+			return nil, fmt.Errorf("failed to load config from: %s: %w", *configFile, err)
+		}
+		log.Println("failed to load config, skipping...")
 	} else {
 		log.Println("Using config file:", *configFile)
 	}

@@ -6,19 +6,24 @@ import (
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/gofrs/uuid"
+	"github.com/teamhanko/passkey-server/mapper"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"time"
 )
 
-func WebauthnCredentialToModel(credential *webauthn.Credential, userId string, webauthnUserId uuid.UUID, backupEligible bool, backupState bool) *models.WebauthnCredential {
+func WebauthnCredentialToModel(credential *webauthn.Credential, userId string, webauthnUserId uuid.UUID, backupEligible bool, backupState bool, authenticatorMetadata mapper.AuthenticatorMetadata) *models.WebauthnCredential {
 	now := time.Now().UTC()
 	aaguid, _ := uuid.FromBytes(credential.Authenticator.AAGUID)
 	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
-	name := fmt.Sprintf("cred-%s", credentialID)
+	name := authenticatorMetadata.GetNameForAaguid(aaguid)
+	if name == nil {
+		genericName := fmt.Sprintf("cred-%s", credentialID)
+		name = &genericName
+	}
 
 	c := &models.WebauthnCredential{
 		ID:              credentialID,
-		Name:            &name,
+		Name:            name,
 		UserId:          userId,
 		PublicKey:       base64.RawURLEncoding.EncodeToString(credential.PublicKey),
 		AttestationType: credential.AttestationType,

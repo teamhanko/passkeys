@@ -7,6 +7,7 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/intern"
+	"github.com/teamhanko/passkey-server/mapper"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
 	"strings"
@@ -20,6 +21,7 @@ type RegistrationService interface {
 
 type registrationService struct {
 	WebauthnService
+	mapper.AuthenticatorMetadata
 }
 
 func NewRegistrationService(params WebauthnServiceCreateParams) RegistrationService {
@@ -38,6 +40,7 @@ func NewRegistrationService(params WebauthnServiceCreateParams) RegistrationServ
 			userPersister:        params.UserPersister,
 			sessionDataPersister: params.SessionPersister,
 		},
+		params.AuthenticatorMetadata,
 	}
 }
 
@@ -201,7 +204,9 @@ func (rs *registrationService) createCredential(dbUser *models.WebauthnUser, ses
 		session.UserId,
 		dbUser.ID,
 		flags.HasBackupEligible(),
-		flags.HasBackupState())
+		flags.HasBackupState(),
+		rs.AuthenticatorMetadata,
+	)
 
 	err = rs.credentialPersister.Create(dbCredential)
 	if err != nil {

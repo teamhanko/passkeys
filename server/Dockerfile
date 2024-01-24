@@ -17,6 +17,8 @@ COPY commands commands
 COPY config config
 COPY crypto crypto
 COPY persistence persistence
+COPY mapper mapper
+COPY utils utils
 
 # Build
 RUN go generate ./...
