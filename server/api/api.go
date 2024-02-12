@@ -4,14 +4,15 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/router"
 	"github.com/teamhanko/passkey-server/config"
+	"github.com/teamhanko/passkey-server/mapper"
 	"github.com/teamhanko/passkey-server/persistence"
 	"sync"
 )
 
-func StartPublic(cfg *config.Config, wg *sync.WaitGroup, persister persistence.Persister) {
+func StartPublic(cfg *config.Config, wg *sync.WaitGroup, persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata) {
 	defer wg.Done()
 
-	mainRouter := router.NewMainRouter(cfg, persister)
+	mainRouter := router.NewMainRouter(cfg, persister, authenticatorMetadata)
 	mainRouter.Logger.Fatal(mainRouter.Start(cfg.Address))
 }
 

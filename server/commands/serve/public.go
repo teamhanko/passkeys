@@ -4,13 +4,17 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/teamhanko/passkey-server/api"
 	"github.com/teamhanko/passkey-server/config"
+	"github.com/teamhanko/passkey-server/mapper"
 	"github.com/teamhanko/passkey-server/persistence"
 	"log"
 	"sync"
 )
 
 func NewServePublicCommand() *cobra.Command {
-	var configFile string
+	var (
+		configFile                string
+		authenticatorMetadataFile string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "public",
@@ -22,6 +26,8 @@ func NewServePublicCommand() *cobra.Command {
 				log.Fatal(err)
 			}
 
+			authenticatorMetadata := mapper.LoadAuthenticatorMetadata(&authenticatorMetadataFile)
+
 			persister, err := persistence.NewDatabase(globalConfig.Database)
 			if err != nil {
 				log.Fatal(err)
@@ -30,13 +36,14 @@ func NewServePublicCommand() *cobra.Command {
 			var wg sync.WaitGroup
 			wg.Add(1)
 
-			go api.StartPublic(globalConfig, &wg, persister)
+			go api.StartPublic(globalConfig, &wg, persister, authenticatorMetadata)
 
 			wg.Wait()
 		},
 	}
 
 	cmd.Flags().StringVar(&configFile, "config", config.DefaultConfigFilePath, "config file")
+	cmd.Flags().StringVar(&authenticatorMetadataFile, "auth-meta", "", "authenticator metadata file")
 
 	return cmd
 }

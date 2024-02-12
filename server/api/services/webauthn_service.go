@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/crypto/jwt"
+	"github.com/teamhanko/passkey-server/mapper"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"github.com/teamhanko/passkey-server/persistence/persisters"
 	"net/http"
@@ -25,10 +26,11 @@ type WebauthnService struct {
 }
 
 type WebauthnServiceCreateParams struct {
-	Ctx            echo.Context
-	Tenant         models.Tenant
-	WebauthnClient webauthn.WebAuthn
-	Generator      jwt.Generator
+	Ctx                   echo.Context
+	Tenant                models.Tenant
+	WebauthnClient        webauthn.WebAuthn
+	Generator             jwt.Generator
+	AuthenticatorMetadata mapper.AuthenticatorMetadata
 
 	UserPersister       persisters.WebauthnUserPersister
 	SessionPersister    persisters.WebauthnSessionDataPersister

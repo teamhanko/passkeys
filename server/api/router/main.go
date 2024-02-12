@@ -8,6 +8,7 @@ import (
 	"github.com/teamhanko/passkey-server/api/template"
 	"github.com/teamhanko/passkey-server/api/validators"
 	"github.com/teamhanko/passkey-server/config"
+	"github.com/teamhanko/passkey-server/mapper"
 	"github.com/teamhanko/passkey-server/persistence"
 )
 
@@ -16,7 +17,7 @@ const (
 	FinishEndpoint = "/finalize"
 )
 
-func NewMainRouter(cfg *config.Config, persister persistence.Persister) *echo.Echo {
+func NewMainRouter(cfg *config.Config, persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata) *echo.Echo {
 	main := echo.New()
 	main.Renderer = template.NewTemplateRenderer()
 	main.HideBanner = true
@@ -45,7 +46,7 @@ func NewMainRouter(cfg *config.Config, persister persistence.Persister) *echo.Ec
 
 	RouteWellKnown(tenantGroup)
 	RouteCredentials(tenantGroup, persister)
-	RouteRegistration(tenantGroup, persister)
+	RouteRegistration(tenantGroup, persister, authenticatorMetadata)
 	RouteLogin(tenantGroup, persister)
 	RouteTransaction(tenantGroup, persister)
 
@@ -78,8 +79,8 @@ func RouteCredentials(parent *echo.Group, persister persistence.Persister) {
 	return
 }
 
-func RouteRegistration(parent *echo.Group, persister persistence.Persister) {
-	registrationHandler := handler.NewRegistrationHandler(persister)
+func RouteRegistration(parent *echo.Group, persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata) {
+	registrationHandler := handler.NewRegistrationHandler(persister, authenticatorMetadata)
 
 	group := parent.Group("/registration", passkeyMiddleware.WebauthnMiddleware())
 	group.POST(InitEndpoint, registrationHandler.Init, passkeyMiddleware.ApiKeyMiddleware())
