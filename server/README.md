@@ -2,11 +2,11 @@
 
 ## Getting started
 
-For a quick start of the passkey server you can use the config and docker compose file in [deploy](../deploy).
+For a quick start of the passkey server you can use the config and docker compose file in [deploy/docker-compose](../deploy/docker-compose).
 All you have to do to start the server is to run the following commands:
 
 ```shell
-cd deploy
+cd ../deploy/docker-compose
 docker compose -f backend.yaml up -d
 ```
 
