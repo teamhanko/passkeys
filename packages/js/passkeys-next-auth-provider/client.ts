@@ -25,6 +25,14 @@ interface ClientFirstLoginConfig extends Common {
 }
 
 /**
+ * As there can only be one ongoing passkey request at a time, this AbortController should
+ * be called to cancel the current request before starting a new one.
+ *
+ * After starting a new request, set this variable to the request's AbortController.
+ */
+let controller: AbortController | undefined;
+
+/**
  * Sign in with a passkey. Requires `PasskeyProvider` to be configured in `pages/api/auth/[...nextauth].ts`
  */
 export async function signInWithPasskey(config: SignInConfig) {
@@ -49,7 +57,7 @@ signInWithPasskey.conditional = function (config: SignInConfig, signal?: AbortSi
 		return noop;
 	}
 
-	let controller: AbortController | undefined;
+	controller?.abort(); // Abort any ongoing request
 	if (!signal) {
 		controller = new AbortController();
 		signal = controller.signal;
@@ -61,7 +69,7 @@ signInWithPasskey.conditional = function (config: SignInConfig, signal?: AbortSi
 		signal,
 	});
 
-	return (reason = "Manually aborted") => controller?.abort();
+	return (reason = "Manually aborted") => controller?.abort(reason);
 };
 
 /**
@@ -84,8 +92,12 @@ export async function clientFirstPasskeyLogin(config: ClientFirstLoginConfig): P
 		loginOptions.mediation = config.mediation;
 	}
 
+	controller?.abort(); // Abort any ongoing request
 	if (config.signal) {
 		loginOptions.signal = config.signal;
+	} else {
+		controller = new AbortController();
+		loginOptions.signal = controller.signal;
 	}
 
 	// Open "select passkey" dialog
