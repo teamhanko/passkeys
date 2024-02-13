@@ -31,11 +31,21 @@ interface ClientFirstLoginConfig extends Common {
  * After starting a new request, set this variable to the request's AbortController.
  */
 let controller: AbortController | undefined;
+export enum AbortReason {
+	NewRequest = "Aborted by new request",
+	ManualCallback = "Manually aborted using callback",
+}
 
 /**
  * Sign in with a passkey. Requires `PasskeyProvider` to be configured in `pages/api/auth/[...nextauth].ts`
  */
 export async function signInWithPasskey(config: SignInConfig) {
+	if (!config.signal) {
+		controller?.abort(AbortReason.NewRequest);
+		controller = new AbortController();
+		config.signal = controller.signal;
+	}
+
 	const finalizeJWT = await clientFirstPasskeyLogin(config);
 
 	await signIn(config.provider ?? DEFAULT_PROVIDER_ID, {
@@ -48,7 +58,7 @@ export async function signInWithPasskey(config: SignInConfig) {
 const noop = () => {};
 let warnedConditionalNotAvailable = false;
 
-signInWithPasskey.conditional = function (config: SignInConfig, signal?: AbortSignal) {
+signInWithPasskey.conditional = function (config: SignInConfig) {
 	if (!isConditionalMediationAvailable()) {
 		if (!warnedConditionalNotAvailable) {
 			console.error("Conditional mediation is not available on this device.");
@@ -57,25 +67,20 @@ signInWithPasskey.conditional = function (config: SignInConfig, signal?: AbortSi
 		return noop;
 	}
 
-	controller?.abort(); // Abort any ongoing request
-	if (!signal) {
-		controller = new AbortController();
-		signal = controller.signal;
-	}
-
 	signInWithPasskey({
 		...config,
 		mediation: "conditional",
-		signal,
 	});
 
-	return (reason = "Manually aborted") => controller?.abort(reason);
+	return (reason = AbortReason.ManualCallback) => controller?.abort(reason);
 };
 
 /**
  * You likely want to use {@link signInWithPasskey} instead.
  *
  * This method runs the ["Client-First Login Flow"]() triggers the "select passkey" dialog and returns a JWT signed by the Hanko Passkey API.
+ *
+ * It can then be used to sign in e.g. with the PasskeyProvider, passing the returned JWT as the `finalizeJWT` parameter.
  *
  * @returns a JWT that can be exchanged for a session on the backend.
  *          To verify the JWT, use the JWKS endpoint of the tenant. (`{tenantId}/.well-known/jwks.json`)
@@ -88,17 +93,8 @@ export async function clientFirstPasskeyLogin(config: ClientFirstLoginConfig): P
 		headers,
 	}).then((res) => res.json());
 
-	if (config.mediation) {
-		loginOptions.mediation = config.mediation;
-	}
-
-	controller?.abort(); // Abort any ongoing request
-	if (config.signal) {
-		loginOptions.signal = config.signal;
-	} else {
-		controller = new AbortController();
-		loginOptions.signal = controller.signal;
-	}
+	if (config.mediation) loginOptions.mediation = config.mediation;
+	if (config.signal) loginOptions.signal = config.signal;
 
 	// Open "select passkey" dialog
 	const credential = await get(loginOptions);
