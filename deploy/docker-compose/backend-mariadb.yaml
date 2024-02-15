@@ -1,0 +1,58 @@
+version: '3.9'
+services:
+  passkey-migrate:
+    build: ../../server
+    volumes:
+      - type: bind
+        source: ./config-mariadb.yaml
+        target: /etc/config/config.yaml
+    command: --config /etc/config/config.yaml migrate up
+    restart: on-failure
+    depends_on:
+      mariadbd:
+        condition: service_healthy
+    networks:
+      - intranet
+  passkey-server:
+    build: ../../server
+    volumes:
+      - type: bind
+        source: ./config-mariadb.yaml
+        target: /etc/config/config.yaml
+    command: --config /etc/config/config.yaml serve all
+    ports:
+      - '8000:8000'
+      - '8001:8001'
+    restart: unless-stopped
+    depends_on:
+      passkey-migrate:
+        condition: service_completed_successfully
+    networks:
+      - intranet
+  mariadbd:
+    image: mariadb:11
+    ports:
+      - "3306:3306"
+    environment:
+      - MARIADB_USER=hanko
+      - MARIADB_PASSWORD=hanko
+      - MARIADB_DATABASE=passkey
+      - MARIADB_RANDOM_ROOT_PASSWORD=true
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test:
+          [
+          "CMD",
+          "healthcheck.sh",
+          "--su-mysql",
+          "--connect",
+          "--innodb_initialized"
+          ]
+      timeout: 30s
+      start_period: 30s
+    networks:
+      - intranet
+
+networks:
+  intranet:
