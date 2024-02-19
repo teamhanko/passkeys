@@ -1,0 +1,7 @@
+database:
+  database: passkey
+  dialect: mysql
+  host: mariadbd
+  port: 3306
+  user: hanko
+  password: hanko
