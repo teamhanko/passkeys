@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  version: '1.0'
+  version: '1.1'
   title: passkey-server-admin
   summary: Admin API for Passkey Server
   description: 'ADmin API for Hanko Passkey Server. Allows creation and configiration of tenants and api keys, '
@@ -508,6 +508,8 @@ components:
                 type: string
               config:
                 $ref: '#/components/schemas/config'
+              create_api_key:
+                type: boolean
             required:
               - display_name
     update_tenant:
@@ -580,7 +582,6 @@ components:
           $ref: '#/components/schemas/secret'
       required:
         - id
-        - api_key
     secret:
       type: object
       title: secret
