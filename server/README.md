@@ -119,7 +119,7 @@ To apply the migrations, run:
 ### Create Tenant
 
 Now you need to create a tenant. For this you can import our [admin OpenAPI specification](../spec/passkey-server-admin.yaml)
-into Postman or Insomnia or use the following curl command:
+into Postman, Insomnia or use the following curl command:
 
 ```shell
 curl --location 'http://<YOUR DOMAIN>:8001/tenants' \
@@ -144,11 +144,13 @@ curl --location 'http://<YOUR DOMAIN>:8001/tenants' \
       },
       "timeout": 60000,
       "user_verification": "preferred"
-    }
+    },
+    "create_api_key": true
   }
 }'
 ```
-> **Note**: The result of the curl command will contain your **tenant id** (Field: `id`) and your **API key** (Field: `api_key.secret`)
+> **Note**: The result of the curl command will contain your **tenant id** (Field: `id`) and your **API key** (Field: `api_key.secret`). 
+> If you want to skip the api key creation, remove the `create_api_key` parameter from the body. 
 
 Let us dissect the command to show how to configure the tenant for your use case.
 
