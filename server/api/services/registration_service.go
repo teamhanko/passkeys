@@ -70,7 +70,7 @@ func (rs *registrationService) Initialize(user *models.WebauthnUser) (*protocol.
 		return nil, internalUser.UserId, err
 	}
 
-	err = rs.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, rs.tenant.ID, models.WebauthnOperationRegistration))
+	err = rs.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, rs.tenant.ID, models.WebauthnOperationRegistration, false))
 	if err != nil {
 		return nil, internalUser.UserId, err
 	}
