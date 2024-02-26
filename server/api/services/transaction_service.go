@@ -92,7 +92,7 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 		return nil, err
 	}
 
-	err = ts.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, ts.tenant.ID, models.WebauthnOperationTransaction))
+	err = ts.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, ts.tenant.ID, models.WebauthnOperationTransaction, false))
 	if err != nil {
 		ts.logger.Error(err)
 		return nil, err
