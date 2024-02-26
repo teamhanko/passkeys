@@ -580,6 +580,7 @@ components:
           maxLength: 36
         api_key:
           $ref: '#/components/schemas/secret'
+          description: omitted when `create_api_key`is omitted or set to `false`
       required:
         - id
     secret:
@@ -658,10 +659,32 @@ components:
           examples:
             - 60000
         user_verification:
+          type: string
           enum:
             - required
             - preferred
             - discouraged
+        attachment:
+          type: string
+          enum:
+            - platform
+            - cross-platform
+          description: uses all authenticator attachments when omitted
+        attestation_preference:
+          type: string
+          enum:
+            - none
+            - indirect
+            - direct
+            - enterprise
+          description: defaults to `none` when omitted
+        resident_key_requirement:
+          type: string
+          enum:
+            - discouraged
+            - preferred
+            - required
+          description: defaults to `required` when omitted
       required:
         - relying_party
         - timeout

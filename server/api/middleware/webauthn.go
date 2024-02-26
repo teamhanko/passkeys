@@ -30,11 +30,11 @@ func WebauthnMiddleware() echo.MiddlewareFunc {
 				RPDisplayName:         cfg.WebauthnConfig.RelyingParty.DisplayName,
 				RPID:                  cfg.WebauthnConfig.RelyingParty.RPId,
 				RPOrigins:             origins,
-				AttestationPreference: protocol.PreferNoAttestation,
+				AttestationPreference: cfg.WebauthnConfig.AttestationPreference,
 				AuthenticatorSelection: protocol.AuthenticatorSelection{
 					RequireResidentKey: &f,
-					ResidentKey:        protocol.ResidentKeyRequirementDiscouraged,
-					UserVerification:   protocol.VerificationRequired,
+					ResidentKey:        cfg.WebauthnConfig.ResidentKeyRequirement,
+					UserVerification:   cfg.WebauthnConfig.UserVerification,
 				},
 				Debug: false,
 				Timeouts: webauthn.TimeoutsConfig{

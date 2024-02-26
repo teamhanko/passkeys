@@ -51,14 +51,20 @@ func (rs *registrationService) Initialize(user *models.WebauthnUser) (*protocol.
 	}
 
 	t := true
+	authSelection := protocol.AuthenticatorSelection{
+		RequireResidentKey: &t,
+		ResidentKey:        rs.tenant.Config.WebauthnConfig.ResidentKeyRequirement,
+		UserVerification:   rs.tenant.Config.WebauthnConfig.UserVerification,
+	}
+
+	if rs.tenant.Config.WebauthnConfig.Attachment != nil {
+		authSelection.AuthenticatorAttachment = *rs.tenant.Config.WebauthnConfig.Attachment
+	}
+
 	credentialCreation, sessionData, err := rs.webauthnClient.BeginRegistration(
 		internalUser,
-		webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
-			RequireResidentKey: &t,
-			ResidentKey:        protocol.ResidentKeyRequirementRequired,
-			UserVerification:   rs.tenant.Config.WebauthnConfig.UserVerification,
-		}),
-		webauthn.WithConveyancePreference(protocol.PreferNoAttestation),
+		webauthn.WithAuthenticatorSelection(authSelection),
+		webauthn.WithConveyancePreference(rs.tenant.Config.WebauthnConfig.AttestationPreference),
 	)
 	if err != nil {
 		return nil, internalUser.UserId, err
