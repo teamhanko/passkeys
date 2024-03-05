@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-webauthn/webauthn/protocol"
-	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/mapper"
@@ -50,21 +49,8 @@ func (rs *registrationService) Initialize(user *models.WebauthnUser) (*protocol.
 		return nil, user.UserID, err
 	}
 
-	t := true
-	authSelection := protocol.AuthenticatorSelection{
-		RequireResidentKey: &t,
-		ResidentKey:        rs.tenant.Config.WebauthnConfig.ResidentKeyRequirement,
-		UserVerification:   rs.tenant.Config.WebauthnConfig.UserVerification,
-	}
-
-	if rs.tenant.Config.WebauthnConfig.Attachment != nil {
-		authSelection.AuthenticatorAttachment = *rs.tenant.Config.WebauthnConfig.Attachment
-	}
-
 	credentialCreation, sessionData, err := rs.webauthnClient.BeginRegistration(
 		internalUser,
-		webauthn.WithAuthenticatorSelection(authSelection),
-		webauthn.WithConveyancePreference(rs.tenant.Config.WebauthnConfig.AttestationPreference),
 	)
 	if err != nil {
 		return nil, internalUser.UserId, err

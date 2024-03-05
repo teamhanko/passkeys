@@ -52,7 +52,7 @@ func (ls *loginService) Initialize() (*protocol.CredentialAssertion, error) {
 			return nil, echo.NewHTTPError(http.StatusNotFound, err)
 		}
 
-		credentialAssertion, sessionData, err = ls.webauthnClient.BeginLogin(user, webauthn.WithUserVerification(ls.tenant.Config.WebauthnConfig.UserVerification))
+		credentialAssertion, sessionData, err = ls.webauthnClient.BeginLogin(user)
 		if err != nil {
 			ls.logger.Error(err)
 			return nil, echo.NewHTTPError(
@@ -61,10 +61,9 @@ func (ls *loginService) Initialize() (*protocol.CredentialAssertion, error) {
 			)
 		}
 		isDiscoverable = false
+
 	} else {
-		credentialAssertion, sessionData, err = ls.webauthnClient.BeginDiscoverableLogin(
-			webauthn.WithUserVerification(ls.tenant.Config.WebauthnConfig.UserVerification),
-		)
+		credentialAssertion, sessionData, err = ls.webauthnClient.BeginDiscoverableLogin()
 
 		if err != nil {
 			ls.logger.Error(err)

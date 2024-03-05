@@ -15,10 +15,10 @@ type Config struct {
 	TenantID uuid.UUID `json:"tenant_id" db:"tenant_id"`
 	Tenant   *Tenant   `json:"tenant,omitempty" belongs_to:"tenant"`
 
-	WebauthnConfig WebauthnConfig `json:"webauthn_config,omitempty" has_one:"webauthn_config"`
-	Cors           Cors           `json:"cors,omitempty" has_one:"cor"`
-	AuditLogConfig AuditLogConfig `json:"audit_log_config,omitempty" has_one:"audit_log_config"`
-	Secrets        Secrets        `json:"secrets,omitempty" has_many:"secrets"`
+	WebauthnConfigs []WebauthnConfig `json:"webauthn_config,omitempty" has_many:"webauthn_config"`
+	Cors            Cors             `json:"cors,omitempty" has_one:"cor"`
+	AuditLogConfig  AuditLogConfig   `json:"audit_log_config,omitempty" has_one:"audit_log_config"`
+	Secrets         Secrets          `json:"secrets,omitempty" has_many:"secrets"`
 
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`

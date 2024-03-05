@@ -8,8 +8,9 @@ import (
 )
 
 type CreateConfigDto struct {
-	Cors     CreateCorsDto     `json:"cors" validate:"required"`
-	Webauthn CreateWebauthnDto `json:"webauthn" validate:"required"`
+	Cors     CreateCorsDto           `json:"cors" validate:"required"`
+	Webauthn CreateWebauthnConfigDto `json:"webauthn" validate:"required"`
+	Mfa      CreateWebauthnConfigDto `json:"mfa" validate:"required"`
 }
 
 func (dto *CreateConfigDto) ToModel(tenant models.Tenant) models.Config {

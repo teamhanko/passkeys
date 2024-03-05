@@ -70,7 +70,6 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 
 	credentialAssertion, sessionData, err := ts.webauthnClient.BeginLogin(
 		intern.NewWebauthnUser(*webauthnUser),
-		webauthn.WithUserVerification(ts.tenant.Config.WebauthnConfig.UserVerification),
 		ts.withTransaction(transaction.Identifier, transaction.Data),
 	)
 	if err != nil {

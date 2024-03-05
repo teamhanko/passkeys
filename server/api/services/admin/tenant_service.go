@@ -89,8 +89,10 @@ func (ts *tenantService) Create(dto request.CreateTenantDto) (*response.CreateTe
 	tenantModel := dto.ToModel()
 	configModel := dto.Config.ToModel(tenantModel)
 	corsModel := dto.Config.Cors.ToModel(configModel)
-	webauthnConfigModel := dto.Config.Webauthn.ToModel(configModel)
-	relyingPartyModel := dto.Config.Webauthn.RelyingParty.ToModel(webauthnConfigModel)
+	passkeyConfigModel := dto.Config.Webauthn.ToPasskeyModel(configModel)
+	relyingPartyModel := dto.Config.Webauthn.RelyingParty.ToModel(passkeyConfigModel)
+	mfaConfigModel := dto.Config.Mfa.ToMfaModel(configModel)
+	mfaRp := dto.Config.Mfa.RelyingParty.ToModel(mfaConfigModel)
 
 	err := ts.tenantPersister.Create(&tenantModel)
 	if err != nil {
@@ -101,8 +103,10 @@ func (ts *tenantService) Create(dto request.CreateTenantDto) (*response.CreateTe
 	err = ts.persistConfig(
 		&configModel,
 		&corsModel,
-		&webauthnConfigModel,
+		&passkeyConfigModel,
 		&relyingPartyModel,
+		&mfaConfigModel,
+		&mfaRp,
 	)
 
 	var apiSecretModel *models.Secret = nil
@@ -163,7 +167,7 @@ func (ts *tenantService) createSecret(name string, configId uuid.UUID, isAPIKey 
 	return model, nil
 }
 
-func (ts *tenantService) persistConfig(config *models.Config, cors *models.Cors, webauthn *models.WebauthnConfig, rp *models.RelyingParty) error {
+func (ts *tenantService) persistConfig(config *models.Config, cors *models.Cors, webauthn *models.WebauthnConfig, rp *models.RelyingParty, mfaConfig *models.WebauthnConfig, mfaRp *models.RelyingParty) error {
 	err := ts.configPersister.Create(config)
 	if err != nil {
 		return err
@@ -180,6 +184,16 @@ func (ts *tenantService) persistConfig(config *models.Config, cors *models.Cors,
 	}
 
 	err = ts.relyingPartyPerister.Create(rp)
+	if err != nil {
+		return err
+	}
+
+	err = ts.webauthnConfigPersister.Create(mfaConfig)
+	if err != nil {
+		return err
+	}
+
+	err = ts.relyingPartyPerister.Create(mfaRp)
 	if err != nil {
 		return err
 	}
@@ -209,10 +223,20 @@ func (ts *tenantService) UpdateConfig(dto request.UpdateConfigDto) error {
 	config := ts.tenant.Config
 	newConfig := dto.ToModel(*ts.tenant)
 	corsModel := dto.Cors.ToModel(newConfig)
-	webauthnConfigModel := dto.Webauthn.ToModel(newConfig)
+	webauthnConfigModel := dto.Webauthn.ToPasskeyModel(newConfig)
 	relyingPartyModel := dto.Webauthn.RelyingParty.ToModel(webauthnConfigModel)
+	mfaConfigModel := dto.Mfa.ToMfaModel(newConfig)
+	mfaRp := dto.Mfa.RelyingParty.ToModel(mfaConfigModel)
 
-	err := ts.persistConfig(&newConfig, &corsModel, &webauthnConfigModel, &relyingPartyModel)
+	err := ts.persistConfig(
+		&newConfig,
+		&corsModel,
+		&webauthnConfigModel,
+		&relyingPartyModel,
+		&mfaConfigModel,
+		&mfaRp,
+	)
+
 	if err != nil {
 		ts.logger.Error(err)
 		return err

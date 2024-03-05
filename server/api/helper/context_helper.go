@@ -10,24 +10,30 @@ import (
 )
 
 type WebauthnContext struct {
-	Tenant    *models.Tenant
-	Webauthn  *webauthn.WebAuthn
-	Config    models.Config
-	AuditLog  auditlog.Logger
-	Generator jwt.Generator
+	Tenant         *models.Tenant
+	WebauthnClient *webauthn.WebAuthn
+	Config         models.Config
+	AuditLog       auditlog.Logger
+	Generator      jwt.Generator
 }
 
-func GetHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
+func getContext(ctx echo.Context, webauthnClientKey string, jwtGeneratorKey string) (*WebauthnContext, error) {
 	ctxTenant := ctx.Get("tenant")
 	if ctxTenant == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Unable to find tenant")
 	}
 	tenant := ctxTenant.(*models.Tenant)
 
-	ctxWebautn := ctx.Get("webauthn_client")
+	webauthnClientCtx := ctx.Get(webauthnClientKey)
 	var webauthnClient *webauthn.WebAuthn
-	if ctxWebautn != nil {
-		webauthnClient = ctxWebautn.(*webauthn.WebAuthn)
+	if webauthnClientCtx != nil {
+		webauthnClient = webauthnClientCtx.(*webauthn.WebAuthn)
+	}
+
+	jwtGeneratorCtx := ctx.Get(jwtGeneratorKey)
+	var jwtGenerator jwt.Generator
+	if jwtGeneratorCtx != nil {
+		jwtGenerator = jwtGeneratorCtx.(jwt.Generator)
 	}
 
 	ctxAuditLog := ctx.Get("audit_logger")
@@ -36,17 +42,19 @@ func GetHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
 		auditLogger = ctxAuditLog.(auditlog.Logger)
 	}
 
-	ctxGenerator := ctx.Get("jwt_generator")
-	var generator jwt.Generator
-	if ctxGenerator != nil {
-		generator = ctxGenerator.(jwt.Generator)
-	}
-
 	return &WebauthnContext{
-		Tenant:    tenant,
-		Webauthn:  webauthnClient,
-		Config:    tenant.Config,
-		AuditLog:  auditLogger,
-		Generator: generator,
+		Tenant:         tenant,
+		WebauthnClient: webauthnClient,
+		Config:         tenant.Config,
+		AuditLog:       auditLogger,
+		Generator:      jwtGenerator,
 	}, nil
+}
+
+func GetHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
+	return getContext(ctx, "webauthn_client", "jwt_generator")
+}
+
+func GetMfaHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
+	return getContext(ctx, "mfa_client", "mfa_jwt_generator")
 }

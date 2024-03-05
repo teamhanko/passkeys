@@ -19,8 +19,8 @@ type registrationHandler struct {
 	mapper.AuthenticatorMetadata
 }
 
-func NewRegistrationHandler(persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata) WebauthnHandler {
-	webauthnHandler := newWebAuthnHandler(persister)
+func NewRegistrationHandler(persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata, useMfaClient bool) WebauthnHandler {
+	webauthnHandler := newWebAuthnHandler(persister, useMfaClient)
 
 	return &registrationHandler{
 		webauthnHandler,
@@ -36,8 +36,15 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 
 	webauthnUser := dto.ToModel()
 
-	h, err := helper.GetHandlerContext(ctx)
-	if err != nil {
+	var h *helper.WebauthnContext
+	var hErr error
+	if r.UseMfaClient {
+		h, hErr = helper.GetMfaHandlerContext(ctx)
+	} else {
+		h, hErr = helper.GetHandlerContext(ctx)
+	}
+
+	if hErr != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
@@ -50,7 +57,7 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 		service := services.NewRegistrationService(services.WebauthnServiceCreateParams{
 			Ctx:                 ctx,
 			Tenant:              *h.Tenant,
-			WebauthnClient:      *h.Webauthn,
+			WebauthnClient:      *h.WebauthnClient,
 			UserPersister:       userPersister,
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
@@ -79,8 +86,15 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse credential creation response").SetInternal(err)
 	}
 
-	h, err := helper.GetHandlerContext(ctx)
-	if err != nil {
+	var h *helper.WebauthnContext
+	var hErr error
+	if r.UseMfaClient {
+		h, hErr = helper.GetMfaHandlerContext(ctx)
+	} else {
+		h, hErr = helper.GetHandlerContext(ctx)
+	}
+
+	if hErr != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
@@ -93,7 +107,7 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		service := services.NewRegistrationService(services.WebauthnServiceCreateParams{
 			Ctx:                   ctx,
 			Tenant:                *h.Tenant,
-			WebauthnClient:        *h.Webauthn,
+			WebauthnClient:        *h.WebauthnClient,
 			UserPersister:         userPersister,
 			SessionPersister:      sessionPersister,
 			CredentialPersister:   credentialPersister,

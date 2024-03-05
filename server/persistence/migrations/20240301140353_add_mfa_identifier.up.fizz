@@ -1,0 +1,2 @@
+add_column("webauthn_configs", "is_mfa", "boolean", { default: false})
+add_index("webauthn_configs", ["config_id", "is_mfa"], { unique: true, name:"webauthn_mfa_config_idx" })

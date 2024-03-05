@@ -23,6 +23,7 @@ type WebauthnConfig struct {
 	Attachment             *protocol.AuthenticatorAttachment    `json:"attachment" db:"attachment"`
 	AttestationPreference  protocol.ConveyancePreference        `json:"attestation_preference" db:"attestation_preference"`
 	ResidentKeyRequirement protocol.ResidentKeyRequirement      `json:"resident_key_requirement" db:"resident_key_requirement"`
+	IsMfa                  bool                                 `json:"is_mfa" db:"is_mfa"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
