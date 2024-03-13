@@ -29,13 +29,14 @@ type WebauthnSessionData struct {
 	Operation          Operation                              `db:"operation"`
 	AllowedCredentials []WebauthnSessionDataAllowedCredential `has_many:"webauthn_session_data_allowed_credentials"`
 	ExpiresAt          nulls.Time                             `db:"expires_at"`
+	IsDiscoverable     bool                                   `db:"is_discoverable"`
 
 	TenantID uuid.UUID `db:"tenant_id"`
 	Tenant   *Tenant   `belongs_to:"tenants"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
-func (sd *WebauthnSessionData) Validate(tx *pop.Connection) (*validate.Errors, error) {
+func (sd *WebauthnSessionData) Validate(_ *pop.Connection) (*validate.Errors, error) {
 	return validate.Validate(
 		&validators.UUIDIsPresent{Name: "ID", Field: sd.ID},
 		&validators.StringIsPresent{Name: "Challenge", Field: sd.Challenge},

@@ -176,6 +176,8 @@ paths:
       operationId: post-login-initialize
       parameters:
         - $ref: '#/components/parameters/tenant_id'
+      requestBody:
+        $ref: '#/components/requestBodies/post-login-initialize'
       responses:
         '200':
           $ref: '#/components/responses/post-login-initialize'
@@ -428,6 +430,16 @@ components:
               - user_id
               - transaction_id
               - transaction_data
+    post-login-initialize:
+      description: Body for login/initialize
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: string
+                description: optional
   responses:
     get-credentials:
       description: Example response

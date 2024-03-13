@@ -5,6 +5,7 @@ import (
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/labstack/echo/v4"
+	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/api/helper"
 	"github.com/teamhanko/passkey-server/api/services"
@@ -33,6 +34,11 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 		return err
 	}
 
+	dto, err := BindAndValidateRequest[request.InitLoginDto](ctx)
+	if err != nil {
+		return err
+	}
+
 	return lh.persister.GetConnection().Transaction(func(tx *pop.Connection) error {
 		userPersister := lh.persister.GetWebauthnUserPersister(tx)
 		sessionPersister := lh.persister.GetWebauthnSessionDataPersister(tx)
@@ -42,6 +48,7 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 			Ctx:                 ctx,
 			Tenant:              *h.Tenant,
 			WebauthnClient:      *h.Webauthn,
+			UserId:              dto.UserId,
 			UserPersister:       userPersister,
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,

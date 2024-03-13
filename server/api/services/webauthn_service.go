@@ -31,6 +31,7 @@ type WebauthnServiceCreateParams struct {
 	WebauthnClient        webauthn.WebAuthn
 	Generator             jwt.Generator
 	AuthenticatorMetadata mapper.AuthenticatorMetadata
+	UserId                *string
 
 	UserPersister       persisters.WebauthnUserPersister
 	SessionPersister    persisters.WebauthnSessionDataPersister
