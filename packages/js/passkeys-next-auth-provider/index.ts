@@ -46,7 +46,11 @@ export function PasskeyProvider({
 	const JWKS = createRemoteJWKSet(url);
 
 	// TODO call normally when this is fixed: https://github.com/nextauthjs/next-auth/issues/572
-	return ((CredentialsProvider as any).default as typeof CredentialsProvider)({
+	return (
+		('default' in CredentialsProvider
+			? (CredentialsProvider as any).default
+			: CredentialsProvider) as typeof CredentialsProvider
+	)({
 		id,
 		credentials: {
 			/**
