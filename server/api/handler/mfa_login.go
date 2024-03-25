@@ -52,15 +52,16 @@ func (lh *mfaLoginHandler) Init(ctx echo.Context) error {
 			UserPersister:       userPersister,
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
+			UseMFA:              true,
 		})
 
 		credentialAssertion, err := service.Initialize()
-		err = lh.handleError(h.AuditLog, models.AuditLogWebAuthnAuthenticationInitFailed, tx, ctx, nil, nil, err)
+		err = lh.handleError(h.AuditLog, models.AuditLogWebAuthnAuthenticationInitFailed, tx, ctx, dto.UserId, nil, err)
 		if err != nil {
 			return err
 		}
 
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitSucceeded, nil, nil, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitSucceeded, dto.UserId, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -96,6 +97,7 @@ func (lh *mfaLoginHandler) Finish(ctx echo.Context) error {
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
 			Generator:           h.Generator,
+			UseMFA:              true,
 		})
 
 		token, userId, err := service.Finalize(parsedRequest)

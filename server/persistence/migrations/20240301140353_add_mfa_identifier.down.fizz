@@ -1,2 +1,0 @@
-drop_index("webauthn_configs", "webauthn_mfa_config_idx")
-drop_column("webauthn_configs", "is_mfa")

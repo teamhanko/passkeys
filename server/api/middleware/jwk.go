@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
 	hankoJwk "github.com/teamhanko/passkey-server/crypto/jwk"
 	"github.com/teamhanko/passkey-server/crypto/jwt"
@@ -46,29 +45,12 @@ func instantiateJwtGenerator(ctx echo.Context, keys []string, tenant models.Tena
 	}
 	ctx.Set("jwk_manager", jwkManager)
 
-	for _, webauthnConfig := range tenant.Config.WebauthnConfigs {
-		if webauthnConfig.IsMfa {
-			err = createGeneratorFromConfig(ctx, "mfa_jwt_generator", webauthnConfig, jwkManager, tenant.ID)
-		} else {
-			err = createGeneratorFromConfig(ctx, "jwt_generator", webauthnConfig, jwkManager, tenant.ID)
-		}
-
-		if err != nil {
-			ctx.Logger().Error(err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func createGeneratorFromConfig(ctx echo.Context, ctxKey string, cfg models.WebauthnConfig, manager hankoJwk.Manager, tenantId uuid.UUID) error {
-	generator, err := jwt.NewGenerator(&cfg, manager, tenantId)
+	generator, err := jwt.NewGenerator(&tenant.Config.WebauthnConfig, jwkManager, tenant.ID)
 	if err != nil {
 		return err
 	}
 
-	ctx.Set(ctxKey, generator)
+	ctx.Set("jwt_generator", generator)
 
 	return nil
 }

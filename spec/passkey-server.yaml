@@ -301,9 +301,157 @@ paths:
               default: localhost
             path_prefix:
               default: ''
+  '/{tenant_id}/mfa/registration/initialize':
+    post:
+      tags:
+        - credentials
+        - mfa
+      summary: Start MFA Registration
+      description: Initialize a registration for mfa credentials
+      operationId: post-mfa-registration-initialize
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - name: tenant_id
+          in: path
+          description: Tenant ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/post-registration-initialize'
+      responses:
+        '200':
+          $ref: '#/components/responses/post-registration-initialize'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+  '/{tenant_id}/mfa/registration/finalize':
+    post:
+      tags:
+        - credentials
+        - mfa
+      summary: Finish MFA Registration
+      description: Finish credential registration process
+      operationId: post-mfa-registration-finalize
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - name: tenant_id
+          in: path
+          description: Tenant ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/post-registration-finalize'
+      responses:
+        '200':
+          $ref: '#/components/responses/token'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+  '/{tenant_id}/mfa/login/initialize':
+    post:
+      tags:
+        - credentials
+        - mfa
+      summary: Start MFA Login
+      description: Initialize a login flow for MFA
+      operationId: post-mfa-login-initialize
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - name: tenant_id
+          in: path
+          description: Tenant ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/post-mfa-login-initialize'
+      responses:
+        '200':
+          $ref: '#/components/responses/post-login-initialize'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+  '/{tenant_id}/mfa/login/finalize':
+    post:
+      tags:
+        - credentials
+        - mfa
+      summary: Finish MFA Login
+      description: Finalize the login operation
+      operationId: post-mfa-login-finalize
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - name: tenant_id
+          in: path
+          description: Tenant ID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: '#/components/requestBodies/post-login-finalize'
+      responses:
+        '200':
+          $ref: '#/components/responses/token'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      security: []
+      servers:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
 tags:
   - name: credentials
     description: Represents all objects which are related to WebAuthn credentials
+  - name: mfa
+    description: Represents all objects which are related to MFA in common
   - name: webauthn
     description: Represents all objects which are related to WebAuthn in common
 components:
@@ -439,7 +587,17 @@ components:
             properties:
               user_id:
                 type: string
-                description: optional
+                description: optional - when provided the API Key needs to be sent to the server too.
+    post-mfa-login-initialize:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              user_id:
+                type: string
+            required:
+              - user_id
   responses:
     get-credentials:
       description: Example response

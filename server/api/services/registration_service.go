@@ -21,6 +21,7 @@ type RegistrationService interface {
 type registrationService struct {
 	WebauthnService
 	mapper.AuthenticatorMetadata
+	UseMFA bool
 }
 
 func NewRegistrationService(params WebauthnServiceCreateParams) RegistrationService {
@@ -40,6 +41,7 @@ func NewRegistrationService(params WebauthnServiceCreateParams) RegistrationServ
 			sessionDataPersister: params.SessionPersister,
 		},
 		params.AuthenticatorMetadata,
+		params.UseMFA,
 	}
 }
 
@@ -135,7 +137,7 @@ func (rs *registrationService) Finalize(req *protocol.ParsedCredentialCreationDa
 
 	err = rs.sessionDataPersister.Delete(*dbSessionData)
 	if err != nil {
-		rs.logger.Warnf("failed to delete attestation session data: %w", err)
+		rs.logger.Errorf("failed to delete attestation session data: %w", err)
 	}
 
 	token, err := rs.generator.Generate(dbUser.UserID, credential.ID)
@@ -198,6 +200,7 @@ func (rs *registrationService) createCredential(dbUser *models.WebauthnUser, ses
 		flags.HasBackupEligible(),
 		flags.HasBackupState(),
 		rs.AuthenticatorMetadata,
+		rs.UseMFA,
 	)
 
 	err = rs.credentialPersister.Create(dbCredential)

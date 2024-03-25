@@ -86,7 +86,7 @@ func RouteCredentials(parent *echo.Group, persister persistence.Persister) {
 func RouteRegistration(parent *echo.Group, persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata) {
 	registrationHandler := handler.NewRegistrationHandler(persister, authenticatorMetadata, false)
 
-	group := parent.Group("/registration", passkeyMiddleware.WebauthnMiddleware(persister))
+	group := parent.Group("/registration")
 	group.POST(InitEndpoint, registrationHandler.Init, passkeyMiddleware.ApiKeyMiddleware())
 	group.POST(FinishEndpoint, registrationHandler.Finish)
 }
@@ -94,7 +94,7 @@ func RouteRegistration(parent *echo.Group, persister persistence.Persister, auth
 func RouteLogin(parent *echo.Group, persister persistence.Persister) {
 	loginHandler := handler.NewLoginHandler(persister)
 
-	group := parent.Group("/login", passkeyMiddleware.WebauthnMiddleware(persister))
+	group := parent.Group("/login")
 	group.POST(InitEndpoint, loginHandler.Init)
 	group.POST(FinishEndpoint, loginHandler.Finish)
 }
@@ -102,7 +102,7 @@ func RouteLogin(parent *echo.Group, persister persistence.Persister) {
 func RouteTransaction(parent *echo.Group, persister persistence.Persister) {
 	transactionHandler := handler.NewTransactionHandler(persister)
 
-	group := parent.Group("/transaction", passkeyMiddleware.WebauthnMiddleware(persister), passkeyMiddleware.ApiKeyMiddleware())
+	group := parent.Group("/transaction", passkeyMiddleware.ApiKeyMiddleware())
 	group.POST(InitEndpoint, transactionHandler.Init)
 	group.POST(FinishEndpoint, transactionHandler.Finish)
 }

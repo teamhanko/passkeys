@@ -627,9 +627,12 @@ components:
           $ref: '#/components/schemas/cors'
         webauthn:
           $ref: '#/components/schemas/webauthn'
+        mfa:
+          $ref: '#/components/schemas/mfa'
       required:
         - cors
         - webauthn
+        - mfa
     cors:
       type: object
       title: cors
@@ -664,6 +667,7 @@ components:
             - required
             - preferred
             - discouraged
+          description: defaults to `required` when omitted
         attachment:
           type: string
           enum:
@@ -677,7 +681,7 @@ components:
             - indirect
             - direct
             - enterprise
-          description: defaults to `none` when omitted
+          description: defaults to `direct` when omitted
         resident_key_requirement:
           type: string
           enum:
@@ -688,7 +692,6 @@ components:
       required:
         - relying_party
         - timeout
-        - user_verification
     relying_party:
       type: object
       title: relying_party
@@ -719,6 +722,43 @@ components:
         - id
         - display_name
         - origins
+    mfa:
+      type: object
+      title: mfa
+      properties:
+        timeout:
+          type: number
+          default: 60000
+        user_verification:
+          type: string
+          enum:
+            - required
+            - preferred
+            - discouraged
+          description: defaults to `discouraged` when omitted
+        attachment:
+          type: string
+          enum:
+            - platform
+            - cross-platform
+          description: defaults to `cross-platform` when omitted
+        attestation_preference:
+          type: string
+          enum:
+            - none
+            - indirect
+            - direct
+            - enterprise
+          description: defaults to `direct` when omitted
+        resident_key_requirement:
+          type: string
+          enum:
+            - discouraged
+            - preferred
+            - required
+          description: defaults to `preferred` when omitted
+      required:
+        - timeout
     secret_list:
       type: array
       title: secret_list

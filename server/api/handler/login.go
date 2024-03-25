@@ -13,6 +13,7 @@ import (
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
+	"strings"
 )
 
 type loginHandler struct {
@@ -39,6 +40,11 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 		return err
 	}
 
+	apiKey := ctx.Request().Header.Get("apiKey")
+	if dto.UserId != nil && strings.TrimSpace(apiKey) == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "api key is missing")
+	}
+
 	return lh.persister.GetConnection().Transaction(func(tx *pop.Connection) error {
 		userPersister := lh.persister.GetWebauthnUserPersister(tx)
 		sessionPersister := lh.persister.GetWebauthnSessionDataPersister(tx)
@@ -55,12 +61,12 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 		})
 
 		credentialAssertion, err := service.Initialize()
-		err = lh.handleError(h.AuditLog, models.AuditLogWebAuthnAuthenticationInitFailed, tx, ctx, nil, nil, err)
+		err = lh.handleError(h.AuditLog, models.AuditLogWebAuthnAuthenticationInitFailed, tx, ctx, dto.UserId, nil, err)
 		if err != nil {
 			return err
 		}
 
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitSucceeded, nil, nil, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitSucceeded, dto.UserId, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)

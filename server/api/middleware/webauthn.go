@@ -12,6 +12,15 @@ import (
 	"time"
 )
 
+type clientParams struct {
+	RP                     models.RelyingParty
+	Timeout                int
+	UserVerification       protocol.UserVerificationRequirement
+	Attachment             *protocol.AuthenticatorAttachment
+	AttestationPreference  protocol.ConveyancePreference
+	ResidentKeyRequirement protocol.ResidentKeyRequirement
+}
+
 func WebauthnMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
@@ -20,8 +29,6 @@ func WebauthnMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 				ctx.Logger().Errorf("tenant for webauthn middleware not found")
 				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
 			}
-
-			ctx.Path()
 
 			cfg := tenant.Config
 
@@ -38,64 +45,56 @@ func WebauthnMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 
 func setWebauthnClientCtx(ctx echo.Context, cfg models.Config, persister persistence.Persister) error {
 	var passkeyConfig models.WebauthnConfig
-	for _, webauthnConfig := range cfg.WebauthnConfigs {
-		var err error
-		if webauthnConfig.IsMfa {
-			err = createWebauthnClient(ctx, "mfa_client", webauthnConfig)
-		} else {
-			passkeyConfig = webauthnConfig
-			err = createWebauthnClient(ctx, "webauthn_client", webauthnConfig)
-		}
 
+	err := createPasskeyCLient(ctx, cfg.WebauthnConfig)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	if cfg.MfaConfig == nil {
+		cfg.MfaConfig, err = createDefaultMfaConfig(persister, passkeyConfig)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err
 		}
 	}
 
-	if ctx.Get("mfa_client") == nil {
-		mfaConfig, err := createDefaultMfaConfig(persister, passkeyConfig)
-		if err != nil {
-			ctx.Logger().Error(err)
-			return err
-		}
-
-		err = createWebauthnClient(ctx, "mfa_client", *mfaConfig)
-		if err != nil {
-			ctx.Logger().Error(err)
-			return err
-		}
+	err = createMFAClient(ctx, *cfg.MfaConfig, cfg.WebauthnConfig.RelyingParty)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
 	}
 
 	return nil
 }
 
-func createWebauthnClient(ctx echo.Context, ctxKey string, cfg models.WebauthnConfig) error {
+func createClient(ctx echo.Context, ctxKey string, params clientParams) error {
 	var origins []string
-	for _, origin := range cfg.RelyingParty.Origins {
+	for _, origin := range params.RP.Origins {
 		origins = append(origins, origin.Origin)
 	}
 
-	requireKey := cfg.ResidentKeyRequirement == protocol.ResidentKeyRequirementRequired
+	requireKey := params.ResidentKeyRequirement == protocol.ResidentKeyRequirementRequired
 
 	webauthnClient, err := webauthn.New(&webauthn.Config{
-		RPDisplayName:         cfg.RelyingParty.DisplayName,
-		RPID:                  cfg.RelyingParty.RPId,
+		RPDisplayName:         params.RP.DisplayName,
+		RPID:                  params.RP.RPId,
 		RPOrigins:             origins,
-		AttestationPreference: cfg.AttestationPreference,
+		AttestationPreference: params.AttestationPreference,
 		AuthenticatorSelection: protocol.AuthenticatorSelection{
 			RequireResidentKey: &requireKey,
-			ResidentKey:        cfg.ResidentKeyRequirement,
-			UserVerification:   cfg.UserVerification,
+			ResidentKey:        params.ResidentKeyRequirement,
+			UserVerification:   params.UserVerification,
 		},
 		Debug: false,
 		Timeouts: webauthn.TimeoutsConfig{
 			Login: webauthn.TimeoutConfig{
-				Timeout: time.Duration(cfg.Timeout) * time.Millisecond,
+				Timeout: time.Duration(params.Timeout) * time.Millisecond,
 				Enforce: true,
 			},
 			Registration: webauthn.TimeoutConfig{
-				Timeout: time.Duration(cfg.Timeout) * time.Millisecond,
+				Timeout: time.Duration(params.Timeout) * time.Millisecond,
 				Enforce: true,
 			},
 		},
@@ -110,27 +109,49 @@ func createWebauthnClient(ctx echo.Context, ctxKey string, cfg models.WebauthnCo
 	return nil
 }
 
-func createDefaultMfaConfig(persister persistence.Persister, passkeyConfig models.WebauthnConfig) (*models.WebauthnConfig, error) {
+func createPasskeyCLient(ctx echo.Context, cfg models.WebauthnConfig) error {
+	params := clientParams{
+		RP:                     cfg.RelyingParty,
+		Timeout:                cfg.Timeout,
+		UserVerification:       cfg.UserVerification,
+		Attachment:             cfg.Attachment,
+		AttestationPreference:  cfg.AttestationPreference,
+		ResidentKeyRequirement: cfg.ResidentKeyRequirement,
+	}
+
+	return createClient(ctx, "webauthn_client", params)
+}
+
+func createMFAClient(ctx echo.Context, cfg models.MfaConfig, rp models.RelyingParty) error {
+	params := clientParams{
+		RP:                     rp,
+		Timeout:                cfg.Timeout,
+		UserVerification:       cfg.UserVerification,
+		Attachment:             &cfg.Attachment,
+		AttestationPreference:  cfg.AttestationPreference,
+		ResidentKeyRequirement: cfg.ResidentKeyRequirement,
+	}
+
+	return createClient(ctx, "mfa_client", params)
+}
+
+func createDefaultMfaConfig(persister persistence.Persister, passkeyConfig models.WebauthnConfig) (*models.MfaConfig, error) {
 	configId, _ := uuid.NewV4()
 	now := time.Now()
 
-	cpAttachment := protocol.CrossPlatform
-
-	mfaConfig := &models.WebauthnConfig{
+	mfaConfig := &models.MfaConfig{
 		ID:                     configId,
 		ConfigID:               passkeyConfig.ConfigID,
-		RelyingParty:           passkeyConfig.RelyingParty,
 		Timeout:                passkeyConfig.Timeout,
 		CreatedAt:              now,
 		UpdatedAt:              now,
 		UserVerification:       protocol.VerificationPreferred,
-		Attachment:             &cpAttachment,
+		Attachment:             protocol.CrossPlatform,
 		AttestationPreference:  protocol.PreferNoAttestation,
 		ResidentKeyRequirement: protocol.ResidentKeyRequirementDiscouraged,
-		IsMfa:                  true,
 	}
 
-	err := persister.GetWebauthnConfigPersister(nil).Create(mfaConfig)
+	err := persister.GetMFAConfigPersister(nil).Create(mfaConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create default mfa config: %w", err)
 	}

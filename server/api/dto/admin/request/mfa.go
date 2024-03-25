@@ -7,8 +7,7 @@ import (
 	"time"
 )
 
-type CreateWebauthnConfigDto struct {
-	RelyingParty           CreateRelyingPartyDto                 `json:"relying_party" validate:"required"`
+type CreateMFAConfigDto struct {
 	Timeout                int                                   `json:"timeout" validate:"required,number"`
 	UserVerification       *protocol.UserVerificationRequirement `json:"user_verification" validate:"omitempty,oneof=required preferred discouraged"`
 	Attachment             *protocol.AuthenticatorAttachment     `json:"attachment" validate:"omitempty,oneof=platform cross-platform"`
@@ -16,12 +15,12 @@ type CreateWebauthnConfigDto struct {
 	ResidentKeyRequirement *protocol.ResidentKeyRequirement      `json:"resident_key_requirement" validate:"omitempty,oneof=discouraged preferred required"`
 }
 
-func (dto *CreateWebauthnConfigDto) ToModel(configModel models.Config) models.WebauthnConfig {
-	passkeyConfigId, _ := uuid.NewV4()
+func (dto *CreateMFAConfigDto) ToModel(configModel models.Config) models.MfaConfig {
+	mfaConfigId, _ := uuid.NewV4()
 	now := time.Now()
 
-	passkeyConfig := models.WebauthnConfig{
-		ID:        passkeyConfigId,
+	mfaConfig := models.MfaConfig{
+		ID:        mfaConfigId,
 		ConfigID:  configModel.ID,
 		Timeout:   dto.Timeout,
 		CreatedAt: now,
@@ -29,24 +28,28 @@ func (dto *CreateWebauthnConfigDto) ToModel(configModel models.Config) models.We
 	}
 
 	if dto.AttestationPreference == nil {
-		passkeyConfig.AttestationPreference = protocol.PreferNoAttestation
+		mfaConfig.AttestationPreference = protocol.PreferNoAttestation
 	} else {
-		passkeyConfig.AttestationPreference = *dto.AttestationPreference
+		mfaConfig.AttestationPreference = *dto.AttestationPreference
 	}
 
-	passkeyConfig.Attachment = dto.Attachment
-
 	if dto.ResidentKeyRequirement == nil {
-		passkeyConfig.ResidentKeyRequirement = protocol.ResidentKeyRequirementRequired
+		mfaConfig.ResidentKeyRequirement = protocol.ResidentKeyRequirementDiscouraged
 	} else {
-		passkeyConfig.ResidentKeyRequirement = *dto.ResidentKeyRequirement
+		mfaConfig.ResidentKeyRequirement = *dto.ResidentKeyRequirement
 	}
 
 	if dto.UserVerification == nil {
-		passkeyConfig.UserVerification = protocol.VerificationRequired
+		mfaConfig.UserVerification = protocol.VerificationPreferred
 	} else {
-		passkeyConfig.UserVerification = *dto.UserVerification
+		mfaConfig.UserVerification = *dto.UserVerification
 	}
 
-	return passkeyConfig
+	if dto.Attachment == nil {
+		mfaConfig.Attachment = protocol.CrossPlatform
+	} else {
+		mfaConfig.Attachment = *dto.Attachment
+	}
+
+	return mfaConfig
 }

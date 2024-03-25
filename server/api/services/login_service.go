@@ -19,23 +19,27 @@ type LoginService interface {
 type loginService struct {
 	WebauthnService
 	userId *string
+	useMFA bool
 }
 
 func NewLoginService(params WebauthnServiceCreateParams) LoginService {
 
-	return &loginService{WebauthnService{
-		BaseService: &BaseService{
-			logger:              params.Ctx.Logger(),
-			tenant:              params.Tenant,
-			credentialPersister: params.CredentialPersister,
-		},
-		webauthnClient: params.WebauthnClient,
-		generator:      params.Generator,
+	return &loginService{
+		WebauthnService{
+			BaseService: &BaseService{
+				logger:              params.Ctx.Logger(),
+				tenant:              params.Tenant,
+				credentialPersister: params.CredentialPersister,
+			},
+			webauthnClient: params.WebauthnClient,
+			generator:      params.Generator,
 
-		userPersister:        params.UserPersister,
-		sessionDataPersister: params.SessionPersister,
-	},
-		params.UserId}
+			userPersister:        params.UserPersister,
+			sessionDataPersister: params.SessionPersister,
+		},
+		params.UserId,
+		params.UseMFA,
+	}
 }
 
 func (ls *loginService) Initialize() (*protocol.CredentialAssertion, error) {
@@ -119,7 +123,12 @@ func (ls *loginService) Finalize(req *protocol.ParsedCredentialAssertionData) (s
 	}
 	credentialId := base64.RawURLEncoding.EncodeToString(credential.ID)
 
-	err = ls.updateCredentialForUser(webauthnUser, credentialId, req.Response.AuthenticatorData.Flags)
+	dbCredential := webauthnUser.FindCredentialById(credentialId)
+	if !ls.useMFA && dbCredential.IsMFA {
+		return "", userHandle, echo.NewHTTPError(http.StatusBadRequest, "MFA passkeys are not usable for normal login")
+	}
+
+	err = ls.updateCredentialForUser(dbCredential, req.Response.AuthenticatorData.Flags)
 	if err != nil {
 		return "", userHandle, err
 	}

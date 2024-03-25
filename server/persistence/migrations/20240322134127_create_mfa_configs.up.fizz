@@ -1,0 +1,13 @@
+create_table("mfa_configs") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("timeout", "integer", { "null": false, default: 60000 })
+	t.Column("user_verification", "string", { "null": false, default: "discouraged" })
+	t.Column("attachment", "string", { "null": false, default: "cross-platform" })
+	t.Column("attestation_preference", "string", { "null": false, "default": "direct" })
+	t.Column("resident_key_requirement", "string", { "null": false, default: "discouraged" })
+	t.Column("config_id", "uuid", { "null": false })
+
+	t.ForeignKey("config_id", {"configs": ["id"]}, {"on_delete": "cascade", "on_update": "cascade"})
+
+	t.Timestamps()
+}

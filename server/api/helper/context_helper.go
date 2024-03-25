@@ -17,7 +17,7 @@ type WebauthnContext struct {
 	Generator      jwt.Generator
 }
 
-func getContext(ctx echo.Context, webauthnClientKey string, jwtGeneratorKey string) (*WebauthnContext, error) {
+func getContext(ctx echo.Context, webauthnClientKey string) (*WebauthnContext, error) {
 	ctxTenant := ctx.Get("tenant")
 	if ctxTenant == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Unable to find tenant")
@@ -30,7 +30,7 @@ func getContext(ctx echo.Context, webauthnClientKey string, jwtGeneratorKey stri
 		webauthnClient = webauthnClientCtx.(*webauthn.WebAuthn)
 	}
 
-	jwtGeneratorCtx := ctx.Get(jwtGeneratorKey)
+	jwtGeneratorCtx := ctx.Get("jwt_generator")
 	var jwtGenerator jwt.Generator
 	if jwtGeneratorCtx != nil {
 		jwtGenerator = jwtGeneratorCtx.(jwt.Generator)
@@ -52,9 +52,9 @@ func getContext(ctx echo.Context, webauthnClientKey string, jwtGeneratorKey stri
 }
 
 func GetHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
-	return getContext(ctx, "webauthn_client", "jwt_generator")
+	return getContext(ctx, "webauthn_client")
 }
 
 func GetMfaHandlerContext(ctx echo.Context) (*WebauthnContext, error) {
-	return getContext(ctx, "mfa_client", "mfa_jwt_generator")
+	return getContext(ctx, "mfa_client")
 }

@@ -32,6 +32,7 @@ type WebauthnServiceCreateParams struct {
 	Generator             jwt.Generator
 	AuthenticatorMetadata mapper.AuthenticatorMetadata
 	UserId                *string
+	UseMFA                bool
 
 	UserPersister       persisters.WebauthnUserPersister
 	SessionPersister    persisters.WebauthnSessionDataPersister
@@ -87,15 +88,14 @@ func (ws *WebauthnService) createUserCredentialToken(userId string, credentialId
 	return token, nil
 }
 
-func (ws *WebauthnService) updateCredentialForUser(webauthnUser *intern.WebauthnUser, credentialId string, flags protocol.AuthenticatorFlags) error {
-	dbCredential := webauthnUser.FindCredentialById(credentialId)
-	if dbCredential != nil {
+func (ws *WebauthnService) updateCredentialForUser(credential *models.WebauthnCredential, flags protocol.AuthenticatorFlags) error {
+	if credential != nil {
 		now := time.Now().UTC()
 
-		dbCredential.BackupState = flags.HasBackupState()
-		dbCredential.BackupEligible = flags.HasBackupEligible()
-		dbCredential.LastUsedAt = &now
-		err := ws.credentialPersister.Update(dbCredential)
+		credential.BackupState = flags.HasBackupState()
+		credential.BackupEligible = flags.HasBackupEligible()
+		credential.LastUsedAt = &now
+		err := ws.credentialPersister.Update(credential)
 		if err != nil {
 			ws.logger.Error(err)
 			return err

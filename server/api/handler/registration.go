@@ -38,7 +38,7 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 
 	var h *helper.WebauthnContext
 	var hErr error
-	if r.UseMfaClient {
+	if r.UseMFAClient {
 		h, hErr = helper.GetMfaHandlerContext(ctx)
 	} else {
 		h, hErr = helper.GetHandlerContext(ctx)
@@ -61,6 +61,7 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 			UserPersister:       userPersister,
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
+			UseMFA:              r.UseMFAClient,
 		})
 
 		credentialCreation, userId, err := service.Initialize(webauthnUser)
@@ -88,7 +89,7 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 
 	var h *helper.WebauthnContext
 	var hErr error
-	if r.UseMfaClient {
+	if r.UseMFAClient {
 		h, hErr = helper.GetMfaHandlerContext(ctx)
 	} else {
 		h, hErr = helper.GetHandlerContext(ctx)
@@ -113,6 +114,7 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 			CredentialPersister:   credentialPersister,
 			Generator:             h.Generator,
 			AuthenticatorMetadata: r.AuthenticatorMetadata,
+			UseMFA:                r.UseMFAClient,
 		})
 
 		token, userId, err := service.Finalize(parsedRequest)

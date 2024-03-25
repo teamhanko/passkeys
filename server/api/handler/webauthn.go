@@ -22,13 +22,13 @@ type WebauthnHandler interface {
 
 type webauthnHandler struct {
 	persister    persistence.Persister
-	UseMfaClient bool
+	UseMFAClient bool
 }
 
-func newWebAuthnHandler(persister persistence.Persister, useMfaClient bool) *webauthnHandler {
+func newWebAuthnHandler(persister persistence.Persister, useMFAClient bool) *webauthnHandler {
 	return &webauthnHandler{
 		persister:    persister,
-		UseMfaClient: useMfaClient,
+		UseMFAClient: useMFAClient,
 	}
 }
 
