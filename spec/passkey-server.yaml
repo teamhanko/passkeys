@@ -644,6 +644,9 @@ components:
                 backup_state:
                   type: boolean
                   default: false
+                is_mfa:
+                  type: boolean
+                  default: false
               required:
                 - id
                 - public_key
@@ -653,6 +656,7 @@ components:
                 - transports
                 - backup_eligible
                 - backup_state
+                - is_mfa
     error:
       description: Error Response with detailed information
       content:
