@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func WebauthnCredentialToModel(credential *webauthn.Credential, userId string, webauthnUserId uuid.UUID, backupEligible bool, backupState bool, authenticatorMetadata mapper.AuthenticatorMetadata) *models.WebauthnCredential {
+func WebauthnCredentialToModel(credential *webauthn.Credential, userId string, webauthnUserId uuid.UUID, backupEligible bool, backupState bool, authenticatorMetadata mapper.AuthenticatorMetadata, isMFACredential bool) *models.WebauthnCredential {
 	now := time.Now().UTC()
 	aaguid, _ := uuid.FromBytes(credential.Authenticator.AAGUID)
 	credentialID := base64.RawURLEncoding.EncodeToString(credential.ID)
@@ -34,6 +34,7 @@ func WebauthnCredentialToModel(credential *webauthn.Credential, userId string, w
 		UpdatedAt:       now,
 		BackupEligible:  backupEligible,
 		BackupState:     backupState,
+		IsMFA:           isMFACredential,
 
 		WebauthnUserID: webauthnUserId,
 	}

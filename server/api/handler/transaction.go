@@ -24,7 +24,7 @@ type transactionHandler struct {
 }
 
 func NewTransactionHandler(persister persistence.Persister) WebauthnHandler {
-	webauthnHandler := newWebAuthnHandler(persister)
+	webauthnHandler := newWebAuthnHandler(persister, false)
 
 	return &transactionHandler{webauthnHandler}
 }
@@ -56,7 +56,7 @@ func (t *transactionHandler) Init(ctx echo.Context) error {
 			WebauthnServiceCreateParams: &services.WebauthnServiceCreateParams{
 				Ctx:              ctx,
 				Tenant:           *h.Tenant,
-				WebauthnClient:   *h.Webauthn,
+				WebauthnClient:   *h.WebauthnClient,
 				UserPersister:    webauthnUserPersister,
 				SessionPersister: sessionDataPersister,
 			},
@@ -103,7 +103,7 @@ func (t *transactionHandler) Finish(ctx echo.Context) error {
 			WebauthnServiceCreateParams: &services.WebauthnServiceCreateParams{
 				Ctx:                 ctx,
 				Tenant:              *h.Tenant,
-				WebauthnClient:      *h.Webauthn,
+				WebauthnClient:      *h.WebauthnClient,
 				UserPersister:       webauthnUserPersister,
 				SessionPersister:    sessionDataPersister,
 				CredentialPersister: credentialPersister,

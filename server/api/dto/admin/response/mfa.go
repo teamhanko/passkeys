@@ -5,18 +5,16 @@ import (
 	"github.com/teamhanko/passkey-server/persistence/models"
 )
 
-type GetWebauthnResponse struct {
-	RelyingParty           GetRelyingPartyResponse              `json:"relying_party"`
+type GetMFAResponse struct {
 	Timeout                int                                  `json:"timeout"`
 	UserVerification       protocol.UserVerificationRequirement `json:"user_verification"`
-	Attachment             *protocol.AuthenticatorAttachment    `json:"attachment,omitempty"`
+	Attachment             protocol.AuthenticatorAttachment     `json:"attachment"`
 	AttestationPreference  protocol.ConveyancePreference        `json:"attestation_preference"`
 	ResidentKeyRequirement protocol.ResidentKeyRequirement      `json:"resident_key_requirement"`
 }
 
-func ToGetWebauthnResponse(webauthn *models.WebauthnConfig) GetWebauthnResponse {
-	return GetWebauthnResponse{
-		RelyingParty:           ToGetRelyingPartyResponse(&webauthn.RelyingParty),
+func ToGetMFAResponse(webauthn *models.MfaConfig) GetMFAResponse {
+	return GetMFAResponse{
 		Timeout:                webauthn.Timeout,
 		UserVerification:       webauthn.UserVerification,
 		Attachment:             webauthn.Attachment,

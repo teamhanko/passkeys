@@ -1,0 +1,3 @@
+drop_column("webauthn_configs", "resident_key_requirement")
+drop_column("webauthn_configs", "attestation_preference")
+drop_column("webauthn_configs", "attachment")

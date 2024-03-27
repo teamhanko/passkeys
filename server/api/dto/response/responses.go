@@ -17,6 +17,7 @@ type CredentialDto struct {
 	Transports      []string   `json:"transports"`
 	BackupEligible  bool       `json:"backup_eligible"`
 	BackupState     bool       `json:"backup_state"`
+	IsMFA           bool       `json:"is_mfa"`
 }
 
 type CredentialDtoList []CredentialDto
@@ -37,5 +38,6 @@ func CredentialDtoFromModel(credential models.WebauthnCredential) CredentialDto 
 		Transports:      credential.Transports.GetNames(),
 		BackupEligible:  credential.BackupEligible,
 		BackupState:     credential.BackupState,
+		IsMFA:           credential.IsMFA,
 	}
 }

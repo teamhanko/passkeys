@@ -143,7 +143,9 @@ curl --location 'http://<YOUR DOMAIN>:8001/tenants' \
         ]
       },
       "timeout": 60000,
-      "user_verification": "preferred"
+      "user_verification": "preferred",
+      "attestation_preference": "none",
+      "resident_key_requirement": "required"
     },
     "create_api_key": true
   }
@@ -225,7 +227,9 @@ the [WebAuthn Relying Party](https://www.w3.org/TR/webauthn-2/#webauthn-relying-
         ]
       },
       "timeout": 60000,
-      "user_verification": "preferred"
+      "user_verification": "preferred",
+      "attestation_preference": "none",
+      "resident_key_requirement": "required"
     }
   }
 }
@@ -252,7 +256,9 @@ As an example: If the login should be available at `https://login.example.com` i
         ]
       },
       "timeout": 60000,
-      "user_verification": "preferred"
+      "user_verification": "preferred",
+      "attestation_preference": "none",
+      "resident_key_requirement": "required"
     }
   }
 }
@@ -275,7 +281,9 @@ point. Then the WebAuthn config would look like this:
         ]
       },
       "timeout": 60000,
-      "user_verification": "preferred"
+      "user_verification": "preferred",
+      "attestation_preference": "none",
+      "resident_key_requirement": "required"
     }
   }
 }

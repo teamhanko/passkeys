@@ -13,36 +13,30 @@ import (
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
-	"strings"
 )
 
-type loginHandler struct {
+type mfaLoginHandler struct {
 	*webauthnHandler
 }
 
-func NewLoginHandler(persister persistence.Persister) WebauthnHandler {
-	webauthnHandler := newWebAuthnHandler(persister, false)
+func NewMfaLoginHandler(persister persistence.Persister) WebauthnHandler {
+	webauthnHandler := newWebAuthnHandler(persister, true)
 
-	return &loginHandler{
+	return &mfaLoginHandler{
 		webauthnHandler,
 	}
 }
 
-func (lh *loginHandler) Init(ctx echo.Context) error {
-	h, err := helper.GetHandlerContext(ctx)
+func (lh *mfaLoginHandler) Init(ctx echo.Context) error {
+	h, err := helper.GetMfaHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
-	dto, err := BindAndValidateRequest[request.InitLoginDto](ctx)
+	dto, err := BindAndValidateRequest[request.InitMfaLoginDto](ctx)
 	if err != nil {
 		return err
-	}
-
-	apiKey := ctx.Request().Header.Get("apiKey")
-	if dto.UserId != nil && strings.TrimSpace(apiKey) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "api key is missing")
 	}
 
 	return lh.persister.GetConnection().Transaction(func(tx *pop.Connection) error {
@@ -58,6 +52,7 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 			UserPersister:       userPersister,
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
+			UseMFA:              true,
 		})
 
 		credentialAssertion, err := service.Initialize()
@@ -76,14 +71,14 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 	})
 }
 
-func (lh *loginHandler) Finish(ctx echo.Context) error {
+func (lh *mfaLoginHandler) Finish(ctx echo.Context) error {
 	parsedRequest, err := protocol.ParseCredentialRequestResponse(ctx.Request())
 	if err != nil {
 		ctx.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to finish login").SetInternal(err)
 	}
 
-	h, err := helper.GetHandlerContext(ctx)
+	h, err := helper.GetMfaHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -102,6 +97,7 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
 			Generator:           h.Generator,
+			UseMFA:              true,
 		})
 
 		token, userId, err := service.Finalize(parsedRequest)

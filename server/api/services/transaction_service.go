@@ -28,6 +28,7 @@ type transactionService struct {
 	*WebauthnService
 
 	transactionPersister persisters.TransactionPersister
+	useMFA               bool
 }
 
 func NewTransactionService(params TransactionServiceCreateParams) TransactionService {
@@ -46,6 +47,7 @@ func NewTransactionService(params TransactionServiceCreateParams) TransactionSer
 			sessionDataPersister: params.SessionPersister,
 		},
 		transactionPersister: params.TransactionPersister,
+		useMFA:               params.UseMFA,
 	}
 }
 
@@ -70,7 +72,6 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 
 	credentialAssertion, sessionData, err := ts.webauthnClient.BeginLogin(
 		intern.NewWebauthnUser(*webauthnUser),
-		webauthn.WithUserVerification(ts.tenant.Config.WebauthnConfig.UserVerification),
 		ts.withTransaction(transaction.Identifier, transaction.Data),
 	)
 	if err != nil {
@@ -92,7 +93,7 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 		return nil, err
 	}
 
-	err = ts.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, ts.tenant.ID, models.WebauthnOperationTransaction))
+	err = ts.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, ts.tenant.ID, models.WebauthnOperationTransaction, false))
 	if err != nil {
 		ts.logger.Error(err)
 		return nil, err
@@ -148,7 +149,12 @@ func (ts *transactionService) Finalize(req *protocol.ParsedCredentialAssertionDa
 	}
 	credentialId := base64.RawURLEncoding.EncodeToString(credential.ID)
 
-	err = ts.updateCredentialForUser(webauthnUser, credentialId, req.Response.AuthenticatorData.Flags)
+	dbCredential := webauthnUser.FindCredentialById(credentialId)
+	if !ts.useMFA && dbCredential.IsMFA {
+		return "", userHandle, transaction, echo.NewHTTPError(http.StatusBadRequest, "MFA passkeys are not usable for normal login")
+	}
+
+	err = ts.updateCredentialForUser(dbCredential, req.Response.AuthenticatorData.Flags)
 	if err != nil {
 		return "", userHandle, transaction, err
 	}

@@ -30,7 +30,7 @@ type UpdateCredentialsDto struct {
 }
 
 type WebauthnRequests interface {
-	InitRegistrationDto | InitTransactionDto
+	InitRegistrationDto | InitTransactionDto | InitLoginDto | InitMfaLoginDto
 }
 
 type InitRegistrationDto struct {
@@ -90,4 +90,12 @@ func (initTransaction *InitTransactionDto) ToModel() (*models.Transaction, error
 		CreatedAt: now,
 		UpdatedAt: now,
 	}, nil
+}
+
+type InitLoginDto struct {
+	UserId *string `json:"user_id" validate:"omitempty,min=1"`
+}
+
+type InitMfaLoginDto struct {
+	UserId *string `json:"user_id" validate:"required,min=1"`
 }

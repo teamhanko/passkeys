@@ -44,6 +44,7 @@ func (t tenantPersister) Get(tenantId uuid.UUID) (*models.Tenant, error) {
 	err := t.database.Eager(
 		"Config.Secrets",
 		"Config.WebauthnConfig.RelyingParty.Origins",
+		"Config.MfaConfig",
 		"Config.Cors.Origins",
 		"Config.AuditLogConfig",
 	).Find(&tenant, tenantId)

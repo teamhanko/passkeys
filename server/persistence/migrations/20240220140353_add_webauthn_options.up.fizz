@@ -1,0 +1,3 @@
+add_column("webauthn_configs", "attachment", "string", { "null": true })
+add_column("webauthn_configs", "attestation_preference", "string", { default: "none" })
+add_column("webauthn_configs", "resident_key_requirement", "string", { default: "required" })

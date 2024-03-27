@@ -1,10 +1,11 @@
 package models
 
 import (
+	"time"
+
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gobuffalo/validate/v3/validators"
-	"time"
 
 	"github.com/gofrs/uuid"
 )
@@ -16,6 +17,7 @@ type Config struct {
 	Tenant   *Tenant   `json:"tenant,omitempty" belongs_to:"tenant"`
 
 	WebauthnConfig WebauthnConfig `json:"webauthn_config,omitempty" has_one:"webauthn_config"`
+	MfaConfig      *MfaConfig     `json:"mfa_config,omitempty" has_one:"mfa_config"`
 	Cors           Cors           `json:"cors,omitempty" has_one:"cor"`
 	AuditLogConfig AuditLogConfig `json:"audit_log_config,omitempty" has_one:"audit_log_config"`
 	Secrets        Secrets        `json:"secrets,omitempty" has_many:"secrets"`
@@ -26,7 +28,7 @@ type Config struct {
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 // This method is not required and may be deleted.
-func (config *Config) Validate(tx *pop.Connection) (*validate.Errors, error) {
+func (config *Config) Validate(_ *pop.Connection) (*validate.Errors, error) {
 	return validate.Validate(
 		&validators.UUIDIsPresent{Name: "ID", Field: config.ID},
 		&validators.TimeIsPresent{Name: "UpdatedAt", Field: config.UpdatedAt},

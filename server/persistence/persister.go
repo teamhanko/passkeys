@@ -31,6 +31,7 @@ type Persister interface {
 	GetCorsPersister(tx *pop.Connection) persisters.CorsPersister
 	GetAuditLogConfigPersister(tx *pop.Connection) persisters.AuditLogConfigPersister
 	GetTransactionPersister(tx *pop.Connection) persisters.TransactionPersister
+	GetMFAConfigPersister(tx *pop.Connection) persisters.MFAConfigPersister
 }
 
 type Migrator interface {
@@ -210,4 +211,12 @@ func (p *persister) GetTransactionPersister(tx *pop.Connection) persisters.Trans
 	}
 
 	return persisters.NewTransactionPersister(tx)
+}
+
+func (p *persister) GetMFAConfigPersister(tx *pop.Connection) persisters.MFAConfigPersister {
+	if tx == nil {
+		return persisters.NewMFAConfigPersister(p.Database)
+	}
+
+	return persisters.NewMFAConfigPersister(tx)
 }

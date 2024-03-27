@@ -18,38 +18,67 @@ type LoginService interface {
 
 type loginService struct {
 	WebauthnService
+	userId *string
+	useMFA bool
 }
 
 func NewLoginService(params WebauthnServiceCreateParams) LoginService {
 
-	return &loginService{WebauthnService{
-		BaseService: &BaseService{
-			logger:              params.Ctx.Logger(),
-			tenant:              params.Tenant,
-			credentialPersister: params.CredentialPersister,
-		},
-		webauthnClient: params.WebauthnClient,
-		generator:      params.Generator,
+	return &loginService{
+		WebauthnService{
+			BaseService: &BaseService{
+				logger:              params.Ctx.Logger(),
+				tenant:              params.Tenant,
+				credentialPersister: params.CredentialPersister,
+			},
+			webauthnClient: params.WebauthnClient,
+			generator:      params.Generator,
 
-		userPersister:        params.UserPersister,
-		sessionDataPersister: params.SessionPersister,
-	}}
+			userPersister:        params.UserPersister,
+			sessionDataPersister: params.SessionPersister,
+		},
+		params.UserId,
+		params.UseMFA,
+	}
 }
 
 func (ls *loginService) Initialize() (*protocol.CredentialAssertion, error) {
-	credentialAssertion, sessionData, err := ls.webauthnClient.BeginDiscoverableLogin(
-		webauthn.WithUserVerification(ls.tenant.Config.WebauthnConfig.UserVerification),
-	)
+	var credentialAssertion *protocol.CredentialAssertion
+	var sessionData *webauthn.SessionData
+	var err error
+	isDiscoverable := true
 
-	if err != nil {
-		ls.logger.Error(err)
-		return nil, echo.NewHTTPError(
-			http.StatusInternalServerError,
-			fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err),
-		)
+	if ls.userId != nil {
+		user, err := ls.getWebauthnUserByUserHandle(*ls.userId)
+		if err != nil {
+			ls.logger.Error(err)
+
+			return nil, echo.NewHTTPError(http.StatusNotFound, err)
+		}
+
+		credentialAssertion, sessionData, err = ls.webauthnClient.BeginLogin(user)
+		if err != nil {
+			ls.logger.Error(err)
+			return nil, echo.NewHTTPError(
+				http.StatusInternalServerError,
+				fmt.Errorf("failed to create webauthn assertion options for login: %w", err),
+			)
+		}
+		isDiscoverable = false
+
+	} else {
+		credentialAssertion, sessionData, err = ls.webauthnClient.BeginDiscoverableLogin()
+
+		if err != nil {
+			ls.logger.Error(err)
+			return nil, echo.NewHTTPError(
+				http.StatusInternalServerError,
+				fmt.Errorf("failed to create webauthn assertion options for discoverable login: %w", err),
+			)
+		}
 	}
 
-	err = ls.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, ls.tenant.ID, models.WebauthnOperationAuthentication))
+	err = ls.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, ls.tenant.ID, models.WebauthnOperationAuthentication, isDiscoverable))
 	if err != nil {
 		ls.logger.Error(err)
 		return nil, err
@@ -79,16 +108,27 @@ func (ls *loginService) Finalize(req *protocol.ParsedCredentialAssertionData) (s
 		return "", userHandle, echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
 	}
 
-	credential, err := ls.webauthnClient.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
-		return webauthnUser, nil
-	}, *sessionData, req)
+	var credential *webauthn.Credential
+	if dbSessionData.IsDiscoverable {
+		credential, err = ls.webauthnClient.ValidateDiscoverableLogin(func(rawID, userHandle []byte) (user webauthn.User, err error) {
+			return webauthnUser, nil
+		}, *sessionData, req)
+	} else {
+		credential, err = ls.webauthnClient.ValidateLogin(webauthnUser, *sessionData, req)
+	}
+
 	if err != nil {
 		ls.logger.Error(err)
 		return "", userHandle, echo.NewHTTPError(http.StatusUnauthorized, "failed to validate assertion").SetInternal(err)
 	}
 	credentialId := base64.RawURLEncoding.EncodeToString(credential.ID)
 
-	err = ls.updateCredentialForUser(webauthnUser, credentialId, req.Response.AuthenticatorData.Flags)
+	dbCredential := webauthnUser.FindCredentialById(credentialId)
+	if !ls.useMFA && dbCredential.IsMFA {
+		return "", userHandle, echo.NewHTTPError(http.StatusBadRequest, "MFA passkeys are not usable for normal login")
+	}
+
+	err = ls.updateCredentialForUser(dbCredential, req.Response.AuthenticatorData.Flags)
 	if err != nil {
 		return "", userHandle, err
 	}

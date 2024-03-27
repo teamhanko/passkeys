@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-webauthn/webauthn/protocol"
-	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/mapper"
@@ -22,6 +21,7 @@ type RegistrationService interface {
 type registrationService struct {
 	WebauthnService
 	mapper.AuthenticatorMetadata
+	UseMFA bool
 }
 
 func NewRegistrationService(params WebauthnServiceCreateParams) RegistrationService {
@@ -41,6 +41,7 @@ func NewRegistrationService(params WebauthnServiceCreateParams) RegistrationServ
 			sessionDataPersister: params.SessionPersister,
 		},
 		params.AuthenticatorMetadata,
+		params.UseMFA,
 	}
 }
 
@@ -50,21 +51,14 @@ func (rs *registrationService) Initialize(user *models.WebauthnUser) (*protocol.
 		return nil, user.UserID, err
 	}
 
-	t := true
 	credentialCreation, sessionData, err := rs.webauthnClient.BeginRegistration(
 		internalUser,
-		webauthn.WithAuthenticatorSelection(protocol.AuthenticatorSelection{
-			RequireResidentKey: &t,
-			ResidentKey:        protocol.ResidentKeyRequirementRequired,
-			UserVerification:   rs.tenant.Config.WebauthnConfig.UserVerification,
-		}),
-		webauthn.WithConveyancePreference(protocol.PreferNoAttestation),
 	)
 	if err != nil {
 		return nil, internalUser.UserId, err
 	}
 
-	err = rs.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, rs.tenant.ID, models.WebauthnOperationRegistration))
+	err = rs.sessionDataPersister.Create(*intern.WebauthnSessionDataToModel(sessionData, rs.tenant.ID, models.WebauthnOperationRegistration, false))
 	if err != nil {
 		return nil, internalUser.UserId, err
 	}
@@ -143,7 +137,7 @@ func (rs *registrationService) Finalize(req *protocol.ParsedCredentialCreationDa
 
 	err = rs.sessionDataPersister.Delete(*dbSessionData)
 	if err != nil {
-		rs.logger.Warnf("failed to delete attestation session data: %w", err)
+		rs.logger.Errorf("failed to delete attestation session data: %w", err)
 	}
 
 	token, err := rs.generator.Generate(dbUser.UserID, credential.ID)
@@ -206,6 +200,7 @@ func (rs *registrationService) createCredential(dbUser *models.WebauthnUser, ses
 		flags.HasBackupEligible(),
 		flags.HasBackupState(),
 		rs.AuthenticatorMetadata,
+		rs.UseMFA,
 	)
 
 	err = rs.credentialPersister.Create(dbCredential)

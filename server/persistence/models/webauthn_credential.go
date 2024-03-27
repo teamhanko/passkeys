@@ -24,6 +24,7 @@ type WebauthnCredential struct {
 	Transports      Transports `has_many:"webauthn_credential_transports" json:"-"`
 	BackupEligible  bool       `db:"backup_eligible" json:"-"`
 	BackupState     bool       `db:"backup_state" json:"-"`
+	IsMFA           bool       `db:"is_mfa" json:"-"`
 
 	WebauthnUserID uuid.UUID     `db:"webauthn_user_id"`
 	WebauthnUser   *WebauthnUser `belongs_to:"webauthn_user"`
@@ -32,7 +33,7 @@ type WebauthnCredential struct {
 type WebauthnCredentials []WebauthnCredential
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
-func (credential *WebauthnCredential) Validate(tx *pop.Connection) (*validate.Errors, error) {
+func (credential *WebauthnCredential) Validate(_ *pop.Connection) (*validate.Errors, error) {
 	return validate.Validate(
 		&validators.StringIsPresent{Name: "ID", Field: credential.ID},
 		&validators.StringIsPresent{Name: "UserId", Field: credential.UserId},

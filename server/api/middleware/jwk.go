@@ -47,7 +47,6 @@ func instantiateJwtGenerator(ctx echo.Context, keys []string, tenant models.Tena
 
 	generator, err := jwt.NewGenerator(&tenant.Config.WebauthnConfig, jwkManager, tenant.ID)
 	if err != nil {
-		ctx.Logger().Error(err)
 		return err
 	}
 

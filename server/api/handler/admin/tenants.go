@@ -65,6 +65,7 @@ func (th *TenantHandler) Create(ctx echo.Context) error {
 			AuditConfigPersister:    th.persister.GetAuditLogConfigPersister(tx),
 			SecretPersister:         th.persister.GetSecretsPersister(tx),
 			JwkPersister:            th.persister.GetJwkPersister(tx),
+			MFAConfigPersister:      th.persister.GetMFAConfigPersister(tx),
 		})
 
 		createResponse, err := service.Create(dto)
@@ -166,6 +167,7 @@ func (th *TenantHandler) UpdateConfig(ctx echo.Context) error {
 			RelyingPartyPerister:    th.persister.GetWebauthnRelyingPartyPersister(tx),
 			AuditConfigPersister:    th.persister.GetAuditLogConfigPersister(tx),
 			SecretPersister:         th.persister.GetSecretsPersister(tx),
+			MFAConfigPersister:      th.persister.GetMFAConfigPersister(tx),
 		})
 
 		err := service.UpdateConfig(dto)
