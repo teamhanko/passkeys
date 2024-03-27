@@ -29,7 +29,7 @@ func (dto *CreateWebauthnConfigDto) ToModel(configModel models.Config) models.We
 	}
 
 	if dto.AttestationPreference == nil {
-		passkeyConfig.AttestationPreference = protocol.PreferNoAttestation
+		passkeyConfig.AttestationPreference = protocol.PreferDirectAttestation
 	} else {
 		passkeyConfig.AttestationPreference = *dto.AttestationPreference
 	}

@@ -28,7 +28,7 @@ func (dto *CreateMFAConfigDto) ToModel(configModel models.Config) models.MfaConf
 	}
 
 	if dto.AttestationPreference == nil {
-		mfaConfig.AttestationPreference = protocol.PreferNoAttestation
+		mfaConfig.AttestationPreference = protocol.PreferDirectAttestation
 	} else {
 		mfaConfig.AttestationPreference = *dto.AttestationPreference
 	}
