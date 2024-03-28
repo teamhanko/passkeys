@@ -49,6 +49,4 @@ We invite you to join our growing [Discord community](https://www.hanko.io/commu
 
 # License
 
-The Hanko Passkey Server (`server` directory) is licensed under the [GPL-3.0](LICENSE).
-
-The Hanko Passkey SDKs (`packages` directory) are licensed under the [MIT](LICENSE) license.
+This project is licensed under the [AGPL-3.0](LICENSE).
