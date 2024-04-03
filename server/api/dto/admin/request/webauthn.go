@@ -61,30 +61,10 @@ func (dto *CreatePasskeyConfigDto) ToMfaModel(configModel models.Config) models.
 		Timeout:   dto.Timeout,
 		CreatedAt: now,
 		UpdatedAt: now,
-	}
-
-	if dto.AttestationPreference == nil {
-		mfaConfig.AttestationPreference = protocol.PreferDirectAttestation
-	} else {
-		mfaConfig.AttestationPreference = *dto.AttestationPreference
-	}
-
-	if dto.ResidentKeyRequirement == nil {
-		mfaConfig.ResidentKeyRequirement = protocol.ResidentKeyRequirementDiscouraged
-	} else {
-		mfaConfig.ResidentKeyRequirement = *dto.ResidentKeyRequirement
-	}
-
-	if dto.UserVerification == nil {
-		mfaConfig.UserVerification = protocol.VerificationPreferred
-	} else {
-		mfaConfig.UserVerification = *dto.UserVerification
-	}
-
-	if dto.Attachment == nil {
-		mfaConfig.Attachment = protocol.CrossPlatform
-	} else {
-		mfaConfig.Attachment = *dto.Attachment
+		AttestationPreference: protocol.PreferDirectAttestation
+		ResidentKeyRequirement: protocol.ResidentKeyRequirementDiscouraged
+		UserVerification: protocol.VerificationPreferred
+		Attachment: protocol.CrossPlatform
 	}
 
 	return mfaConfig
