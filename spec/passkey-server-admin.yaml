@@ -632,7 +632,6 @@ components:
       required:
         - cors
         - webauthn
-        - mfa
     cors:
       type: object
       title: cors
