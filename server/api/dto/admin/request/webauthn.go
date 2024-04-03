@@ -61,10 +61,10 @@ func (dto *CreatePasskeyConfigDto) ToMfaModel(configModel models.Config) models.
 		Timeout:   dto.Timeout,
 		CreatedAt: now,
 		UpdatedAt: now,
-		AttestationPreference: protocol.PreferDirectAttestation
-		ResidentKeyRequirement: protocol.ResidentKeyRequirementDiscouraged
-		UserVerification: protocol.VerificationPreferred
-		Attachment: protocol.CrossPlatform
+		AttestationPreference: protocol.PreferDirectAttestation,
+		ResidentKeyRequirement: protocol.ResidentKeyRequirementDiscouraged,
+		UserVerification: protocol.VerificationPreferred,
+		Attachment: protocol.CrossPlatform,
 	}
 
 	return mfaConfig
