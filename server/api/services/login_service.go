@@ -125,7 +125,7 @@ func (ls *loginService) Finalize(req *protocol.ParsedCredentialAssertionData) (s
 
 	dbCredential := webauthnUser.FindCredentialById(credentialId)
 	if !ls.useMFA && dbCredential.IsMFA {
-		return "", userHandle, echo.NewHTTPError(http.StatusBadRequest, "MFA passkeys are not usable for normal login")
+		return "", userHandle, echo.NewHTTPError(http.StatusBadRequest, "MFA credentials are not usable for normal login")
 	}
 
 	err = ls.updateCredentialForUser(dbCredential, req.Response.AuthenticatorData.Flags)

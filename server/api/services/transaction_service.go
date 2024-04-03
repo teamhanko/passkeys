@@ -151,7 +151,7 @@ func (ts *transactionService) Finalize(req *protocol.ParsedCredentialAssertionDa
 
 	dbCredential := webauthnUser.FindCredentialById(credentialId)
 	if !ts.useMFA && dbCredential.IsMFA {
-		return "", userHandle, transaction, echo.NewHTTPError(http.StatusBadRequest, "MFA passkeys are not usable for normal login")
+		return "", userHandle, transaction, echo.NewHTTPError(http.StatusBadRequest, "MFA credentials are not usable for transactions")
 	}
 
 	err = ts.updateCredentialForUser(dbCredential, req.Response.AuthenticatorData.Flags)

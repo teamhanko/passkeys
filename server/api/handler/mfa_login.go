@@ -56,12 +56,12 @@ func (lh *mfaLoginHandler) Init(ctx echo.Context) error {
 		})
 
 		credentialAssertion, err := service.Initialize()
-		err = lh.handleError(h.AuditLog, models.AuditLogWebAuthnAuthenticationInitFailed, tx, ctx, dto.UserId, nil, err)
+		err = lh.handleError(h.AuditLog, models.AuditLogMfaAuthenticationInitFailed, tx, ctx, dto.UserId, nil, err)
 		if err != nil {
 			return err
 		}
 
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitSucceeded, dto.UserId, nil, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogMfaAuthenticationInitSucceeded, dto.UserId, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -101,12 +101,12 @@ func (lh *mfaLoginHandler) Finish(ctx echo.Context) error {
 		})
 
 		token, userId, err := service.Finalize(parsedRequest)
-		err = lh.handleError(h.AuditLog, models.AuditLogWebAuthnAuthenticationFinalFailed, tx, ctx, &userId, nil, err)
+		err = lh.handleError(h.AuditLog, models.AuditLogMfaAuthenticationFinalFailed, tx, ctx, &userId, nil, err)
 		if err != nil {
 			return err
 		}
 
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationFinalSucceeded, &userId, nil, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogMfaAuthenticationFinalSucceeded, &userId, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)

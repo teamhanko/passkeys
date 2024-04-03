@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type CreateWebauthnConfigDto struct {
+type CreatePasskeyConfigDto struct {
 	RelyingParty           CreateRelyingPartyDto                 `json:"relying_party" validate:"required"`
 	Timeout                int                                   `json:"timeout" validate:"required,number"`
 	UserVerification       *protocol.UserVerificationRequirement `json:"user_verification" validate:"omitempty,oneof=required preferred discouraged"`
@@ -16,7 +16,7 @@ type CreateWebauthnConfigDto struct {
 	ResidentKeyRequirement *protocol.ResidentKeyRequirement      `json:"resident_key_requirement" validate:"omitempty,oneof=discouraged preferred required"`
 }
 
-func (dto *CreateWebauthnConfigDto) ToModel(configModel models.Config) models.WebauthnConfig {
+func (dto *CreatePasskeyConfigDto) ToModel(configModel models.Config) models.WebauthnConfig {
 	passkeyConfigId, _ := uuid.NewV4()
 	now := time.Now()
 
@@ -49,4 +49,43 @@ func (dto *CreateWebauthnConfigDto) ToModel(configModel models.Config) models.We
 	}
 
 	return passkeyConfig
+}
+
+func (dto *CreatePasskeyConfigDto) ToMfaModel(configModel models.Config) models.MfaConfig {
+	mfaConfigId, _ := uuid.NewV4()
+	now := time.Now()
+
+	mfaConfig := models.MfaConfig{
+		ID:        mfaConfigId,
+		ConfigID:  configModel.ID,
+		Timeout:   dto.Timeout,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if dto.AttestationPreference == nil {
+		mfaConfig.AttestationPreference = protocol.PreferDirectAttestation
+	} else {
+		mfaConfig.AttestationPreference = *dto.AttestationPreference
+	}
+
+	if dto.ResidentKeyRequirement == nil {
+		mfaConfig.ResidentKeyRequirement = protocol.ResidentKeyRequirementDiscouraged
+	} else {
+		mfaConfig.ResidentKeyRequirement = *dto.ResidentKeyRequirement
+	}
+
+	if dto.UserVerification == nil {
+		mfaConfig.UserVerification = protocol.VerificationPreferred
+	} else {
+		mfaConfig.UserVerification = *dto.UserVerification
+	}
+
+	if dto.Attachment == nil {
+		mfaConfig.Attachment = protocol.CrossPlatform
+	} else {
+		mfaConfig.Attachment = *dto.Attachment
+	}
+
+	return mfaConfig
 }

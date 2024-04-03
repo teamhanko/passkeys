@@ -92,9 +92,15 @@ func (ts *tenantService) Create(dto request.CreateTenantDto) (*response.CreateTe
 	tenantModel := dto.ToModel()
 	configModel := dto.Config.ToModel(tenantModel)
 	corsModel := dto.Config.Cors.ToModel(configModel)
-	passkeyConfigModel := dto.Config.Webauthn.ToModel(configModel)
-	relyingPartyModel := dto.Config.Webauthn.RelyingParty.ToModel(passkeyConfigModel)
-	mfaConfigModel := dto.Config.Mfa.ToModel(configModel)
+	passkeyConfigModel := dto.Config.Passkey.ToModel(configModel)
+	relyingPartyModel := dto.Config.Passkey.RelyingParty.ToModel(passkeyConfigModel)
+
+	var mfaConfigModel models.MfaConfig
+	if dto.Config.Mfa == nil {
+		mfaConfigModel = dto.Config.Passkey.ToMfaModel(configModel)
+	} else {
+		mfaConfigModel = dto.Config.Mfa.ToModel(configModel)
+	}
 
 	err := ts.tenantPersister.Create(&tenantModel)
 	if err != nil {
@@ -219,9 +225,15 @@ func (ts *tenantService) UpdateConfig(dto request.UpdateConfigDto) error {
 	config := ts.tenant.Config
 	newConfig := dto.ToModel(*ts.tenant)
 	corsModel := dto.Cors.ToModel(newConfig)
-	webauthnConfigModel := dto.Webauthn.ToModel(newConfig)
-	relyingPartyModel := dto.Webauthn.RelyingParty.ToModel(webauthnConfigModel)
-	mfaConfigModel := dto.Mfa.ToModel(newConfig)
+	webauthnConfigModel := dto.Passkey.ToModel(newConfig)
+	relyingPartyModel := dto.Passkey.RelyingParty.ToModel(webauthnConfigModel)
+
+	var mfaConfigModel models.MfaConfig
+	if dto.Mfa == nil {
+		mfaConfigModel = dto.Passkey.ToMfaModel(newConfig)
+	} else {
+		mfaConfigModel = dto.Mfa.ToModel(newConfig)
+	}
 
 	err := ts.persistConfig(
 		&newConfig,

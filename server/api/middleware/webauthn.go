@@ -46,7 +46,7 @@ func WebauthnMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 func setWebauthnClientCtx(ctx echo.Context, cfg models.Config, persister persistence.Persister) error {
 	var passkeyConfig models.WebauthnConfig
 
-	err := createPasskeyCLient(ctx, cfg.WebauthnConfig)
+	err := createPasskeyClient(ctx, cfg.WebauthnConfig)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -75,19 +75,25 @@ func createClient(ctx echo.Context, ctxKey string, params clientParams) error {
 		origins = append(origins, origin.Origin)
 	}
 
-	requireKey := params.ResidentKeyRequirement == protocol.ResidentKeyRequirementRequired
+	requireResidentKey := params.ResidentKeyRequirement == protocol.ResidentKeyRequirementRequired
+
+	authenticatorSelection := protocol.AuthenticatorSelection{
+		RequireResidentKey: &requireResidentKey,
+		ResidentKey:        params.ResidentKeyRequirement,
+		UserVerification:   params.UserVerification,
+	}
+
+	if params.Attachment != nil {
+		authenticatorSelection.AuthenticatorAttachment = *params.Attachment
+	}
 
 	webauthnClient, err := webauthn.New(&webauthn.Config{
-		RPDisplayName:         params.RP.DisplayName,
-		RPID:                  params.RP.RPId,
-		RPOrigins:             origins,
-		AttestationPreference: params.AttestationPreference,
-		AuthenticatorSelection: protocol.AuthenticatorSelection{
-			RequireResidentKey: &requireKey,
-			ResidentKey:        params.ResidentKeyRequirement,
-			UserVerification:   params.UserVerification,
-		},
-		Debug: false,
+		RPDisplayName:          params.RP.DisplayName,
+		RPID:                   params.RP.RPId,
+		RPOrigins:              origins,
+		AttestationPreference:  params.AttestationPreference,
+		AuthenticatorSelection: authenticatorSelection,
+		Debug:                  false,
 		Timeouts: webauthn.TimeoutsConfig{
 			Login: webauthn.TimeoutConfig{
 				Timeout: time.Duration(params.Timeout) * time.Millisecond,
@@ -109,7 +115,7 @@ func createClient(ctx echo.Context, ctxKey string, params clientParams) error {
 	return nil
 }
 
-func createPasskeyCLient(ctx echo.Context, cfg models.WebauthnConfig) error {
+func createPasskeyClient(ctx echo.Context, cfg models.WebauthnConfig) error {
 	params := clientParams{
 		RP:                     cfg.RelyingParty,
 		Timeout:                cfg.Timeout,
@@ -147,7 +153,7 @@ func createDefaultMfaConfig(persister persistence.Persister, passkeyConfig model
 		UpdatedAt:              now,
 		UserVerification:       protocol.VerificationPreferred,
 		Attachment:             protocol.CrossPlatform,
-		AttestationPreference:  protocol.PreferNoAttestation,
+		AttestationPreference:  protocol.PreferDirectAttestation,
 		ResidentKeyRequirement: protocol.ResidentKeyRequirementDiscouraged,
 	}
 

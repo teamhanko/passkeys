@@ -44,4 +44,14 @@ var (
 
 	AuditLogWebAuthnTransactionFinalFailed    AuditLogType = "webauthn_transaction_final_failed"
 	AuditLogWebAuthnTransactionFinalSucceeded AuditLogType = "webauthn_transaction_final_succeeded"
+
+	AuditLogMfaRegistrationInitFailed     AuditLogType = "mfa_registration_init_failed"
+	AuditLogMfaRegistrationInitSucceeded  AuditLogType = "mfa_registration_init_succeeded"
+	AuditLogMfaRegistrationFinalSucceeded AuditLogType = "mfa_registration_final_succeeded"
+	AuditLogMfaRegistrationFinalFailed    AuditLogType = "mfa_registration_final_failed"
+
+	AuditLogMfaAuthenticationInitSucceeded  AuditLogType = "mfa_authentication_init_succeeded"
+	AuditLogMfaAuthenticationInitFailed     AuditLogType = "mfa_authentication_init_failed"
+	AuditLogMfaAuthenticationFinalSucceeded AuditLogType = "mfa_authentication_final_succeeded"
+	AuditLogMfaAuthenticationFinalFailed    AuditLogType = "mfa_authentication_final_failed"
 )

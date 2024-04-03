@@ -41,8 +41,15 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 	}
 
 	apiKey := ctx.Request().Header.Get("apiKey")
-	if dto.UserId != nil && strings.TrimSpace(apiKey) == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "api key is missing")
+	if dto.UserId != nil {
+		if strings.TrimSpace(apiKey) == "" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "api key is missing")
+		}
+
+		err = helper.CreateApiKeyError(h.Config.Secrets, apiKey)
+		if err != nil {
+			return err
+		}
 	}
 
 	return lh.persister.GetConnection().Transaction(func(tx *pop.Connection) error {
