@@ -96,13 +96,22 @@ func (ls *loginService) Initialize() (*protocol.CredentialAssertion, error) {
 func (ls *loginService) Finalize(req *protocol.ParsedCredentialAssertionData) (string, string, error) {
 	// backward compatibility
 	userHandle := ls.convertUserHandle(req.Response.UserHandle)
-	req.Response.UserHandle = []byte(userHandle)
-
 	sessionData, dbSessionData, err := ls.getSessionByChallenge(req.Response.CollectedClientData.Challenge, models.WebauthnOperationAuthentication)
 	if err != nil {
 		return "", userHandle, echo.NewHTTPError(http.StatusUnauthorized, "failed to get session data").SetInternal(err)
 	}
 
+	// when using MFA or session was initialized for a non-discoverable cred
+	if ls.useMFA || !dbSessionData.IsDiscoverable {
+		userHandle = ls.convertUserHandle(sessionData.UserID)
+	}
+
+	err = ls.checkCredentialId(req.RawID, sessionData.AllowedCredentialIDs)
+	if err != nil {
+		return "", userHandle, err
+	}
+
+	req.Response.UserHandle = []byte(userHandle)
 	webauthnUser, err := ls.getWebauthnUserByUserHandle(userHandle)
 	if err != nil {
 		return "", userHandle, echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
@@ -146,4 +155,19 @@ func (ls *loginService) Finalize(req *protocol.ParsedCredentialAssertionData) (s
 	}
 
 	return token, userHandle, nil
+}
+
+func (ls *loginService) checkCredentialId(credentialId []byte, allowedCredentialIds [][]byte) error {
+	foundCred := false
+	for _, allowedCred := range allowedCredentialIds {
+		if string(allowedCred) == string(credentialId) {
+			foundCred = true
+		}
+
+		if !foundCred {
+			return echo.NewHTTPError(http.StatusUnauthorized, "credential is not allowed for this operation")
+		}
+	}
+
+	return nil
 }
