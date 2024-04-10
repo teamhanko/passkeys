@@ -23,6 +23,8 @@ type WebauthnService struct {
 
 	userPersister        persisters.WebauthnUserPersister
 	sessionDataPersister persisters.WebauthnSessionDataPersister
+
+	useMFA bool
 }
 
 type WebauthnServiceCreateParams struct {
@@ -75,7 +77,7 @@ func (ws *WebauthnService) getWebauthnUserByUserHandle(userHandle string) (*inte
 		return nil, fmt.Errorf("user not found")
 	}
 
-	return intern.NewWebauthnUser(*user), nil
+	return intern.NewWebauthnUser(*user, ws.useMFA), nil
 }
 
 func (ws *WebauthnService) createUserCredentialToken(userId string, credentialId string) (string, error) {

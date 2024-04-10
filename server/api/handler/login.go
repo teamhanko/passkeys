@@ -46,7 +46,7 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusUnauthorized, "api key is missing")
 		}
 
-		err = helper.CreateApiKeyError(h.Config.Secrets, apiKey)
+		err = helper.CheckApiKey(h.Config.Secrets, apiKey)
 		if err != nil {
 			return err
 		}

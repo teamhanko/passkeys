@@ -18,7 +18,7 @@ func ApiKeyMiddleware() echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusNotFound, "tenant not found")
 			}
 
-			err := helper.CreateApiKeyError(tenant.Config.Secrets, apiKey)
+			err := helper.CheckApiKey(tenant.Config.Secrets, apiKey)
 			if err != nil {
 				return err
 			}

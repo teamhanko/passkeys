@@ -19,7 +19,6 @@ type LoginService interface {
 type loginService struct {
 	WebauthnService
 	userId *string
-	useMFA bool
 }
 
 func NewLoginService(params WebauthnServiceCreateParams) LoginService {
@@ -36,9 +35,9 @@ func NewLoginService(params WebauthnServiceCreateParams) LoginService {
 
 			userPersister:        params.UserPersister,
 			sessionDataPersister: params.SessionPersister,
+			useMFA:               params.UseMFA,
 		},
 		params.UserId,
-		params.UseMFA,
 	}
 }
 
@@ -64,8 +63,8 @@ func (ls *loginService) Initialize() (*protocol.CredentialAssertion, error) {
 				fmt.Errorf("failed to create webauthn assertion options for login: %w", err),
 			)
 		}
-		isDiscoverable = false
 
+		isDiscoverable = false
 	} else {
 		credentialAssertion, sessionData, err = ls.webauthnClient.BeginDiscoverableLogin()
 

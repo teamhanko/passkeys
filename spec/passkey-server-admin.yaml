@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  version: '1.1'
+  version: '1.2'
   title: passkey-server-admin
   summary: Admin API for Passkey Server
   description: 'ADmin API for Hanko Passkey Server. Allows creation and configiration of tenants and api keys, '
@@ -734,7 +734,7 @@ components:
             - required
             - preferred
             - discouraged
-          description: defaults to `discouraged` when omitted
+          description: defaults to `preferred` when omitted
         attachment:
           type: string
           enum:
@@ -755,7 +755,7 @@ components:
             - discouraged
             - preferred
             - required
-          description: defaults to `preferred` when omitted
+          description: defaults to `discouraged` when omitted
       required:
         - timeout
     secret_list:

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func CreateApiKeyError(keys []models.Secret, apiKey string) error {
+func CheckApiKey(keys []models.Secret, apiKey string) error {
 	var foundKey *models.Secret
 	for _, key := range keys {
 		if strings.TrimSpace(apiKey) == key.Key {

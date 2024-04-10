@@ -21,7 +21,6 @@ type RegistrationService interface {
 type registrationService struct {
 	WebauthnService
 	mapper.AuthenticatorMetadata
-	UseMFA bool
 }
 
 func NewRegistrationService(params WebauthnServiceCreateParams) RegistrationService {
@@ -39,9 +38,10 @@ func NewRegistrationService(params WebauthnServiceCreateParams) RegistrationServ
 
 			userPersister:        params.UserPersister,
 			sessionDataPersister: params.SessionPersister,
+
+			useMFA: params.UseMFA,
 		},
 		params.AuthenticatorMetadata,
-		params.UseMFA,
 	}
 }
 
@@ -87,7 +87,7 @@ func (rs *registrationService) createOrUpdateUser(user models.WebauthnUser) (*in
 		return nil, err
 	}
 
-	return intern.NewWebauthnUser(user), err
+	return intern.NewWebauthnUser(user, rs.useMFA), err
 }
 
 func (rs *registrationService) getDbUser(userId string) (*models.WebauthnUser, error) {
@@ -170,7 +170,7 @@ func (rs *registrationService) geDbtUserAndSessionFromRequest(req *protocol.Pars
 }
 
 func (rs *registrationService) createCredential(dbUser *models.WebauthnUser, session *models.WebauthnSessionData, req *protocol.ParsedCredentialCreationData) (*models.WebauthnCredential, error) {
-	credential, err := rs.webauthnClient.CreateCredential(intern.NewWebauthnUser(*dbUser), *intern.WebauthnSessionDataFromModel(session), req)
+	credential, err := rs.webauthnClient.CreateCredential(intern.NewWebauthnUser(*dbUser, rs.useMFA), *intern.WebauthnSessionDataFromModel(session), req)
 	if err != nil {
 		rs.logger.Error(err)
 
@@ -200,7 +200,7 @@ func (rs *registrationService) createCredential(dbUser *models.WebauthnUser, ses
 		flags.HasBackupEligible(),
 		flags.HasBackupState(),
 		rs.AuthenticatorMetadata,
-		rs.UseMFA,
+		rs.useMFA,
 	)
 
 	err = rs.credentialPersister.Create(dbCredential)

@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  version: '1.0'
+  version: '1.1'
   title: passkey-server
   summary: 'OpenAPI Spec for creating, managing and using passkeys'
   description: 'This API shall represent the private and public endpoints for passkey registration, management and authentication'

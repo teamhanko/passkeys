@@ -28,7 +28,6 @@ type transactionService struct {
 	*WebauthnService
 
 	transactionPersister persisters.TransactionPersister
-	useMFA               bool
 }
 
 func NewTransactionService(params TransactionServiceCreateParams) TransactionService {
@@ -45,9 +44,10 @@ func NewTransactionService(params TransactionServiceCreateParams) TransactionSer
 
 			userPersister:        params.UserPersister,
 			sessionDataPersister: params.SessionPersister,
+
+			useMFA: params.UseMFA,
 		},
 		transactionPersister: params.TransactionPersister,
-		useMFA:               params.UseMFA,
 	}
 }
 
@@ -71,7 +71,7 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 	}
 
 	credentialAssertion, sessionData, err := ts.webauthnClient.BeginLogin(
-		intern.NewWebauthnUser(*webauthnUser),
+		intern.NewWebauthnUser(*webauthnUser, ts.useMFA),
 		ts.withTransaction(transaction.Identifier, transaction.Data),
 	)
 	if err != nil {
