@@ -2,27 +2,34 @@ package helper
 
 import (
 	"fmt"
-	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/persistence/models"
-	"github.com/teamhanko/passkey-server/persistence/persisters"
 	"net/http"
+	"strings"
 )
 
-func FindTenantByIdString(id string, tenantPersister persisters.TenantPersister) (*models.Tenant, error) {
-	tenantId, err := uuid.FromString(id)
-	if err != nil {
-		return nil, echo.NewHTTPError(http.StatusBadRequest, "unable to parse tenant id").SetInternal(err)
+func CheckApiKey(keys []models.Secret, apiKey string) error {
+	var foundKey *models.Secret
+	for _, key := range keys {
+		if strings.TrimSpace(apiKey) == key.Key {
+			foundKey = &key
+			break
+		}
 	}
 
-	tenant, err := tenantPersister.Get(tenantId)
-	if err != nil {
-		return nil, err
+	if foundKey == nil {
+		title := "The api key is invalid"
+		details := "api keys needs to be an apiKey Header and 32 byte long"
+
+		return echo.NewHTTPError(http.StatusUnauthorized, title).SetInternal(fmt.Errorf(details))
 	}
 
-	if tenant == nil {
-		return nil, echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("no tenant with ID '%s' was found", id))
+	if !foundKey.IsAPISecret {
+		title := "The api key is invalid"
+		details := "provided key is not an api key"
+
+		return echo.NewHTTPError(http.StatusUnauthorized, title).SetInternal(fmt.Errorf(details))
 	}
 
-	return tenant, nil
+	return nil
 }

@@ -2,16 +2,12 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gobuffalo/pop/v6"
-	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	auditlog "github.com/teamhanko/passkey-server/audit_log"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
-	"github.com/teamhanko/passkey-server/persistence/persisters"
 	"net/http"
 )
 
@@ -21,12 +17,14 @@ type WebauthnHandler interface {
 }
 
 type webauthnHandler struct {
-	persister persistence.Persister
+	persister    persistence.Persister
+	UseMFAClient bool
 }
 
-func newWebAuthnHandler(persister persistence.Persister) *webauthnHandler {
+func newWebAuthnHandler(persister persistence.Persister, useMFAClient bool) *webauthnHandler {
 	return &webauthnHandler{
-		persister: persister,
+		persister:    persister,
+		UseMFAClient: useMFAClient,
 	}
 }
 
@@ -47,29 +45,6 @@ func (w *webauthnHandler) handleError(logger auditlog.Logger, logType models.Aud
 	}
 
 	return nil
-}
-
-func (w *webauthnHandler) getWebauthnUserByUserHandle(userHandle string, tenantId uuid.UUID, persister persisters.WebauthnUserPersister) (*intern.WebauthnUser, error) {
-	user, err := persister.GetByUserId(userHandle, tenantId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-
-	if user == nil {
-		return nil, fmt.Errorf("user not found")
-	}
-
-	return intern.NewWebauthnUser(*user), nil
-}
-
-func (w *webauthnHandler) convertUserHandle(userHandle []byte) string {
-	userId := string(userHandle)
-	userUuid, err := uuid.FromBytes(userHandle)
-	if err == nil {
-		userId = userUuid.String()
-	}
-
-	return userId
 }
 
 func BindAndValidateRequest[I request.CredentialRequests | request.WebauthnRequests](ctx echo.Context) (*I, error) {

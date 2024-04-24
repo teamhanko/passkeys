@@ -22,7 +22,7 @@ type credentialsHandler struct {
 }
 
 func NewCredentialsHandler(persister persistence.Persister) CredentialsHandler {
-	webauthnHandler := newWebAuthnHandler(persister)
+	webauthnHandler := newWebAuthnHandler(persister, false)
 
 	return &credentialsHandler{
 		webauthnHandler,

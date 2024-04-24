@@ -19,8 +19,8 @@ type registrationHandler struct {
 	mapper.AuthenticatorMetadata
 }
 
-func NewRegistrationHandler(persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata) WebauthnHandler {
-	webauthnHandler := newWebAuthnHandler(persister)
+func NewRegistrationHandler(persister persistence.Persister, authenticatorMetadata mapper.AuthenticatorMetadata, useMfaClient bool) WebauthnHandler {
+	webauthnHandler := newWebAuthnHandler(persister, useMfaClient)
 
 	return &registrationHandler{
 		webauthnHandler,
@@ -36,7 +36,13 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 
 	webauthnUser := dto.ToModel()
 
-	h, err := helper.GetHandlerContext(ctx)
+	var h *helper.WebauthnContext
+	if r.UseMFAClient {
+		h, err = helper.GetMfaHandlerContext(ctx)
+	} else {
+		h, err = helper.GetHandlerContext(ctx)
+	}
+
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -50,22 +56,32 @@ func (r *registrationHandler) Init(ctx echo.Context) error {
 		service := services.NewRegistrationService(services.WebauthnServiceCreateParams{
 			Ctx:                 ctx,
 			Tenant:              *h.Tenant,
-			WebauthnClient:      *h.Webauthn,
+			WebauthnClient:      *h.WebauthnClient,
 			UserPersister:       userPersister,
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
+			UseMFA:              r.UseMFAClient,
 		})
 
 		credentialCreation, userId, err := service.Initialize(webauthnUser)
-		err = r.handleError(h.AuditLog, models.AuditLogWebAuthnRegistrationInitFailed, tx, ctx, &userId, nil, err)
+
+		if r.UseMFAClient {
+			err = r.handleError(h.AuditLog, models.AuditLogMfaRegistrationInitFailed, tx, ctx, &userId, nil, err)
+		} else {
+			err = r.handleError(h.AuditLog, models.AuditLogWebAuthnRegistrationInitFailed, tx, ctx, &userId, nil, err)
+		}
 		if err != nil {
 			return err
 		}
 
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnRegistrationInitSucceeded, &userId, nil, err)
-		if auditErr != nil {
-			ctx.Logger().Error(auditErr)
-			return auditErr
+		if r.UseMFAClient {
+			err = h.AuditLog.CreateWithConnection(tx, models.AuditLogMfaRegistrationInitSucceeded, &userId, nil, err)
+		} else {
+			err = h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnRegistrationInitSucceeded, &userId, nil, err)
+		}
+		if err != nil {
+			ctx.Logger().Error(err)
+			return err
 		}
 
 		return ctx.JSON(http.StatusOK, credentialCreation)
@@ -79,8 +95,15 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse credential creation response").SetInternal(err)
 	}
 
-	h, err := helper.GetHandlerContext(ctx)
-	if err != nil {
+	var h *helper.WebauthnContext
+	var hErr error
+	if r.UseMFAClient {
+		h, hErr = helper.GetMfaHandlerContext(ctx)
+	} else {
+		h, hErr = helper.GetHandlerContext(ctx)
+	}
+
+	if hErr != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
@@ -93,21 +116,31 @@ func (r *registrationHandler) Finish(ctx echo.Context) error {
 		service := services.NewRegistrationService(services.WebauthnServiceCreateParams{
 			Ctx:                   ctx,
 			Tenant:                *h.Tenant,
-			WebauthnClient:        *h.Webauthn,
+			WebauthnClient:        *h.WebauthnClient,
 			UserPersister:         userPersister,
 			SessionPersister:      sessionPersister,
 			CredentialPersister:   credentialPersister,
 			Generator:             h.Generator,
 			AuthenticatorMetadata: r.AuthenticatorMetadata,
+			UseMFA:                r.UseMFAClient,
 		})
 
 		token, userId, err := service.Finalize(parsedRequest)
-		err = r.handleError(h.AuditLog, models.AuditLogWebAuthnRegistrationFinalFailed, tx, ctx, userId, nil, err)
+
+		if r.UseMFAClient {
+			err = r.handleError(h.AuditLog, models.AuditLogMfaRegistrationFinalFailed, tx, ctx, userId, nil, err)
+		} else {
+			err = r.handleError(h.AuditLog, models.AuditLogWebAuthnRegistrationFinalFailed, tx, ctx, userId, nil, err)
+		}
 		if err != nil {
 			return err
 		}
 
-		err = h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnRegistrationFinalSucceeded, userId, nil, nil)
+		if r.UseMFAClient {
+			err = h.AuditLog.CreateWithConnection(tx, models.AuditLogMfaRegistrationFinalSucceeded, userId, nil, nil)
+		} else {
+			err = h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnRegistrationFinalSucceeded, userId, nil, nil)
+		}
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err

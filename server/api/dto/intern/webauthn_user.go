@@ -11,15 +11,17 @@ type WebauthnUser struct {
 	Icon                string
 	DisplayName         string
 	WebauthnCredentials []models.WebauthnCredential
+	IsMfaUser           bool
 }
 
-func NewWebauthnUser(user models.WebauthnUser) *WebauthnUser {
+func NewWebauthnUser(user models.WebauthnUser, isMfaUser bool) *WebauthnUser {
 	return &WebauthnUser{
 		UserId:              user.UserID,
 		Name:                user.Name,
 		Icon:                user.Icon,
 		DisplayName:         user.DisplayName,
 		WebauthnCredentials: user.WebauthnCredentials,
+		IsMfaUser:           isMfaUser,
 	}
 }
 
@@ -42,6 +44,11 @@ func (u *WebauthnUser) WebAuthnIcon() string {
 func (u *WebauthnUser) WebAuthnCredentials() []webauthn.Credential {
 	var credentials []webauthn.Credential
 	for _, credential := range u.WebauthnCredentials {
+		if !u.IsMfaUser && credential.IsMFA {
+			// Skip if request is not for an MFA cred but the credential is a mfa cred
+			continue
+		}
+
 		cred := credential
 		c := WebauthnCredentialFromModel(&cred)
 		credentials = append(credentials, *c)
@@ -52,6 +59,11 @@ func (u *WebauthnUser) WebAuthnCredentials() []webauthn.Credential {
 
 func (u *WebauthnUser) FindCredentialById(credentialId string) *models.WebauthnCredential {
 	for i := range u.WebauthnCredentials {
+		if !u.IsMfaUser && u.WebauthnCredentials[i].IsMFA {
+			// Skip if request is not for an MFA cred but the credential is a mfa cred
+			continue
+		}
+
 		if u.WebauthnCredentials[i].ID == credentialId {
 			return &u.WebauthnCredentials[i]
 		}

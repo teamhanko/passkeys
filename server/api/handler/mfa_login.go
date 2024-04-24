@@ -13,43 +13,30 @@ import (
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
-	"strings"
 )
 
-type loginHandler struct {
+type mfaLoginHandler struct {
 	*webauthnHandler
 }
 
-func NewLoginHandler(persister persistence.Persister) WebauthnHandler {
-	webauthnHandler := newWebAuthnHandler(persister, false)
+func NewMfaLoginHandler(persister persistence.Persister) WebauthnHandler {
+	webauthnHandler := newWebAuthnHandler(persister, true)
 
-	return &loginHandler{
+	return &mfaLoginHandler{
 		webauthnHandler,
 	}
 }
 
-func (lh *loginHandler) Init(ctx echo.Context) error {
-	h, err := helper.GetHandlerContext(ctx)
+func (lh *mfaLoginHandler) Init(ctx echo.Context) error {
+	h, err := helper.GetMfaHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
-	dto, err := BindAndValidateRequest[request.InitLoginDto](ctx)
+	dto, err := BindAndValidateRequest[request.InitMfaLoginDto](ctx)
 	if err != nil {
 		return err
-	}
-
-	apiKey := ctx.Request().Header.Get("apiKey")
-	if dto.UserId != nil {
-		if strings.TrimSpace(apiKey) == "" {
-			return echo.NewHTTPError(http.StatusUnauthorized, "api key is missing")
-		}
-
-		err = helper.CheckApiKey(h.Config.Secrets, apiKey)
-		if err != nil {
-			return err
-		}
 	}
 
 	return lh.persister.GetConnection().Transaction(func(tx *pop.Connection) error {
@@ -65,15 +52,16 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 			UserPersister:       userPersister,
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
+			UseMFA:              true,
 		})
 
 		credentialAssertion, err := service.Initialize()
-		err = lh.handleError(h.AuditLog, models.AuditLogWebAuthnAuthenticationInitFailed, tx, ctx, dto.UserId, nil, err)
+		err = lh.handleError(h.AuditLog, models.AuditLogMfaAuthenticationInitFailed, tx, ctx, dto.UserId, nil, err)
 		if err != nil {
 			return err
 		}
 
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationInitSucceeded, dto.UserId, nil, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogMfaAuthenticationInitSucceeded, dto.UserId, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)
@@ -83,14 +71,14 @@ func (lh *loginHandler) Init(ctx echo.Context) error {
 	})
 }
 
-func (lh *loginHandler) Finish(ctx echo.Context) error {
+func (lh *mfaLoginHandler) Finish(ctx echo.Context) error {
 	parsedRequest, err := protocol.ParseCredentialRequestResponse(ctx.Request())
 	if err != nil {
 		ctx.Logger().Error(err)
 		return echo.NewHTTPError(http.StatusBadRequest, "unable to finish login").SetInternal(err)
 	}
 
-	h, err := helper.GetHandlerContext(ctx)
+	h, err := helper.GetMfaHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
@@ -109,15 +97,16 @@ func (lh *loginHandler) Finish(ctx echo.Context) error {
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
 			Generator:           h.Generator,
+			UseMFA:              true,
 		})
 
 		token, userId, err := service.Finalize(parsedRequest)
-		err = lh.handleError(h.AuditLog, models.AuditLogWebAuthnAuthenticationFinalFailed, tx, ctx, &userId, nil, err)
+		err = lh.handleError(h.AuditLog, models.AuditLogMfaAuthenticationFinalFailed, tx, ctx, &userId, nil, err)
 		if err != nil {
 			return err
 		}
 
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnAuthenticationFinalSucceeded, &userId, nil, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogMfaAuthenticationFinalSucceeded, &userId, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)

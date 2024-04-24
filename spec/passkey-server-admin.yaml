@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  version: '1.1'
+  version: '1.2'
   title: passkey-server-admin
   summary: Admin API for Passkey Server
   description: 'ADmin API for Hanko Passkey Server. Allows creation and configiration of tenants and api keys, '
@@ -580,6 +580,7 @@ components:
           maxLength: 36
         api_key:
           $ref: '#/components/schemas/secret'
+          description: omitted when `create_api_key`is omitted or set to `false`
       required:
         - id
     secret:
@@ -626,6 +627,8 @@ components:
           $ref: '#/components/schemas/cors'
         webauthn:
           $ref: '#/components/schemas/webauthn'
+        mfa:
+          $ref: '#/components/schemas/mfa'
       required:
         - cors
         - webauthn
@@ -658,14 +661,36 @@ components:
           examples:
             - 60000
         user_verification:
+          type: string
           enum:
             - required
             - preferred
             - discouraged
+          description: defaults to `required` when omitted
+        attachment:
+          type: string
+          enum:
+            - platform
+            - cross-platform
+          description: uses all authenticator attachments when omitted
+        attestation_preference:
+          type: string
+          enum:
+            - none
+            - indirect
+            - direct
+            - enterprise
+          description: defaults to `direct` when omitted
+        resident_key_requirement:
+          type: string
+          enum:
+            - discouraged
+            - preferred
+            - required
+          description: defaults to `required` when omitted
       required:
         - relying_party
         - timeout
-        - user_verification
     relying_party:
       type: object
       title: relying_party
@@ -696,6 +721,43 @@ components:
         - id
         - display_name
         - origins
+    mfa:
+      type: object
+      title: mfa
+      properties:
+        timeout:
+          type: number
+          default: 60000
+        user_verification:
+          type: string
+          enum:
+            - required
+            - preferred
+            - discouraged
+          description: defaults to `preferred` when omitted
+        attachment:
+          type: string
+          enum:
+            - platform
+            - cross-platform
+          description: defaults to `cross-platform` when omitted
+        attestation_preference:
+          type: string
+          enum:
+            - none
+            - indirect
+            - direct
+            - enterprise
+          description: defaults to `direct` when omitted
+        resident_key_requirement:
+          type: string
+          enum:
+            - discouraged
+            - preferred
+            - required
+          description: defaults to `discouraged` when omitted
+      required:
+        - timeout
     secret_list:
       type: array
       title: secret_list

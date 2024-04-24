@@ -34,6 +34,7 @@ type tenantService struct {
 	secretPersister         persisters.SecretsPersister
 	jwkPersister            persisters.JwkPersister
 	auditLogPersister       persisters.AuditLogPersister
+	mfaConfigPersister      persisters.MFAConfigPersister
 }
 
 type CreateTenantServiceParams struct {
@@ -49,6 +50,7 @@ type CreateTenantServiceParams struct {
 	SecretPersister         persisters.SecretsPersister
 	JwkPersister            persisters.JwkPersister
 	AuditLogPersister       persisters.AuditLogPersister
+	MFAConfigPersister      persisters.MFAConfigPersister
 }
 
 func NewTenantService(params CreateTenantServiceParams) TenantService {
@@ -65,6 +67,7 @@ func NewTenantService(params CreateTenantServiceParams) TenantService {
 		secretPersister:         params.SecretPersister,
 		jwkPersister:            params.JwkPersister,
 		auditLogPersister:       params.AuditLogPersister,
+		mfaConfigPersister:      params.MFAConfigPersister,
 	}
 }
 
@@ -89,8 +92,15 @@ func (ts *tenantService) Create(dto request.CreateTenantDto) (*response.CreateTe
 	tenantModel := dto.ToModel()
 	configModel := dto.Config.ToModel(tenantModel)
 	corsModel := dto.Config.Cors.ToModel(configModel)
-	webauthnConfigModel := dto.Config.Webauthn.ToModel(configModel)
-	relyingPartyModel := dto.Config.Webauthn.RelyingParty.ToModel(webauthnConfigModel)
+	passkeyConfigModel := dto.Config.Passkey.ToModel(configModel)
+	relyingPartyModel := dto.Config.Passkey.RelyingParty.ToModel(passkeyConfigModel)
+
+	var mfaConfigModel models.MfaConfig
+	if dto.Config.Mfa == nil {
+		mfaConfigModel = dto.Config.Passkey.ToMfaModel(configModel)
+	} else {
+		mfaConfigModel = dto.Config.Mfa.ToModel(configModel)
+	}
 
 	err := ts.tenantPersister.Create(&tenantModel)
 	if err != nil {
@@ -101,8 +111,9 @@ func (ts *tenantService) Create(dto request.CreateTenantDto) (*response.CreateTe
 	err = ts.persistConfig(
 		&configModel,
 		&corsModel,
-		&webauthnConfigModel,
+		&passkeyConfigModel,
 		&relyingPartyModel,
+		&mfaConfigModel,
 	)
 
 	var apiSecretModel *models.Secret = nil
@@ -163,7 +174,7 @@ func (ts *tenantService) createSecret(name string, configId uuid.UUID, isAPIKey 
 	return model, nil
 }
 
-func (ts *tenantService) persistConfig(config *models.Config, cors *models.Cors, webauthn *models.WebauthnConfig, rp *models.RelyingParty) error {
+func (ts *tenantService) persistConfig(config *models.Config, cors *models.Cors, webauthn *models.WebauthnConfig, rp *models.RelyingParty, mfaConfig *models.MfaConfig) error {
 	err := ts.configPersister.Create(config)
 	if err != nil {
 		return err
@@ -180,6 +191,11 @@ func (ts *tenantService) persistConfig(config *models.Config, cors *models.Cors,
 	}
 
 	err = ts.relyingPartyPerister.Create(rp)
+	if err != nil {
+		return err
+	}
+
+	err = ts.mfaConfigPersister.Create(mfaConfig)
 	if err != nil {
 		return err
 	}
@@ -209,10 +225,24 @@ func (ts *tenantService) UpdateConfig(dto request.UpdateConfigDto) error {
 	config := ts.tenant.Config
 	newConfig := dto.ToModel(*ts.tenant)
 	corsModel := dto.Cors.ToModel(newConfig)
-	webauthnConfigModel := dto.Webauthn.ToModel(newConfig)
-	relyingPartyModel := dto.Webauthn.RelyingParty.ToModel(webauthnConfigModel)
+	webauthnConfigModel := dto.Passkey.ToModel(newConfig)
+	relyingPartyModel := dto.Passkey.RelyingParty.ToModel(webauthnConfigModel)
 
-	err := ts.persistConfig(&newConfig, &corsModel, &webauthnConfigModel, &relyingPartyModel)
+	var mfaConfigModel models.MfaConfig
+	if dto.Mfa == nil {
+		mfaConfigModel = dto.Passkey.ToMfaModel(newConfig)
+	} else {
+		mfaConfigModel = dto.Mfa.ToModel(newConfig)
+	}
+
+	err := ts.persistConfig(
+		&newConfig,
+		&corsModel,
+		&webauthnConfigModel,
+		&relyingPartyModel,
+		&mfaConfigModel,
+	)
+
 	if err != nil {
 		ts.logger.Error(err)
 		return err

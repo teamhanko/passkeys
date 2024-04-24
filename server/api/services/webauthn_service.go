@@ -23,6 +23,8 @@ type WebauthnService struct {
 
 	userPersister        persisters.WebauthnUserPersister
 	sessionDataPersister persisters.WebauthnSessionDataPersister
+
+	useMFA bool
 }
 
 type WebauthnServiceCreateParams struct {
@@ -31,6 +33,8 @@ type WebauthnServiceCreateParams struct {
 	WebauthnClient        webauthn.WebAuthn
 	Generator             jwt.Generator
 	AuthenticatorMetadata mapper.AuthenticatorMetadata
+	UserId                *string
+	UseMFA                bool
 
 	UserPersister       persisters.WebauthnUserPersister
 	SessionPersister    persisters.WebauthnSessionDataPersister
@@ -73,7 +77,7 @@ func (ws *WebauthnService) getWebauthnUserByUserHandle(userHandle string) (*inte
 		return nil, fmt.Errorf("user not found")
 	}
 
-	return intern.NewWebauthnUser(*user), nil
+	return intern.NewWebauthnUser(*user, ws.useMFA), nil
 }
 
 func (ws *WebauthnService) createUserCredentialToken(userId string, credentialId string) (string, error) {
@@ -86,15 +90,14 @@ func (ws *WebauthnService) createUserCredentialToken(userId string, credentialId
 	return token, nil
 }
 
-func (ws *WebauthnService) updateCredentialForUser(webauthnUser *intern.WebauthnUser, credentialId string, flags protocol.AuthenticatorFlags) error {
-	dbCredential := webauthnUser.FindCredentialById(credentialId)
-	if dbCredential != nil {
+func (ws *WebauthnService) updateCredentialForUser(credential *models.WebauthnCredential, flags protocol.AuthenticatorFlags) error {
+	if credential != nil {
 		now := time.Now().UTC()
 
-		dbCredential.BackupState = flags.HasBackupState()
-		dbCredential.BackupEligible = flags.HasBackupEligible()
-		dbCredential.LastUsedAt = &now
-		err := ws.credentialPersister.Update(dbCredential)
+		credential.BackupState = flags.HasBackupState()
+		credential.BackupEligible = flags.HasBackupEligible()
+		credential.LastUsedAt = &now
+		err := ws.credentialPersister.Update(credential)
 		if err != nil {
 			ws.logger.Error(err)
 			return err
