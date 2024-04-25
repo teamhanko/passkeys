@@ -35,6 +35,9 @@ func NewMainRouter(cfg *config.Config, persister persistence.Persister, authenti
 	// Validator
 	main.Validator = validators.NewCustomValidator()
 
+	statusHandler := handler.NewStatusHandler(persister)
+	main.GET("/", statusHandler.Get)
+
 	rootGroup := main.Group("/:tenant_id", passkeyMiddleware.TenantMiddleware(persister))
 	tenantGroup := rootGroup.Group(
 		"",
