@@ -59,6 +59,20 @@ export interface paths {
      */
     get: operations["get-.well-known-jwks.json"];
   };
+  "/{tenant_id}/transaction/initialize": {
+    /**
+     * Initialize a transaction
+     * @description Initializes a new transaction for an existing user
+     */
+    post: operations["post-tenant_id-transaction-initialize"];
+  };
+  "/{tenant_id}/transaction/finalize": {
+    /**
+     * Finalize transaction
+     * @description Finalize a transaction
+     */
+    post: operations["post-tenant_id-transaction-finalize"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -66,79 +80,85 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     /** public-key-credential */
-    "public-key-credential": components["schemas"]["credential"] & {
+    "public-key-credential": components["schemas"]["credential"] & ({
       rawId: string;
-      clientExtensionResults?: Record<string, never>;
-      authenticatorAttachment?: string;
-    };
+      /** @enum {string} */
+      authenticatorAttachment?: "cross-platform" | "platform" | null;
+    });
     /** credential */
     credential: {
       id: string;
-      type: string;
+      /** @enum {unknown} */
+      type: "public-key";
     };
     /** authenticator-attestation-response */
-    "authenticator-attestation-response": components["schemas"]["authenticator-response"] & ({
+    "authenticator-attestation-response": components["schemas"]["authenticator-response"] & {
       attestationObject: string;
-      transports?: string[] | null;
-    });
+      transports?: string[];
+    };
     /** authenticator-response */
     "authenticator-response": {
       clientDataJSON: string;
     };
     /** autenticator-assertion-response */
-    "autenticator-assertion-response": components["schemas"]["authenticator-response"] & ({
+    "autenticator-assertion-response": components["schemas"]["authenticator-response"] & {
       authenticatorData: string;
       signature: string;
-      userHandle?: string | null;
-    });
+      userHandle?: Record<string, never>;
+    };
     /** relying-party-entity */
     "relying-party-entity": {
-      id: string;
+      id?: string;
     } & components["schemas"]["credential-entity"];
     /** credential-entity */
     "credential-entity": {
       name: string;
-      icon?: string | null;
     };
-    /** user-entity */
-    "user-entity": ({
+    /** public-key-user */
+    "public-key-user": {
       id: string;
-      displayName?: string | null;
-    }) & components["schemas"]["credential-entity"];
+      displayName: string;
+      name: string;
+    };
     /** credential-parameter-entity */
     "credential-parameter-entity": {
-      type: string;
+      /** @enum {unknown} */
+      type: "public-key";
       /** Format: int32 */
       alg: number;
     };
     /** credential-descriptor-entity */
     "credential-descriptor-entity": {
-      type: string;
+      /** @enum {unknown} */
+      type: "public-key";
       id: string;
-      transports?: string[] | null;
+      transports?: ("ble" | "hybrid" | "internal" | "nfc" | "usb")[];
     };
     /** authentication-selection-entity */
     "authentication-selection-entity": {
-      authenticatorAttachement?: string | null;
+      /** @enum {string} */
+      authenticatorAttachement?: "cross-platform" | "platform";
       /** @default false */
-      requireResidentKey?: boolean | null;
-      residentKey?: string | null;
-      userVerification?: string | null;
+      requireResidentKey?: boolean;
+      /** @enum {string} */
+      residentKey?: "discouraged" | "preferred" | "required";
+      /** @enum {string} */
+      userVerification?: "discouraged" | "preferred" | "required";
     };
   };
   responses: {
     /** @description Example response */
     "get-credentials": {
       content: {
-        "application/json": ({
+        "application/json": {
             id: string;
-            name?: string | null;
+            name?: string;
             public_key: string;
             attestation_type: string;
             /** Format: uuid */
             aaguid: string;
             /** Format: date-time */
-            last_used_at?: string | null;
+            last_used_at?: string;
             /** Format: date-time */
             created_at: string;
             transports: string[];
@@ -146,17 +166,26 @@ export interface components {
             backup_eligible: boolean;
             /** @default false */
             backup_state: boolean;
-          })[];
+          }[];
       };
     };
     /** @description Error Response with detailed information */
     error: {
       content: {
         "application/json": {
-          title?: string | null;
-          details?: string | null;
-          status?: number | null;
-          additional?: Record<string, never> | null;
+          /**
+           * @example [
+           *   "explanatory title"
+           * ]
+           */
+          title?: string;
+          /**
+           * @example [
+           *   "Information which helps resolving the problem"
+           * ]
+           */
+          details?: string;
+          status?: number;
         };
       };
     };
@@ -166,14 +195,19 @@ export interface components {
         "application/json": {
           publicKey: {
             rp: components["schemas"]["relying-party-entity"];
-            user: components["schemas"]["user-entity"];
+            user: components["schemas"]["public-key-user"];
             challenge: string;
-            pubKeyCredParams?: components["schemas"]["credential-parameter-entity"][] | null;
-            timeout?: number | null;
-            excludeCredentials?: components["schemas"]["credential-descriptor-entity"][] | null;
+            pubKeyCredParams: components["schemas"]["credential-parameter-entity"][];
+            timeout?: number;
+            excludeCredentials?: components["schemas"]["credential-descriptor-entity"][];
             authenticatorSelection?: components["schemas"]["authentication-selection-entity"];
-            attestation?: string;
-            extensions?: Record<string, never>[];
+            /** @enum {string} */
+            attestation?: "direct" | "enterprise" | "indirect" | "none";
+            extensions?: {
+              appid?: string;
+              appidExclude?: string;
+              credProps?: boolean;
+            };
           };
         };
       };
@@ -182,15 +216,23 @@ export interface components {
     "post-login-initialize": {
       content: {
         "application/json": {
-          publicKey: {
+          publicKey?: {
             challenge: string;
-            /** Format: int32 */
-            timeout?: number | null;
-            rpId?: string | null;
-            allowCredentials?: string[] | null;
-            userVerification?: string | null;
-            extensions?: Record<string, never>[] | null;
+            timeout?: number;
+            rpId?: string;
+            allowCredentials?: components["schemas"]["credential-descriptor-entity"][];
+            /** @enum {string} */
+            userVerification?: "discouraged" | "preferred" | "required";
+            extensions?: {
+              appid?: boolean;
+              appidExclude?: boolean;
+              credProps?: {
+                rk?: boolean;
+              };
+            };
           };
+          /** @enum {string} */
+          mediation?: "optional" | "required" | "silent";
         };
       };
     };
@@ -199,12 +241,37 @@ export interface components {
       content: {
         "application/json": {
           keys?: {
+              /**
+               * @example [
+               *   "RS256"
+               * ]
+               */
               alg?: string;
+              /**
+               * @example [
+               *   "AAAA"
+               * ]
+               */
               e?: string;
-              /** Format: uuid */
+              /**
+               * Format: uuid
+               * @example [
+               *   "483b2499-1ed7-4325-94e3-97e8118ceee9"
+               * ]
+               */
               kid?: string;
+              /**
+               * @example [
+               *   "RSA"
+               * ]
+               */
               kty?: string;
               n?: string;
+              /**
+               * @example [
+               *   "sig"
+               * ]
+               */
               use?: string;
             }[];
         };
@@ -242,23 +309,39 @@ export interface components {
         "application/json": {
           user_id: string;
           username: string;
-          icon?: string | null;
-          display_name?: string | null;
+          icon?: string;
+          display_name?: string;
         };
       };
     };
     "post-registration-finalize"?: {
       content: {
-        "application/json": components["schemas"]["public-key-credential"] & ({
+        "application/json": components["schemas"]["public-key-credential"] & {
           response: components["schemas"]["authenticator-attestation-response"];
-          transports?: string[] | null;
-        });
+          transports?: string[];
+        };
       };
     };
     "post-login-finalize"?: {
       content: {
         "application/json": components["schemas"]["public-key-credential"] & {
           response: components["schemas"]["autenticator-assertion-response"];
+          clientExtensionResults: {
+            appid?: boolean;
+            appidExclude?: boolean;
+            credProps?: {
+              rk?: boolean;
+            };
+          };
+        };
+      };
+    };
+    "post-transaction-initialize"?: {
+      content: {
+        "application/json": {
+          user_id: string;
+          transaction_id: string;
+          transaction_data: Record<string, never>;
         };
       };
     };
@@ -307,6 +390,9 @@ export interface operations {
    */
   "delete-credentials-credentialId": {
     parameters: {
+      header: {
+        apiKey: components["parameters"]["X-API-KEY"];
+      };
       path: {
         credential_id: components["parameters"]["credential_id"];
         tenant_id: components["parameters"]["tenant_id"];
@@ -438,6 +524,50 @@ export interface operations {
     };
     responses: {
       200: components["responses"]["jwks"];
+    };
+  };
+  /**
+   * Initialize a transaction
+   * @description Initializes a new transaction for an existing user
+   */
+  "post-tenant_id-transaction-initialize": {
+    parameters: {
+      header: {
+        apiKey: components["parameters"]["X-API-KEY"];
+      };
+      path: {
+        tenant_id: components["parameters"]["tenant_id"];
+      };
+    };
+    requestBody: components["requestBodies"]["post-transaction-initialize"];
+    responses: {
+      200: components["responses"]["post-login-initialize"];
+      400: components["responses"]["error"];
+      401: components["responses"]["error"];
+      404: components["responses"]["error"];
+      500: components["responses"]["error"];
+    };
+  };
+  /**
+   * Finalize transaction
+   * @description Finalize a transaction
+   */
+  "post-tenant_id-transaction-finalize": {
+    parameters: {
+      header: {
+        apiKey: components["parameters"]["X-API-KEY"];
+      };
+      path: {
+        tenant_id: components["parameters"]["tenant_id"];
+      };
+    };
+    requestBody: components["requestBodies"]["post-login-finalize"];
+    responses: {
+      200: components["responses"]["token"];
+      400: components["responses"]["error"];
+      401: components["responses"]["error"];
+      404: components["responses"]["error"];
+      500: components["responses"]["error"];
     };
   };
 }
