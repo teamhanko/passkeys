@@ -44,16 +44,14 @@ func WebauthnMiddleware(persister persistence.Persister) echo.MiddlewareFunc {
 }
 
 func setWebauthnClientCtx(ctx echo.Context, cfg models.Config, persister persistence.Persister) error {
-	var passkeyConfig models.WebauthnConfig
-
 	err := createPasskeyClient(ctx, cfg.WebauthnConfig)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
 	}
 
-	if cfg.MfaConfig == nil {
-		cfg.MfaConfig, err = createDefaultMfaConfig(persister, passkeyConfig)
+	if cfg.MfaConfig == nil || cfg.MfaConfig.ID == uuid.Nil {
+		cfg.MfaConfig, err = createDefaultMfaConfig(persister, cfg.WebauthnConfig)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err
