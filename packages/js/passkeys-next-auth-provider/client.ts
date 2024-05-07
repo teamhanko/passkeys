@@ -1,4 +1,4 @@
-import { type CredentialRequestOptionsJSON, get } from "@github/webauthn-json";
+import { get, type CredentialRequestOptionsJSON } from "@github/webauthn-json";
 import { type JWTPayload } from "jose";
 import { signIn } from "next-auth/react";
 import { DEFAULT_PROVIDER_ID } from ".";
