@@ -76,6 +76,26 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 						})
 					);
 				},
+				mfa: {
+					registration: {
+						initialize() {
+							return wrap(client.POST("/{tenant_id}/mfa/registration/initialize", { params }));
+						},
+						finalize(credential: PostRegistrationFinalizeBody) {
+							return wrap(
+								client.POST("/{tenant_id}/mfa/registration/finalize", { params, body: credential })
+							);
+						},
+					},
+					login: {
+						initialize() {
+							return wrap(client.POST("/{tenant_id}/mfa/login/initialize", { params }));
+						},
+						finalize(credential: PostLoginFinalizeBody) {
+							return wrap(client.POST("/{tenant_id}/mfa/login/finalize", { params, body: credential }));
+						},
+					},
+				},
 			};
 		},
 		jwks() {
@@ -93,7 +113,7 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 			},
 		},
 		registration: {
-			initialize(data: { userId: string; username: string; icon?: string | null; displayName?: string | null }) {
+			initialize(data: { userId: string; username: string; icon?: string; displayName?: string }) {
 				return wrap(
 					client.POST("/{tenant_id}/registration/initialize", {
 						params,

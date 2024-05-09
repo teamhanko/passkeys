@@ -73,6 +73,34 @@ export interface paths {
      */
     post: operations["post-tenant_id-transaction-finalize"];
   };
+  "/{tenant_id}/mfa/registration/initialize": {
+    /**
+     * Start MFA Registration
+     * @description Initialize a registration for mfa credentials
+     */
+    post: operations["post-mfa-registration-initialize"];
+  };
+  "/{tenant_id}/mfa/registration/finalize": {
+    /**
+     * Finish MFA Registration
+     * @description Finish credential registration process
+     */
+    post: operations["post-mfa-registration-finalize"];
+  };
+  "/{tenant_id}/mfa/login/initialize": {
+    /**
+     * Start MFA Login
+     * @description Initialize a login flow for MFA
+     */
+    post: operations["post-mfa-login-initialize"];
+  };
+  "/{tenant_id}/mfa/login/finalize": {
+    /**
+     * Finish MFA Login
+     * @description Finalize the login operation
+     */
+    post: operations["post-mfa-login-finalize"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -166,6 +194,8 @@ export interface components {
             backup_eligible: boolean;
             /** @default false */
             backup_state: boolean;
+            /** @default false */
+            is_mfa: boolean;
           }[];
       };
     };
@@ -345,6 +375,22 @@ export interface components {
         };
       };
     };
+    /** @description Body for login/initialize */
+    "post-login-initialize"?: {
+      content: {
+        "application/json": {
+          /** @description optional - when provided the API Key needs to be sent to the server too. */
+          user_id?: string;
+        };
+      };
+    };
+    "post-mfa-login-initialize"?: {
+      content: {
+        "application/json": {
+          user_id: string;
+        };
+      };
+    };
   };
   headers: never;
   pathItems: never;
@@ -485,6 +531,7 @@ export interface operations {
         tenant_id: components["parameters"]["tenant_id"];
       };
     };
+    requestBody: components["requestBodies"]["post-login-initialize"];
     responses: {
       200: components["responses"]["post-login-initialize"];
       400: components["responses"]["error"];
@@ -559,6 +606,97 @@ export interface operations {
       };
       path: {
         tenant_id: components["parameters"]["tenant_id"];
+      };
+    };
+    requestBody: components["requestBodies"]["post-login-finalize"];
+    responses: {
+      200: components["responses"]["token"];
+      400: components["responses"]["error"];
+      401: components["responses"]["error"];
+      404: components["responses"]["error"];
+      500: components["responses"]["error"];
+    };
+  };
+  /**
+   * Start MFA Registration
+   * @description Initialize a registration for mfa credentials
+   */
+  "post-mfa-registration-initialize": {
+    parameters: {
+      header: {
+        apiKey: components["parameters"]["X-API-KEY"];
+      };
+      path: {
+        /** @description Tenant ID */
+        tenant_id: string;
+      };
+    };
+    requestBody: components["requestBodies"]["post-registration-initialize"];
+    responses: {
+      200: components["responses"]["post-registration-initialize"];
+      400: components["responses"]["error"];
+      401: components["responses"]["error"];
+      500: components["responses"]["error"];
+    };
+  };
+  /**
+   * Finish MFA Registration
+   * @description Finish credential registration process
+   */
+  "post-mfa-registration-finalize": {
+    parameters: {
+      header: {
+        apiKey: components["parameters"]["X-API-KEY"];
+      };
+      path: {
+        /** @description Tenant ID */
+        tenant_id: string;
+      };
+    };
+    requestBody: components["requestBodies"]["post-registration-finalize"];
+    responses: {
+      200: components["responses"]["token"];
+      400: components["responses"]["error"];
+      401: components["responses"]["error"];
+      404: components["responses"]["error"];
+      500: components["responses"]["error"];
+    };
+  };
+  /**
+   * Start MFA Login
+   * @description Initialize a login flow for MFA
+   */
+  "post-mfa-login-initialize": {
+    parameters: {
+      header: {
+        apiKey: components["parameters"]["X-API-KEY"];
+      };
+      path: {
+        /** @description Tenant ID */
+        tenant_id: string;
+      };
+    };
+    requestBody: components["requestBodies"]["post-mfa-login-initialize"];
+    responses: {
+      200: components["responses"]["post-login-initialize"];
+      400: components["responses"]["error"];
+      401: components["responses"]["error"];
+      404: components["responses"]["error"];
+      500: components["responses"]["error"];
+    };
+  };
+  /**
+   * Finish MFA Login
+   * @description Finalize the login operation
+   */
+  "post-mfa-login-finalize": {
+    parameters: {
+      header: {
+        apiKey: components["parameters"]["X-API-KEY"];
+      };
+      path: {
+        /** @description Tenant ID */
+        tenant_id: string;
       };
     };
     requestBody: components["requestBodies"]["post-login-finalize"];
