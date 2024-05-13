@@ -422,6 +422,38 @@ paths:
               default: localhost
             path_prefix:
               default: ''
+  '/tenants/{tenant_id}/users':
+    get:
+      summary: List Users
+      description: Lists all webauthn users for a given tenant.
+      operationId: get-tenants-tenant_id-users
+      parameters:
+        - name: tenant_id
+          in: path
+          description: ID of the tenant for which the users will be listed.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of webauthn users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/webauthn_user'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
   /health/alive:
     get:
       summary: Get alive status
@@ -463,6 +495,91 @@ paths:
                     type: boolean
                 required:
                   - ready
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+  '/tenants/{tenant_id}/users/{user_id}':
+    get:
+      summary: Get single user
+      description: Get a detailed user object for a single user.
+      operationId: get-tenants-tenant_id-users-user_id
+      parameters:
+        - name: tenant_id
+          in: path
+          description: ID of the tenant
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: path
+          description: ID of the user.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detailed user object for a single user.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/webauthn_user'
+                  - type: object
+                    properties:
+                      credentials:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/credential'
+                      transactions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/transaction'
+                    required:
+                      - credentials
+                      - transactions
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
+      servers:
+        - url: 'http://{host}:8001/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
+    delete:
+      summary: Remove single user
+      description: Removes a single webauthn user
+      operationId: delete-tenants-tenant_id-users-user_id
+      parameters:
+        - name: tenant_id
+          in: path
+          description: ID of the tenant
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: path
+          description: ID of the user.
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content
+        '400':
+          $ref: '#/components/responses/error'
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          $ref: '#/components/responses/error'
       servers:
         - url: 'http://{host}:8001/{path_prefix}'
           variables:
@@ -801,3 +918,78 @@ components:
         - created_at
         - updated_at
         - tenant_id
+    webauthn_user:
+      type: object
+      title: webauthn_user
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        display_name:
+          type: string
+      required:
+        - id
+        - user_id
+        - name
+        - icon
+        - display_name
+    credential:
+      type: object
+      title: credential
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        public_key:
+          type: string
+        attestation_type:
+          type: string
+        aaguid:
+          type: string
+        last_used_at:
+          type: string
+        created_at:
+          type: string
+        transports:
+          type: array
+          items:
+            type: string
+        backup_eligible:
+          type: boolean
+        backup_state:
+          type: boolean
+      required:
+        - id
+        - public_key
+        - attestation_type
+        - aaguid
+        - created_at
+        - transports
+        - backup_eligible
+        - backup_state
+    transaction:
+      type: object
+      title: transaction
+      properties:
+        id:
+          type: string
+        identifier:
+          type: string
+        data:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - identifier
+        - data
+        - created_at
+        - updated_at

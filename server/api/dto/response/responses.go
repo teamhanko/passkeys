@@ -41,3 +41,22 @@ func CredentialDtoFromModel(credential models.WebauthnCredential) CredentialDto 
 		IsMFA:           credential.IsMFA,
 	}
 }
+
+type TransactionDto struct {
+	ID         string `json:"id"`
+	Identifier string `json:"identifier"`
+	Data       string `json:"data"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func TransactionDtoFromModel(transaction models.Transaction) TransactionDto {
+	return TransactionDto{
+		ID:         transaction.ID.String(),
+		Identifier: transaction.Identifier,
+		Data:       transaction.Data,
+		CreatedAt:  transaction.CreatedAt,
+		UpdatedAt:  transaction.UpdatedAt,
+	}
+}

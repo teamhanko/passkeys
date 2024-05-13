@@ -63,6 +63,7 @@ func NewAdminRouter(cfg *config.Config, persister persistence.Persister, prometh
 	singleGroup.DELETE("", tenantHandler.Remove)
 	singleGroup.PUT("/config", tenantHandler.UpdateConfig)
 	singleGroup.GET("/audit_logs", tenantHandler.ListAuditLog)
+
 	secretHandler := admin.NewSecretsHandler(persister)
 	apiKeyGroup := singleGroup.Group("/secrets/api")
 	apiKeyGroup.GET("", secretHandler.ListAPIKeys)
@@ -73,6 +74,13 @@ func NewAdminRouter(cfg *config.Config, persister persistence.Persister, prometh
 	jwkKeyGroup.GET("", secretHandler.ListJWKKeys)
 	jwkKeyGroup.POST("", secretHandler.CreateJWKKey)
 	jwkKeyGroup.DELETE("/:secret_id", secretHandler.RemoveJWKKey)
+
+	userHandler := admin.NewUserHandler(persister)
+	userGroup := singleGroup.Group("/users")
+	userGroup.GET("", userHandler.List)
+
+	userGroup.GET("/:user_id", userHandler.Get)
+	userGroup.DELETE("/:user_id", userHandler.Remove)
 
 	return main
 }

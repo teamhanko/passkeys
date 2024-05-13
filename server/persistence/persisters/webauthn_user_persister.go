@@ -12,8 +12,11 @@ import (
 
 type WebauthnUserPersister interface {
 	Create(webauthnUser *models.WebauthnUser) error
+	AllForTenant(tenantId uuid.UUID) (models.WebauthnUsers, error)
+	GetById(id uuid.UUID) (*models.WebauthnUser, error)
 	GetByUserId(userId string, tenantId uuid.UUID) (*models.WebauthnUser, error)
 	Update(webauthnUser *models.WebauthnUser) error
+	Delete(user *models.WebauthnUser) error
 }
 
 type webauthnUserPersister struct {
@@ -38,9 +41,37 @@ func (p *webauthnUserPersister) Create(webauthnUser *models.WebauthnUser) error 
 	return nil
 }
 
+func (p *webauthnUserPersister) AllForTenant(tenantId uuid.UUID) (models.WebauthnUsers, error) {
+	webauthnUsers := models.WebauthnUsers{}
+	err := p.database.Where("tenant_id = ?", tenantId).All(&webauthnUsers)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return webauthnUsers, nil
+	}
+
+	if err != nil {
+		return webauthnUsers, fmt.Errorf("failed to get webauthn users for tenant %w", err)
+	}
+
+	return webauthnUsers, nil
+}
+
+func (p *webauthnUserPersister) GetById(id uuid.UUID) (*models.WebauthnUser, error) {
+	webauthnUser := models.WebauthnUser{}
+	err := p.database.Eager().Find(&webauthnUser, id)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get webauthn user by id: %w", err)
+	}
+
+	return &webauthnUser, nil
+}
+
 func (p *webauthnUserPersister) GetByUserId(userId string, tenantId uuid.UUID) (*models.WebauthnUser, error) {
-	weauthnUser := models.WebauthnUser{}
-	err := p.database.Eager().Where("user_id = ? AND tenant_id = ?", userId, tenantId).First(&weauthnUser)
+	webauthnUser := models.WebauthnUser{}
+	err := p.database.Eager().Where("user_id = ? AND tenant_id = ?", userId, tenantId).First(&webauthnUser)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -48,7 +79,7 @@ func (p *webauthnUserPersister) GetByUserId(userId string, tenantId uuid.UUID) (
 		return nil, fmt.Errorf("failed to get webauthn user by user id: %w", err)
 	}
 
-	return &weauthnUser, nil
+	return &webauthnUser, nil
 }
 
 func (p *webauthnUserPersister) Update(webauthnUser *models.WebauthnUser) error {
@@ -59,6 +90,15 @@ func (p *webauthnUserPersister) Update(webauthnUser *models.WebauthnUser) error 
 
 	if vErr != nil && vErr.HasAny() {
 		return fmt.Errorf("webauthn user object validation failed: %w", vErr)
+	}
+
+	return nil
+}
+
+func (p *webauthnUserPersister) Delete(user *models.WebauthnUser) error {
+	err := p.database.Destroy(user)
+	if err != nil {
+		return fmt.Errorf("failed to delete webauthn user: %w", err)
 	}
 
 	return nil
