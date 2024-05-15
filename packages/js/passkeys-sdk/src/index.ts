@@ -78,8 +78,18 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 				},
 				mfa: {
 					registration: {
-						initialize() {
-							return wrap(client.POST("/{tenant_id}/mfa/registration/initialize", { params }));
+						initialize(data: { userId: string; username: string; icon?: string; displayName?: string }) {
+							return wrap(
+								client.POST("/{tenant_id}/mfa/registration/initialize", {
+									params,
+									body: {
+										user_id: data.userId,
+										username: data.username,
+										icon: data.icon,
+										display_name: data.displayName,
+									},
+								})
+							);
 						},
 						finalize(credential: PostRegistrationFinalizeBody) {
 							return wrap(
