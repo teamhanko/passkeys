@@ -98,8 +98,13 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 						},
 					},
 					login: {
-						initialize() {
-							return wrap(client.POST("/{tenant_id}/mfa/login/initialize", { params }));
+						initialize(data: { userId: string }) {
+							return wrap(
+								client.POST("/{tenant_id}/mfa/login/initialize", {
+									params,
+									body: { user_id: data.userId },
+								})
+							);
 						},
 						finalize(credential: PostLoginFinalizeBody) {
 							return wrap(client.POST("/{tenant_id}/mfa/login/finalize", { params, body: credential }));
