@@ -62,11 +62,15 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 		return nil, echo.NewHTTPError(http.StatusNotFound, "unable to find user")
 	}
 
-	for _, storedTransaction := range webauthnUser.Transactions {
-		if storedTransaction.Identifier == transaction.Identifier {
-			ts.logger.Error("transaction already exists")
-			return nil, echo.NewHTTPError(http.StatusConflict, "transaction already exists")
-		}
+	foundTransaction, err := ts.transactionPersister.GetByIdentifier(transaction.Identifier, ts.tenant.ID)
+	if err != nil {
+		ts.logger.Error(err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "unable to search for transaction")
+	}
+
+	if foundTransaction != nil {
+		ts.logger.Error("transaction already exists")
+		return nil, echo.NewHTTPError(http.StatusConflict, "transaction already exists")
 	}
 
 	// check for better error handling as BeginLogin can throw a BadRequestError AND normal errors (but same type)
