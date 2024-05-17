@@ -68,7 +68,7 @@ func (ts *transactionService) Initialize(userId string, transaction *models.Tran
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, "unable to search for transaction")
 	}
 
-	if foundTransaction != nil {
+	if foundTransaction != nil && len(*foundTransaction) > 0 {
 		ts.logger.Error("transaction already exists")
 		return nil, echo.NewHTTPError(http.StatusConflict, "transaction already exists")
 	}
