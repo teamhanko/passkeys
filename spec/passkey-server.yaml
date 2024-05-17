@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  version: '1.1'
+  version: '1.2'
   title: passkey-server
   description: 'This API shall represent the private and public endpoints for passkey registration, management and authentication'
   termsOfService: 'https://www.hanko.io/terms'
@@ -262,6 +262,8 @@ paths:
         '401':
           $ref: '#/components/responses/error'
         '404':
+          $ref: '#/components/responses/error'
+        '409':
           $ref: '#/components/responses/error'
         '500':
           $ref: '#/components/responses/error'
@@ -578,6 +580,7 @@ components:
               transaction_id:
                 type: string
                 maxLength: 128
+                description: Needs to be a tenant-wide unique identifier
               transaction_data:
                 type: object
             required:

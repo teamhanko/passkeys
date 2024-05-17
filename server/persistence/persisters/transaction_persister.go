@@ -12,6 +12,7 @@ import (
 
 type TransactionPersister interface {
 	Create(transaction *models.Transaction) error
+	GetByIdentifier(identifier string, tenantID uuid.UUID) (*models.Transactions, error)
 	ListByUserId(userId uuid.UUID, tenantId uuid.UUID) (*models.Transactions, error)
 	GetByUserId(userId uuid.UUID, tenantId uuid.UUID) (*models.Transaction, error)
 	GetByChallenge(challenge string, tenantId uuid.UUID) (*models.Transaction, error)
@@ -55,6 +56,19 @@ func (p *transactionPersister) GetByUserId(userId uuid.UUID, tenantId uuid.UUID)
 func (p *transactionPersister) ListByUserId(userId uuid.UUID, tenantId uuid.UUID) (*models.Transactions, error) {
 	transactions := models.Transactions{}
 	err := p.database.Eager().Where("webauthn_user_id = ? AND tenant_id = ?", userId, tenantId).All(&transactions)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to list transactions by user id: %w", err)
+	}
+
+	return &transactions, nil
+}
+
+func (p *transactionPersister) GetByIdentifier(identifier string, tenantId uuid.UUID) (*models.Transactions, error) {
+	transactions := models.Transactions{}
+	err := p.database.Eager().Where("identifier = ? AND tenant_id = ?", identifier, tenantId).All(&transactions)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
