@@ -7,11 +7,11 @@
 		"typescript": "^5.0.0"
 	},
 	"dependencies": {
-		"@teamhanko/passkeys-sdk": "^0.1.8",
 		"@github/webauthn-json": "^2.1.1",
+		"@teamhanko/passkeys-sdk": "^0.1.8",
 		"jose": "^5.1.1"
 	},
 	"peerDependencies": {
-		"next-auth": "^4.24.5"
+		"next-auth": "^5.0.0-beta.17"
 	}
 }

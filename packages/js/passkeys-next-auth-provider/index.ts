@@ -1,6 +1,7 @@
 import { Tenant } from "@teamhanko/passkeys-sdk";
 import { JWTPayload, JWTVerifyResult, createRemoteJWKSet, jwtVerify } from "jose";
-import CredentialsProvider from "next-auth/providers/credentials";
+import Credentials, { CredentialsConfig } from "next-auth/providers/credentials";
+import { Provider } from "next-auth/providers/index";
 
 export * from "@teamhanko/passkeys-sdk";
 
@@ -19,7 +20,9 @@ export enum ErrorCode {
 	JWTExpired = "jwtExpired",
 }
 
-export function PasskeyProvider({
+// TODO in future versions, remove `export const PasskeyProvider/Passkeys` and make this `export default function Passkeys`
+//      this is only named this way so we can export both the legacy (PasskeyProvider) and new (Passkeys) variable names
+function createPasskeyProvider({
 	tenant,
 	authorize: authorize,
 	id = DEFAULT_PROVIDER_ID,
@@ -46,8 +49,10 @@ export function PasskeyProvider({
 	const JWKS = createRemoteJWKSet(url);
 
 	// TODO call normally when this is fixed: https://github.com/nextauthjs/next-auth/issues/572
-	return ((CredentialsProvider as any).default as typeof CredentialsProvider)({
+	return {
 		id,
+		name: "Passkeys",
+		type: "credentials",
 		credentials: {
 			/**
 			 * Token returned by `passkeyApi.login.finalize()`
@@ -56,8 +61,8 @@ export function PasskeyProvider({
 				label: "JWT returned by /login/finalize",
 				type: "text",
 			},
-		},
-		async authorize(credentials) {
+		} as any,
+		async authorize(credentials?: { finalizeJWT?: string }) {
 			const jwt = credentials?.finalizeJWT;
 			if (!jwt) throw new Error("No JWT provided");
 
@@ -89,5 +94,13 @@ export function PasskeyProvider({
 
 			return user;
 		},
-	});
+	} as const;
 }
+
+/**
+ * @deprecated Use the default export instead
+ */
+export const PasskeyProvider = createPasskeyProvider;
+
+const Passkeys = createPasskeyProvider; // So TS language server auto-imports it as "Passkeys" which is the preferred spelling in Auth.js v5
+export default Passkeys;

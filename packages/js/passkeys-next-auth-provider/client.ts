@@ -1,6 +1,6 @@
-import { type CredentialRequestOptionsJSON, get } from "@github/webauthn-json";
+import { get, type CredentialRequestOptionsJSON } from "@github/webauthn-json";
 import { type JWTPayload } from "jose";
-import { signIn } from "next-auth/react";
+import { SignInOptions, signIn } from "next-auth/react";
 import { DEFAULT_PROVIDER_ID } from ".";
 
 const headers = { "Content-Type": "application/json" };
@@ -10,13 +10,11 @@ interface Common {
 	signal?: AbortSignal;
 }
 
-interface SignInConfig extends Common {
+interface SignInConfig extends Common, SignInOptions {
 	tenantId: string;
 
 	baseUrl?: string;
 	provider?: string;
-	callbackUrl?: string;
-	redirect?: boolean;
 }
 
 interface ClientFirstLoginConfig extends Common {
@@ -46,12 +44,11 @@ export async function signInWithPasskey(config: SignInConfig) {
 		config.signal = controller.signal;
 	}
 
-	const finalizeJWT = await clientFirstPasskeyLogin(config);
+	const finalizeJWT = await apiClientFirstLogin(config);
 
 	await signIn(config.provider ?? DEFAULT_PROVIDER_ID, {
 		finalizeJWT,
-		callbackUrl: config.callbackUrl,
-		redirect: config.redirect,
+		...config,
 	});
 }
 
@@ -80,12 +77,16 @@ signInWithPasskey.conditional = function (config: SignInConfig) {
  *
  * This method runs the ["Client-First Login Flow"]() triggers the "select passkey" dialog and returns a JWT signed by the Hanko Passkey API.
  *
- * It can then be used to sign in e.g. with the PasskeyProvider, passing the returned JWT as the `finalizeJWT` parameter.
+ * It does NOT sign in the user on the backend or interact with NextAuth/Auth.js in any way.
+ *
+ * The JWT this function returns can then be used to sign in e.g. with the `Passkeys` provider, passing the returned JWT as the `finalizeJWT` parameter.
+ *
+ * It includes the user ID and username, signed by the Hanko Passkey API. (`{tenantId}/.well-known/jwks.json`)
  *
  * @returns a JWT that can be exchanged for a session on the backend.
  *          To verify the JWT, use the JWKS endpoint of the tenant. (`{tenantId}/.well-known/jwks.json`)
  */
-export async function clientFirstPasskeyLogin(config: ClientFirstLoginConfig): Promise<JWTPayload> {
+export async function apiClientFirstLogin(config: ClientFirstLoginConfig): Promise<JWTPayload> {
 	const baseUrl = config.baseUrl ?? "https://passkeys.hanko.io";
 
 	const loginOptions = await fetch(new URL(`${config.tenantId}/login/initialize`, baseUrl), {
