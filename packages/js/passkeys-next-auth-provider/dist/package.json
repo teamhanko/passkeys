@@ -3,7 +3,7 @@
 	"license": "MIT",
 	"private": false,
 	"type": "module",
-	"version": "0.2.7",
+	"version": "0.3.0",
 	"exports": {
 		".": "./index.js",
 		"./client": "./client.js"
@@ -15,7 +15,7 @@
 		"typescript": "^5.0.0"
 	},
 	"dependencies": {
-		"@teamhanko/passkeys-sdk": "^0.1.9",
+		"@teamhanko/passkeys-sdk": "^0.2.0",
 		"@github/webauthn-json": "^2.1.1",
 		"jose": "^5.1.1"
 	},
