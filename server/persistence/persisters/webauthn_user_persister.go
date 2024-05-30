@@ -12,7 +12,8 @@ import (
 
 type WebauthnUserPersister interface {
 	Create(webauthnUser *models.WebauthnUser) error
-	AllForTenant(tenantId uuid.UUID) (models.WebauthnUsers, error)
+	AllForTenant(tenantId uuid.UUID, page int, perPage int, sort string) (models.WebauthnUsers, error)
+	Count(tenantId uuid.UUID) (int, error)
 	GetById(id uuid.UUID) (*models.WebauthnUser, error)
 	GetByUserId(userId string, tenantId uuid.UUID) (*models.WebauthnUser, error)
 	Update(webauthnUser *models.WebauthnUser) error
@@ -41,9 +42,14 @@ func (p *webauthnUserPersister) Create(webauthnUser *models.WebauthnUser) error 
 	return nil
 }
 
-func (p *webauthnUserPersister) AllForTenant(tenantId uuid.UUID) (models.WebauthnUsers, error) {
+func (p *webauthnUserPersister) AllForTenant(tenantId uuid.UUID, page int, perPage int, sort string) (models.WebauthnUsers, error) {
 	webauthnUsers := models.WebauthnUsers{}
-	err := p.database.Where("tenant_id = ?", tenantId).All(&webauthnUsers)
+	err := p.database.
+		Where("tenant_id = ?", tenantId).
+		Order(fmt.Sprintf("webauthn_users.created_at %s", sort)).
+		Paginate(page, perPage).
+		All(&webauthnUsers)
+
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return webauthnUsers, nil
 	}
@@ -102,4 +108,13 @@ func (p *webauthnUserPersister) Delete(user *models.WebauthnUser) error {
 	}
 
 	return nil
+}
+
+func (p *webauthnUserPersister) Count(tenantId uuid.UUID) (int, error) {
+	count, err := p.database.Where("tenant_id = ?", tenantId).Count(&models.WebauthnUser{})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get user count: %w", err)
+	}
+
+	return count, nil
 }

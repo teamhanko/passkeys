@@ -1,13 +1,19 @@
 package admin
 
 import (
+	"fmt"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
+	adminRequest "github.com/teamhanko/passkey-server/api/dto/admin/request"
 	"github.com/teamhanko/passkey-server/api/helper"
+	"github.com/teamhanko/passkey-server/api/pagination"
 	"github.com/teamhanko/passkey-server/api/services/admin"
 	"github.com/teamhanko/passkey-server/persistence"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 )
 
 type UserHandler interface {
@@ -25,6 +31,30 @@ func NewUserHandler(persister persistence.Persister) UserHandler {
 }
 
 func (uh *userHandler) List(ctx echo.Context) error {
+	var request adminRequest.UserListRequest
+	err := (&echo.DefaultBinder{}).BindQueryParams(ctx, &request)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse request")
+	}
+
+	if request.Page == 0 {
+		request.Page = 1
+	}
+
+	if request.PerPage == 0 {
+		request.PerPage = 20
+	}
+
+	if request.SortDirection == "" {
+		request.SortDirection = "desc"
+	}
+
+	switch strings.ToLower(request.SortDirection) {
+	case "desc", "asc":
+	default:
+		return echo.NewHTTPError(http.StatusBadRequest, "sort_direction must be desc or asc")
+	}
+
 	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
@@ -39,10 +69,15 @@ func (uh *userHandler) List(ctx echo.Context) error {
 			UserPersister: userPersister,
 		})
 
-		users, err := userService.List()
+		users, count, err := userService.List(request)
 		if err != nil {
 			return err
 		}
+
+		u, _ := url.Parse(fmt.Sprintf("%s://%s%s", ctx.Scheme(), ctx.Request().Host, ctx.Request().RequestURI))
+
+		ctx.Response().Header().Set("Link", pagination.CreateHeader(u, count, request.Page, request.PerPage))
+		ctx.Response().Header().Set("X-Total-Count", strconv.FormatInt(int64(count), 10))
 
 		return ctx.JSON(http.StatusOK, users)
 	})

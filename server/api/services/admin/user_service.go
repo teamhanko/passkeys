@@ -3,6 +3,7 @@ package admin
 import (
 	"github.com/gofrs/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/teamhanko/passkey-server/api/dto/admin/request"
 	"github.com/teamhanko/passkey-server/api/dto/admin/response"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"github.com/teamhanko/passkey-server/persistence/persisters"
@@ -10,7 +11,7 @@ import (
 )
 
 type UserService interface {
-	List() ([]response.UserListDto, error)
+	List(request request.UserListRequest) ([]response.UserListDto, int, error)
 	Get(userId uuid.UUID) (*response.UserGetDto, error)
 	Delete(userId uuid.UUID) error
 }
@@ -36,20 +37,26 @@ func NewUserService(params CreateUserServiceParams) UserService {
 	}
 }
 
-func (us *userService) List() ([]response.UserListDto, error) {
+func (us *userService) List(listRequest request.UserListRequest) ([]response.UserListDto, int, error) {
 	list := make([]response.UserListDto, 0)
 
-	users, err := us.userPersister.AllForTenant(us.tenant.ID)
+	count, err := us.userPersister.Count(us.tenant.ID)
 	if err != nil {
 		us.ctx.Logger().Error(err)
-		return nil, echo.NewHTTPError(http.StatusInternalServerError, "unable to list users").SetInternal(err)
+		return nil, 0, echo.NewHTTPError(http.StatusInternalServerError, "unable to count users").SetInternal(err)
+	}
+
+	users, err := us.userPersister.AllForTenant(us.tenant.ID, listRequest.Page, listRequest.PerPage, listRequest.SortDirection)
+	if err != nil {
+		us.ctx.Logger().Error(err)
+		return nil, 0, echo.NewHTTPError(http.StatusInternalServerError, "unable to list users").SetInternal(err)
 	}
 
 	for _, user := range users {
 		list = append(list, response.UserListDtoFromModel(user))
 	}
 
-	return list, nil
+	return list, count, nil
 }
 
 func (us *userService) Get(userId uuid.UUID) (*response.UserGetDto, error) {

@@ -32,13 +32,7 @@ type UserGetDto struct {
 
 func UserGetDtoFromModel(user models.WebauthnUser) UserGetDto {
 	dto := UserGetDto{
-		UserListDto: UserListDto{
-			ID:          user.ID,
-			UserID:      user.UserID,
-			Name:        user.Name,
-			Icon:        user.Icon,
-			DisplayName: user.DisplayName,
-		},
+		UserListDto:  UserListDtoFromModel(user),
 		Credentials:  make([]response.CredentialDto, 0),
 		Transactions: make([]response.TransactionDto, 0),
 	}

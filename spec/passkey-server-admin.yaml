@@ -3,7 +3,7 @@ info:
   version: '1.2'
   title: passkey-server-admin
   summary: Admin API for Passkey Server
-  description: 'ADmin API for Hanko Passkey Server. Allows creation and configiration of tenants and api keys, '
+  description: 'Admin API for Hanko Passkey Server. Allows creation and configiration of tenants and api keys, '
   termsOfService: 'https://www.hanko.io/terms'
   contact:
     name: Hanko Dev Team
@@ -428,6 +428,26 @@ paths:
       description: Lists all webauthn users for a given tenant.
       operationId: get-tenants-tenant_id-users
       parameters:
+        - name: page
+          in: query
+          description: Page of user list
+          schema:
+            type: number
+            default: 1
+        - name: per_page
+          in: query
+          description: How many entries should be shown per page
+          schema:
+            type: number
+            default: 20
+        - name: sort_direction
+          in: query
+          description: Sort entries ascending or descending
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
         - name: tenant_id
           in: path
           description: ID of the tenant for which the users will be listed.
@@ -443,6 +463,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/webauthn_user'
+        '400':
+          $ref: '#/components/responses/error'
         '404':
           $ref: '#/components/responses/error'
         '500':
@@ -602,7 +624,7 @@ components:
         format: uuid
         minLength: 36
         maxLength: 36
-        examples:
+        example:
           - 1f496bcd-49da-4839-a02f-7ce681ccb488
     secret_id:
       name: secret_id
@@ -646,6 +668,7 @@ components:
             $ref: '#/components/schemas/config'
   responses:
     error:
+
       description: Error Response with detailed information
       content:
         application/json:
@@ -656,13 +679,13 @@ components:
                 type:
                   - string
                   - 'null'
-                examples:
+                example:
                   - explanatory title
               details:
                 type:
                   - string
                   - 'null'
-                examples:
+                example:
                   - Information which helps resolving the problem
               status:
                 type:
@@ -727,7 +750,6 @@ components:
       title: tenant
       allOf:
         - type: object
-          additionalProperties: false
           properties:
             config:
               $ref: '#/components/schemas/config'
@@ -758,7 +780,7 @@ components:
           minItems: 1
           items:
             type: string
-            examples:
+            example:
               - '*.example.local'
         allow_unsafe_wildcard:
           type: boolean
@@ -775,7 +797,7 @@ components:
         timeout:
           type: number
           default: 60000
-          examples:
+          example:
             - 60000
         user_verification:
           type: string
@@ -816,17 +838,17 @@ components:
         id:
           type: string
           default: localhost
-          examples:
+          example:
             - localhost
         display_name:
           type: string
           default: Hanko Passkey Server
-          examples:
+          example:
             - Hanko Passkey Server
         icon:
           type: string
           format: uri
-          examples:
+          example:
             - 'http://link.to/icon'
         origins:
           type: array

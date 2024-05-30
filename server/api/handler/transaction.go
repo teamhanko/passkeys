@@ -134,7 +134,7 @@ func (t *transactionHandler) Finish(ctx echo.Context) error {
 }
 
 func (t *transactionHandler) List(ctx echo.Context) error {
-	userId := ctx.Param("userid")
+	userId := ctx.Param("user_id")
 	userUUID, err := uuid.FromString(userId)
 	if err != nil {
 		ctx.Logger().Error(err)
