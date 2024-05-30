@@ -1,0 +1,48 @@
+- id: 2308bb68-80a8-49d6-bdec-15980cd955d3
+  user_id: test-passkey
+  name: passkey
+  icon: ""
+  display_name: Passkey Test
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+
+# Expire User
+- id: 0645fb9f-4386-409e-9c1f-8052e0fa7fa4
+  user_id: test-passkey-expire
+  name: passkey-expire
+  icon: ""
+  display_name: Passkey Expire Test
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+
+# Same User - Different Tenant
+- id: 0b47668f-18d6-467a-8409-554559fcad99
+  user_id: test-passkey
+  name: passkey
+  icon: ""
+  display_name: Passkey Test
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396f
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+
+# MFA User
+- id: a210f5ed-458f-4556-9e35-001dd2e23430
+  user_id: test-mfa
+  name: mfa
+  icon: ""
+  display_name: MFA Test
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+
+# MFA Expire User
+- id: d91acd36-a506-4e88-a96a-bbb5043d3fc2
+  user_id: test-mfa-expire
+  name: mfa-expire
+  icon: ""
+  display_name: MFA Expire Test
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59

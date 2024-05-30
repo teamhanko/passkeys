@@ -1,0 +1,43 @@
+# Passkey Login Non Discovery
+- id: b14ac387-6f28-426c-806e-de39d1ff09a1
+  challenge: 0L7m52NeD3Li1qmyXT1Zx2NgCYg4K-A3bjd8O09vlU0
+  user_id: test-passkey
+  user_verification: required
+  operation: authentication
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false
+
+# Passkey Login Discovery
+- id: e31b32ce-9a69-418e-a636-0c861457f3be
+  challenge: UicP3foGPfahd_duYGnuBySmVWaPl9VCNK7B42i3fxk
+  user_id: ""
+  user_verification: required
+  operation: authentication
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: true
+
+# Passkey MFA
+- id: 3bbb21ea-43d1-42e3-9aed-90358bfbbf2e
+  challenge: ASEf77_dZaC_3YIK6tmcz0OMevC1dwo5Muz5Uf_wJMA
+  user_id: mfa-test
+  user_verification: required
+  operation: authentication
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false
+
+# Passkey MFA Broken User Handle
+- id: 60437890-1294-44a4-8be3-8bdd58d33b00
+  challenge: tFsllZ56FuBayLjy2fc-M3D70kxAOsctUzupv942WkI
+  user_id: mfa-test
+  user_verification: required
+  operation: authentication
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false

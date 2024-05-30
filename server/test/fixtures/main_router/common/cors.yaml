@@ -1,0 +1,10 @@
+- id: 10000000-0000-0000-0000-000000000000
+  allow_unsafe: false
+  config_id: 5dbb21b3-e6d0-474b-bb30-43428df08c18
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+- id: 20000000-0000-0000-0000-000000000000
+  allow_unsafe: true
+  config_id: 5dbb21b3-e6d0-474b-bb30-43428df08c19
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59

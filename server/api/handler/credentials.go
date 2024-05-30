@@ -42,13 +42,26 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 		return err
 	}
 
-	service := services.NewCredentialService(ctx, *h.Tenant, credHandler.persister.GetWebauthnCredentialPersister(nil))
-	dtos, err := service.List(*requestDto)
-	if err != nil {
-		return err
-	}
+	return credHandler.persister.Transaction(func(tx *pop.Connection) error {
+		user, err := credHandler.persister.GetWebauthnUserPersister(tx).GetByUserId(requestDto.UserId, h.Tenant.ID)
+		if err != nil {
+			ctx.Logger().Error(err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "Unable to get credentials for user").SetInternal(err)
+		}
 
-	return ctx.JSON(http.StatusOK, dtos)
+		if user == nil {
+			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+		}
+
+		service := services.NewCredentialService(ctx, *h.Tenant, credHandler.persister.GetWebauthnCredentialPersister(tx))
+		dtos, err := service.List(*requestDto)
+		if err != nil {
+			return err
+		}
+
+		return ctx.JSON(http.StatusOK, dtos)
+	})
+
 }
 
 func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
