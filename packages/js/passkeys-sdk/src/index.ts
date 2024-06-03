@@ -78,12 +78,12 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 				},
 				mfa: {
 					registration: {
-						initialize(data: { userId: string; username: string; icon?: string; displayName?: string }) {
+						initialize(data: { username: string; icon?: string; displayName?: string }) {
 							return wrap(
 								client.POST("/{tenant_id}/mfa/registration/initialize", {
 									params,
 									body: {
-										user_id: data.userId,
+										user_id: userId,
 										username: data.username,
 										icon: data.icon,
 										display_name: data.displayName,
@@ -98,11 +98,11 @@ export function tenant(config: { baseUrl?: string; apiKey: string; tenantId: str
 						},
 					},
 					login: {
-						initialize(data: { userId: string }) {
+						initialize() {
 							return wrap(
 								client.POST("/{tenant_id}/mfa/login/initialize", {
 									params,
-									body: { user_id: data.userId },
+									body: { user_id: userId },
 								})
 							);
 						},
