@@ -106,6 +106,7 @@ func RouteTransaction(parent *echo.Group, persister persistence.Persister) {
 	transactionHandler := handler.NewTransactionHandler(persister)
 
 	group := parent.Group("/transaction", passkeyMiddleware.ApiKeyMiddleware())
+	group.GET("/:user_id", transactionHandler.List)
 	group.POST(InitEndpoint, transactionHandler.Init)
 	group.POST(FinishEndpoint, transactionHandler.Finish)
 }

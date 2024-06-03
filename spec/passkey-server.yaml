@@ -312,12 +312,7 @@ paths:
       operationId: post-mfa-registration-initialize
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
-        - name: tenant_id
-          in: path
-          description: Tenant ID
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         $ref: '#/components/requestBodies/post-registration-initialize'
       responses:
@@ -347,12 +342,7 @@ paths:
       operationId: post-mfa-registration-finalize
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
-        - name: tenant_id
-          in: path
-          description: Tenant ID
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         $ref: '#/components/requestBodies/post-registration-finalize'
       responses:
@@ -384,12 +374,7 @@ paths:
       operationId: post-mfa-login-initialize
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
-        - name: tenant_id
-          in: path
-          description: Tenant ID
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         $ref: '#/components/requestBodies/post-mfa-login-initialize'
       responses:
@@ -421,12 +406,7 @@ paths:
       operationId: post-mfa-login-finalize
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
-        - name: tenant_id
-          in: path
-          description: Tenant ID
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/tenant_id'
       requestBody:
         $ref: '#/components/requestBodies/post-login-finalize'
       responses:
@@ -448,11 +428,49 @@ paths:
               default: localhost
             path_prefix:
               default: ''
+  '/{tenant_id}/transaction/{user_id}':
+    get:
+      tags:
+        - transaction
+      summary: List transactions for a user
+      description: Lists all transactions for a given user.
+      operationId: get-tenant_id-transaction-user_id
+      parameters:
+        - $ref: '#/components/parameters/X-API-KEY'
+        - $ref: '#/components/parameters/tenant_id'
+        - $ref: '#/components/parameters/path_user_id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/transaction'
+        '400':
+          $ref: '#/components/responses/error'
+        '401':
+          description: Unauthorized
+        '404':
+          $ref: '#/components/responses/error'
+        '500':
+          description: Internal Server Error
+      servers:
+        - url: 'http://{host}:8000/{path_prefix}'
+          variables:
+            host:
+              default: localhost
+            path_prefix:
+              default: ''
 tags:
   - name: credentials
     description: Represents all objects which are related to WebAuthn credentials
   - name: mfa
     description: Represents all objects which are related to MFA in common
+  - name: transaction
+    description: Represents all objects which are related to Transactions in common
   - name: webauthn
     description: Represents all objects which are related to WebAuthn in common
 components:
@@ -488,6 +506,16 @@ components:
         maxLength: 36
         example:
           - 1f496bcd-49da-4839-a02f-7ce681ccb488
+    path_user_id:
+      name: user_id
+      in: path
+      description: ID of the user
+      required: true
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 36
     X-API-KEY:
       name: apiKey
       in: header
@@ -833,6 +861,31 @@ components:
                 type: string
             minProperties: 1
   schemas:
+    transaction:
+      type: object
+      title: transaction
+      properties:
+        id:
+          type: string
+          format: uuid
+          minLength: 36
+          maxLength: 36
+        identifier:
+          type: string
+        data:
+          type: string
+          description: stringified data object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - identifier
+        - data
+        - created_at
     public-key-credential:
       title: public-key-credential
       allOf:
@@ -846,7 +899,6 @@ components:
               enum:
                 - cross-platform
                 - platform
-                - null
           required:
             - rawId
     credential:
@@ -894,8 +946,7 @@ components:
               type: string
             signature:
               type: string
-            userHandle:
-              type: string | null
+            userHandle: {}
           required:
             - authenticatorData
             - signature

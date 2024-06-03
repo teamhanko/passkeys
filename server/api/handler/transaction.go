@@ -19,11 +19,16 @@ import (
 	"net/http"
 )
 
+type TransactionHandler interface {
+	WebauthnHandler
+	List(ctx echo.Context) error
+}
+
 type transactionHandler struct {
 	*webauthnHandler
 }
 
-func NewTransactionHandler(persister persistence.Persister) WebauthnHandler {
+func NewTransactionHandler(persister persistence.Persister) TransactionHandler {
 	webauthnHandler := newWebAuthnHandler(persister, false)
 
 	return &transactionHandler{webauthnHandler}
@@ -126,6 +131,38 @@ func (t *transactionHandler) Finish(ctx echo.Context) error {
 
 		return ctx.JSON(http.StatusOK, &response.TokenDto{Token: token})
 	})
+}
+
+func (t *transactionHandler) List(ctx echo.Context) error {
+	userId := ctx.Param("user_id")
+	userUUID, err := uuid.FromString(userId)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid user id")
+	}
+
+	h, err := helper.GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	transactions, err := t.persister.GetTransactionPersister(nil).ListByUserId(userUUID, h.Tenant.ID)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "unable to list transactions").SetInternal(err)
+	}
+
+	if transactions == nil {
+		return echo.NewHTTPError(http.StatusNotFound, "transactions for user not found")
+	}
+
+	transactionList := make([]response.TransactionDto, 0)
+	for _, trans := range *transactions {
+		transactionList = append(transactionList, response.TransactionDtoFromModel(trans))
+	}
+
+	return ctx.JSON(http.StatusOK, transactionList)
 }
 
 func (t *transactionHandler) withTransaction(transactionId string, transactionDataJson string) webauthn.LoginOption {
