@@ -2029,6 +2029,137 @@ func (s *mainRouterSuite) TestMainRouter_MFA_Login_Finish() {
 	}
 }
 
+func (s *mainRouterSuite) TestMainRouter_Transaction_List() {
+	if testing.Short() {
+		s.T().Skip("skipping test in short mode.")
+	}
+
+	tests := []struct {
+		Name     string
+		TenantId string
+		UserId   string
+		ApiKey   string
+
+		SkipApiKey       bool
+		SimulateBrokenDB bool
+		OmitRequestBody  bool
+
+		ExpectedStatusCode    int
+		ExpectedStatusMessage string
+	}{
+		{
+			Name:                  "success",
+			TenantId:              "6eb4710c-72df-4941-984d-f2cf3dbe396e",
+			UserId:                "b4fc06d2-2651-47e9-b1c3-3ba19ade9375",
+			ApiKey:                "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
+			ExpectedStatusCode:    http.StatusOK,
+			ExpectedStatusMessage: `[{"id":"`,
+		},
+		{
+			Name:                  "missing user id",
+			TenantId:              "6eb4710c-72df-4941-984d-f2cf3dbe396e",
+			ApiKey:                "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
+			ExpectedStatusCode:    http.StatusNotFound,
+			ExpectedStatusMessage: "Not Found",
+		},
+		{
+			Name:                  "malformed user id",
+			TenantId:              "6eb4710c-72df-4941-984d-f2cf3dbe396e",
+			UserId:                "malformed",
+			ApiKey:                "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
+			ExpectedStatusCode:    http.StatusBadRequest,
+			ExpectedStatusMessage: "invalid user id",
+		},
+		{
+			Name:                  "unknown user",
+			TenantId:              "6eb4710c-72df-4941-984d-f2cf3dbe396e",
+			UserId:                "000000000-0000-0000-0000-000000000000",
+			ApiKey:                "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
+			ExpectedStatusCode:    http.StatusBadRequest,
+			ExpectedStatusMessage: "invalid user id",
+		},
+		{
+			Name:                  "missing api key",
+			TenantId:              "6eb4710c-72df-4941-984d-f2cf3dbe396e",
+			UserId:                "b4fc06d2-2651-47e9-b1c3-3ba19ade9375",
+			SkipApiKey:            true,
+			ExpectedStatusCode:    http.StatusUnauthorized,
+			ExpectedStatusMessage: "The api key is invalid",
+		},
+		{
+			Name:                  "malformed api key",
+			TenantId:              "6eb4710c-72df-4941-984d-f2cf3dbe396e",
+			UserId:                "b4fc06d2-2651-47e9-b1c3-3ba19ade9375",
+			ApiKey:                "malformed",
+			ExpectedStatusCode:    http.StatusUnauthorized,
+			ExpectedStatusMessage: "The api key is invalid",
+		},
+		{
+			Name:                  "malformed tenant",
+			TenantId:              "malformed",
+			UserId:                "b4fc06d2-2651-47e9-b1c3-3ba19ade9375",
+			ApiKey:                "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
+			ExpectedStatusCode:    http.StatusBadRequest,
+			ExpectedStatusMessage: "tenant_id must be a valid uuid4",
+		},
+		{
+			Name:                  "missing tenant",
+			UserId:                "b4fc06d2-2651-47e9-b1c3-3ba19ade9375",
+			ApiKey:                "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
+			ExpectedStatusCode:    http.StatusBadRequest,
+			ExpectedStatusMessage: "tenant_id must be a valid uuid4",
+		},
+		{
+			Name:                  "broken db",
+			TenantId:              "6eb4710c-72df-4941-984d-f2cf3dbe396e",
+			UserId:                "test-passkey",
+			ApiKey:                "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
+			SimulateBrokenDB:      true,
+			ExpectedStatusCode:    http.StatusInternalServerError,
+			ExpectedStatusMessage: "Internal Server Error",
+		},
+	}
+
+	for _, currentTest := range tests {
+		s.Run(currentTest.Name, func() {
+			err := s.LoadMultipleFixtures([]string{
+				"../../test/fixtures/main_router/common",
+				"../../test/fixtures/main_router/transaction",
+			})
+			s.Require().NoError(err)
+
+			mainRouter := NewMainRouter(&config.Config{}, s.Storage, nil)
+
+			if currentTest.SimulateBrokenDB {
+				err := s.Storage.MigrateDown(-1)
+				s.Require().NoError(err)
+			}
+
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/%s/transaction/%s", currentTest.TenantId, currentTest.UserId), nil)
+
+			if !currentTest.SkipApiKey {
+				req.Header.Set("apiKey", currentTest.ApiKey)
+			}
+
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+
+			mainRouter.ServeHTTP(rec, req)
+
+			s.Assert().Equal(currentTest.ExpectedStatusCode, rec.Code)
+			s.Assert().Contains(rec.Body.String(), currentTest.ExpectedStatusMessage)
+
+			if rec.Code == http.StatusOK {
+				var transactions []response.TransactionDto
+				err = json.Unmarshal(rec.Body.Bytes(), &transactions)
+				s.Require().NoError(err)
+
+				s.Assert().Len(transactions, 2)
+			}
+		})
+	}
+}
+
 func (s *mainRouterSuite) TestMainRouter_Transaction_Init() {
 	if testing.Short() {
 		s.T().Skip("skipping test in short mode.")
@@ -2239,7 +2370,7 @@ func (s *mainRouterSuite) TestMainRouter_Transaction_Init() {
 		s.Run(currentTest.Name, func() {
 			err := s.LoadMultipleFixtures([]string{
 				"../../test/fixtures/main_router/common",
-				"../../test/fixtures/main_router/login",
+				"../../test/fixtures/main_router/transaction",
 			})
 			s.Require().NoError(err)
 
