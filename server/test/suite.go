@@ -113,6 +113,12 @@ func (s *Suite) LoadMultipleFixtures(paths []string) error {
 	return nil
 }
 
+func (s *Suite) SkipOnShort() {
+	if testing.Short() {
+		s.T().Skip("skipping test in short mode")
+	}
+}
+
 func testLogger(_ logging.Level, _ string, _ ...interface{}) {
 
 }
