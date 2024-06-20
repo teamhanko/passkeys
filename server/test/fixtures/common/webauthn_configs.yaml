@@ -1,0 +1,18 @@
+- id: 67173f71-3e6e-4cc8-8428-afb4a3b4f2f0
+  timeout: 60000
+  user_verification: 'preferred'
+  attestation_preference: 'none'
+  resident_key_requirement: 'required'
+  config_id: 5dbb21b3-e6d0-474b-bb30-43428df08c18
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+
+- id: 67173f71-3e6e-4cc8-8428-afb4a3b4f2f1
+  timeout: 60000
+  user_verification: 'preferred'
+  attestation_preference: 'none'
+  resident_key_requirement: 'required'
+  config_id: 5dbb21b3-e6d0-474b-bb30-43428df08c19
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+

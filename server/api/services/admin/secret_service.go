@@ -51,6 +51,16 @@ func (ses *secretService) Create(dto request.CreateSecretDto, isApiSecret bool) 
 		return nil, err
 	}
 
+	foundSecret, err := ses.secretPersister.GetByName(secret.Name, secret.IsAPISecret)
+	if err != nil {
+		ses.logger.Error(err)
+		return nil, err
+	}
+
+	if foundSecret.ID != uuid.Nil {
+		return nil, echo.NewHTTPError(http.StatusConflict, "Secret with this name already exists")
+	}
+
 	err = ses.secretPersister.Create(secret)
 	if err != nil {
 		ses.logger.Error(err)

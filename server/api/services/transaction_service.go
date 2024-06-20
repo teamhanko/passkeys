@@ -140,7 +140,7 @@ func (ts *transactionService) Finalize(req *protocol.ParsedCredentialAssertionDa
 
 	transaction, err := ts.getTransactionByChallenge(challenge)
 	if err != nil {
-		return "", userHandle, nil, echo.NewHTTPError(http.StatusUnauthorized, "failed to get session data").SetInternal(err)
+		return "", userHandle, nil, echo.NewHTTPError(http.StatusUnauthorized, "failed to get transaction data").SetInternal(err)
 	}
 
 	sessionData, dbSessionData, err := ts.getSessionByChallenge(req.Response.CollectedClientData.Challenge, models.WebauthnOperationTransaction)
@@ -150,7 +150,7 @@ func (ts *transactionService) Finalize(req *protocol.ParsedCredentialAssertionDa
 
 	webauthnUser, err := ts.getWebauthnUserByUserHandle(userHandle)
 	if err != nil {
-		return "", userHandle, transaction, echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
+		return "", userHandle, transaction, echo.NewHTTPError(http.StatusUnauthorized, "failed to get user by user handle").SetInternal(err)
 	}
 
 	credential, err := ts.webauthnClient.ValidateLogin(webauthnUser, *sessionData, req)

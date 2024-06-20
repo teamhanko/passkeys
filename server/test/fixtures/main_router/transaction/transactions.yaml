@@ -1,0 +1,18 @@
+- id: 17ee7b9d-7a18-4de9-99c0-3ea82cd20967
+  identifier: 681a8dda-81f4-42f6-96eb-e46709290045
+  data: "{\"payload\":\"Lorem Ipsum\"}"
+  challenge: DypAIi85nrUeZDxLym2CjxHQDMdG3MNdbiMwyuJgECfhyeRlcwC0EygVEoaDl91bRU3XKac0JvKmNh2-W3MLWw
+  webauthn_user_id: b4fc06d2-2651-47e9-b1c3-3ba19ade9375
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+
+# transcation without session
+- id: 17ee7b9d-7a18-4de9-99c0-3ea82cd20968
+  identifier: 681a8dda-81f4-42f6-96eb-e46709290046
+  data: "{\"payload\":\"Lorem Ipsum\"}"
+  challenge: dcjJbmH8wxuBgZwAwsx_8XQnHX1bRBV1hXz7L2tP_uA
+  webauthn_user_id: b4fc06d2-2651-47e9-b1c3-3ba19ade9375
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59

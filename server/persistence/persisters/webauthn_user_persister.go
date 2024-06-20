@@ -46,7 +46,7 @@ func (p *webauthnUserPersister) AllForTenant(tenantId uuid.UUID, page int, perPa
 	webauthnUsers := models.WebauthnUsers{}
 	err := p.database.
 		Where("tenant_id = ?", tenantId).
-		Order(fmt.Sprintf("webauthn_users.created_at %s", sort)).
+		Order(fmt.Sprintf("created_at %s", sort)).
 		Paginate(page, perPage).
 		All(&webauthnUsers)
 

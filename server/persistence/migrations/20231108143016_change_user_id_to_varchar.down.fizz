@@ -1,4 +1,1 @@
-change_column("webauthn_users", "user_id", "uuid", {})
-change_column("webauthn_credentials", "user_id", "uuid", {})
-change_column("webauthn_session_data", "user_id", "uuid", {})
-change_column("audit_logs", "actor_user_id", "uuid", { "null": true })
+# Cannot convert from varchar to uuid without data loss. So stay at varchar.

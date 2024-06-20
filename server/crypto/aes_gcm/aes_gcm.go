@@ -25,7 +25,7 @@ func NewAESGCM(keys []string) (*AESGCM, error) {
 
 	for i, v := range keys {
 		if len(v) < 16 {
-			return nil, fmt.Errorf("secret Nr. %v is too short. It is %v but needs to be at least 16", i, len(v))
+			return nil, fmt.Errorf("secret no. %v is too short. It is %v but needs to be at least 16", i, len(v))
 		} else {
 			hashedKeys = append(hashedKeys, hashSecret(v))
 		}
