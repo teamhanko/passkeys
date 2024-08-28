@@ -108,7 +108,7 @@ func (ls *loginService) Finalize(req *protocol.ParsedCredentialAssertionData) (s
 	req.Response.UserHandle = []byte(userHandle)
 	webauthnUser, err := ls.getWebauthnUserByUserHandle(userHandle)
 	if err != nil {
-		return "", userHandle, echo.NewHTTPError(http.StatusUnauthorized, "failed to get user handle").SetInternal(err)
+		return "", userHandle, echo.NewHTTPError(http.StatusUnauthorized, "failed to get user by user handle").SetInternal(err)
 	}
 
 	var credential *webauthn.Credential

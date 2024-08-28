@@ -32,9 +32,16 @@ func NewUserHandler(persister persistence.Persister) UserHandler {
 
 func (uh *userHandler) List(ctx echo.Context) error {
 	var request adminRequest.UserListRequest
-	err := (&echo.DefaultBinder{}).BindQueryParams(ctx, &request)
+	err := ctx.Bind(&request)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "unable to parse request")
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to list users").SetInternal(err)
+	}
+
+	err = ctx.Validate(&request)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return echo.NewHTTPError(http.StatusBadRequest, "unable to list users").SetInternal(err)
 	}
 
 	if request.Page == 0 {
@@ -92,12 +99,12 @@ func (uh *userHandler) Get(ctx echo.Context) error {
 
 	userIdString := ctx.Param("user_id")
 	if userIdString == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing user_id")
+		return echo.NewHTTPError(http.StatusBadRequest, "user_id must be a valid uuid4")
 	}
 
 	userId, err := uuid.FromString(userIdString)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid user_id")
+		return echo.NewHTTPError(http.StatusBadRequest, "user_id must be a valid uuid4")
 	}
 
 	return uh.persister.GetConnection().Transaction(func(tx *pop.Connection) error {
@@ -126,12 +133,12 @@ func (uh *userHandler) Remove(ctx echo.Context) error {
 
 	userIdString := ctx.Param("user_id")
 	if userIdString == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing user_id")
+		return echo.NewHTTPError(http.StatusBadRequest, "user_id must be a valid uuid4")
 	}
 
 	userId, err := uuid.FromString(userIdString)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid user_id")
+		return echo.NewHTTPError(http.StatusBadRequest, "user_id must be a valid uuid4")
 	}
 
 	return uh.persister.GetConnection().Transaction(func(tx *pop.Connection) error {

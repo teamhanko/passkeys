@@ -1,6 +1,8 @@
 package persisters
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/gobuffalo/pop/v6"
@@ -8,6 +10,7 @@ import (
 )
 
 type SecretsPersister interface {
+	GetByName(name string, isApiSecret bool) (*models.Secret, error)
 	Create(secret *models.Secret) error
 	Delete(secret *models.Secret) error
 	Update(secret *models.Secret) error
@@ -19,6 +22,21 @@ type secretsPersister struct {
 
 func NewSecretsPersister(database *pop.Connection) SecretsPersister {
 	return &secretsPersister{database: database}
+}
+
+func (sp secretsPersister) GetByName(name string, isApiSecret bool) (*models.Secret, error) {
+	secret := &models.Secret{}
+	err := sp.database.Where("name = ? AND is_api_secret = ?", name, isApiSecret).First(secret)
+
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return secret, nil
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get secrets: %w", err)
+	}
+
+	return secret, nil
 }
 
 func (sp secretsPersister) Create(secret *models.Secret) error {
