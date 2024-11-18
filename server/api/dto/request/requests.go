@@ -9,7 +9,7 @@ import (
 )
 
 type CredentialRequests interface {
-	ListCredentialsDto | DeleteCredentialsDto | UpdateCredentialsDto
+	ListCredentialsDto | GetCredentialsDto | DeleteCredentialsDto | UpdateCredentialsDto
 }
 
 type TenantDto struct {
@@ -18,6 +18,10 @@ type TenantDto struct {
 
 type ListCredentialsDto struct {
 	UserId string `query:"user_id" validate:"required"`
+}
+
+type GetCredentialsDto struct {
+	CredentialId string `param:"credential_id" validate:"required"`
 }
 
 type DeleteCredentialsDto struct {
