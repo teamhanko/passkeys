@@ -20,7 +20,7 @@ type ListCredentialsDto struct {
 	UserId string `query:"user_id" validate:"required"`
 }
 
-type GetCredentialsDto struct {
+type GetCredentialDto struct {
 	CredentialId string `param:"credential_id" validate:"required"`
 }
 
