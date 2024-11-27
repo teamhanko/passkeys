@@ -54,7 +54,7 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 }
 
 func (credHandler *credentialsHandler) Get(ctx echo.Context) error {
-	requestDto, err := BindAndValidateRequest[request.GetCredentialsDto](ctx)
+	requestDto, err := BindAndValidateRequest[request.GetCredentialDto](ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err

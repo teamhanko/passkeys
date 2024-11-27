@@ -9,7 +9,7 @@ import (
 )
 
 type CredentialRequests interface {
-	ListCredentialsDto | GetCredentialsDto | DeleteCredentialsDto | UpdateCredentialsDto
+	ListCredentialsDto | GetCredentialDto | DeleteCredentialsDto | UpdateCredentialsDto
 }
 
 type TenantDto struct {
