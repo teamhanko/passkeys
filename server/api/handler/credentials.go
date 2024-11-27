@@ -4,6 +4,7 @@ import (
 	"github.com/gobuffalo/pop/v6"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
+	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/api/helper"
 	"github.com/teamhanko/passkey-server/api/services"
 	"github.com/teamhanko/passkey-server/persistence"
@@ -13,6 +14,7 @@ import (
 
 type CredentialsHandler interface {
 	List(ctx echo.Context) error
+	Get(ctx echo.Context) error
 	Update(ctx echo.Context) error
 	Delete(ctx echo.Context) error
 }
@@ -49,6 +51,30 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, dtos)
+}
+
+func (credHandler *credentialsHandler) Get(ctx echo.Context) error {
+	requestDto, err := BindAndValidateRequest[request.GetCredentialDto](ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	h, err := helper.GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	service := services.NewCredentialService(ctx, *h.Tenant, credHandler.persister.GetWebauthnCredentialPersister(nil))
+	credential, err := service.Get(*requestDto)
+	if err != nil {
+		return err
+	}
+
+	credentialDto := response.CredentialDtoFromModel(*credential)
+
+	return ctx.JSON(http.StatusOK, credentialDto)
 }
 
 func (credHandler *credentialsHandler) Update(ctx echo.Context) error {

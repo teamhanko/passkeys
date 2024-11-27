@@ -12,6 +12,7 @@ import (
 
 type CredentialService interface {
 	List(dto request.ListCredentialsDto) (response.CredentialDtoList, error)
+	Get(dto request.GetCredentialDto) (*models.WebauthnCredential, error)
 	Update(dto request.UpdateCredentialsDto) (*models.WebauthnCredential, error)
 	Delete(dto request.DeleteCredentialsDto) error
 }
@@ -43,6 +44,20 @@ func (cs *credentialService) List(dto request.ListCredentialsDto) (response.Cred
 	}
 
 	return dtos, nil
+}
+
+func (cs *credentialService) Get(dto request.GetCredentialDto) (*models.WebauthnCredential, error) {
+	credential, err := cs.credentialPersister.Get(dto.CredentialId, cs.tenant.ID)
+	if err != nil {
+		cs.logger.Error(err)
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, err)
+	}
+
+	if credential == nil {
+		return nil, echo.NewHTTPError(http.StatusNotFound, fmt.Errorf("credential with id '%s' not found", dto.CredentialId))
+	}
+
+	return credential, nil
 }
 
 func (cs *credentialService) Update(dto request.UpdateCredentialsDto) (*models.WebauthnCredential, error) {
