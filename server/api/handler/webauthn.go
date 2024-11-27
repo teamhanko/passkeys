@@ -8,7 +8,9 @@ import (
 	auditlog "github.com/teamhanko/passkey-server/audit_log"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
+	"io"
 	"net/http"
+	"strings"
 )
 
 type WebauthnHandler interface {
@@ -49,6 +51,11 @@ func (w *webauthnHandler) handleError(logger auditlog.Logger, logType models.Aud
 
 func BindAndValidateRequest[I request.CredentialRequests | request.WebauthnRequests](ctx echo.Context) (*I, error) {
 	var requestDto I
+
+	if ctx.Request().ContentLength <= 0 {
+		ctx.Request().Body = io.NopCloser(strings.NewReader("{}"))
+	}
+
 	err := ctx.Bind(&requestDto)
 	if err != nil {
 		ctx.Logger().Error(err)
