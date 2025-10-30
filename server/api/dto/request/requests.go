@@ -2,10 +2,11 @@ package request
 
 import (
 	"encoding/json"
-	"github.com/gofrs/uuid"
-	"github.com/teamhanko/passkey-server/persistence/models"
 	"strings"
 	"time"
+
+	"github.com/gofrs/uuid"
+	"github.com/teamhanko/passkey-server/persistence/models"
 )
 
 type CredentialRequests interface {
@@ -17,7 +18,10 @@ type TenantDto struct {
 }
 
 type ListCredentialsDto struct {
-	UserId string `query:"user_id" validate:"required"`
+	UserId  string `query:"user_id"`
+	Page    int    `query:"page"`
+	PerPage int    `query:"per_page"`
+	Order   string `query:"order" validate:"oneof=desc asc"`
 }
 
 type GetCredentialDto struct {
