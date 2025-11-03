@@ -21,7 +21,7 @@ type ListCredentialsDto struct {
 	UserId  string `query:"user_id"`
 	Page    int    `query:"page"`
 	PerPage int    `query:"per_page"`
-	Order   string `query:"order" validate:"oneof=desc asc"`
+	Order   string `query:"order" validate:"omitempty,oneof=desc asc"`
 }
 
 type GetCredentialDto struct {
