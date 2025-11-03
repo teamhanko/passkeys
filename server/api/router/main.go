@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/teamhanko/passkey-server/api/handler"
@@ -50,6 +51,7 @@ func NewMainRouter(cfg *config.Config, persister persistence.Persister, authenti
 
 	RouteWellKnown(tenantGroup)
 	RouteCredentials(tenantGroup, persister)
+	RouteAuditLogs(tenantGroup, persister)
 
 	webauthnGroup := tenantGroup.Group("", passkeyMiddleware.WebauthnMiddleware(persister))
 	RouteRegistration(webauthnGroup, persister, authenticatorMetadata)
@@ -121,4 +123,11 @@ func RouteMfa(parent *echo.Group, persister persistence.Persister, authenticator
 	group.POST(fmt.Sprintf("/registration%s", FinishEndpoint), mfaRegistrationHandler.Finish)
 	group.POST(fmt.Sprintf("/login%s", InitEndpoint), mfaLoginHandler.Init)
 	group.POST(fmt.Sprintf("/login%s", FinishEndpoint), mfaLoginHandler.Finish)
+}
+
+func RouteAuditLogs(parent *echo.Group, persister persistence.Persister) {
+	auditLogHandler := handler.NewAuditLogHandler(persister)
+
+	group := parent.Group("/audit_logs", passkeyMiddleware.ApiKeyMiddleware())
+	group.GET("", auditLogHandler.List)
 }
