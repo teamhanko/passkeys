@@ -6,17 +6,18 @@ import (
 	"fmt"
 
 	"github.com/gofrs/uuid"
+	"github.com/teamhanko/passkey-server/api/dto/request"
 
 	"github.com/gobuffalo/pop/v6"
 	"github.com/teamhanko/passkey-server/persistence/models"
 )
 
 type WebauthnCredentialPersister interface {
+	List(tenantId uuid.UUID, dto request.ListCredentialsDto) ([]models.WebauthnCredential, error)
 	Get(id string, tenantId uuid.UUID) (*models.WebauthnCredential, error)
 	Create(credential *models.WebauthnCredential) error
 	Update(credential *models.WebauthnCredential) error
 	Delete(credential *models.WebauthnCredential) error
-	GetFromUser(string, uuid.UUID) ([]models.WebauthnCredential, error)
 }
 
 type webauthnCredentialPersister struct {
@@ -27,6 +28,32 @@ func NewWebauthnCredentialPersister(database *pop.Connection) WebauthnCredential
 	return &webauthnCredentialPersister{
 		database: database,
 	}
+}
+
+func (w *webauthnCredentialPersister) List(tenantId uuid.UUID, dto request.ListCredentialsDto) ([]models.WebauthnCredential, error) {
+	if dto.Order != "desc" && dto.Order != "asc" {
+		dto.Order = "desc"
+	}
+	credentials := []models.WebauthnCredential{}
+	query := w.database.
+		Where("u.tenant_id = ?", tenantId).
+		LeftJoin("webauthn_users u", "u.id = webauthn_credentials.webauthn_user_id").
+		Order(fmt.Sprintf("created_at %s", dto.Order)).
+		Paginate(dto.Page, dto.PerPage)
+
+	if dto.UserId != "" {
+		query = query.Where("webauthn_credentials.user_id = ?", dto.UserId)
+	}
+
+	err := query.All(&credentials)
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get credential: %w", err)
+	}
+
+	return credentials, nil
 }
 
 func (w *webauthnCredentialPersister) Get(id string, tenantId uuid.UUID) (*models.WebauthnCredential, error) {
@@ -90,20 +117,4 @@ func (w *webauthnCredentialPersister) Delete(credential *models.WebauthnCredenti
 	}
 
 	return nil
-}
-
-func (w *webauthnCredentialPersister) GetFromUser(userId string, tenantId uuid.UUID) ([]models.WebauthnCredential, error) {
-	var credentials []models.WebauthnCredential
-	err := w.database.Eager().
-		Where("webauthn_credentials.user_id = ? AND u.tenant_id = ?", &userId, tenantId).
-		LeftJoin("webauthn_users u", "u.id = webauthn_credentials.webauthn_user_id").
-		Order("created_at asc").All(&credentials)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return credentials, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get credentials: %w", err)
-	}
-
-	return credentials, nil
 }

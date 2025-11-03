@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gobuffalo/pop/v6"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
@@ -9,7 +11,6 @@ import (
 	"github.com/teamhanko/passkey-server/api/services"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
-	"net/http"
 )
 
 type CredentialsHandler interface {
@@ -36,6 +37,14 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 	if err != nil {
 		ctx.Logger().Error(err)
 		return err
+	}
+
+	if requestDto.Page <= 0 {
+		requestDto.Page = 1
+	}
+
+	if requestDto.PerPage <= 0 {
+		requestDto.PerPage = 20
 	}
 
 	h, err := helper.GetHandlerContext(ctx)

@@ -2,12 +2,13 @@ package services
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/persistence/models"
 	"github.com/teamhanko/passkey-server/persistence/persisters"
-	"net/http"
 )
 
 type CredentialService interface {
@@ -32,7 +33,7 @@ func NewCredentialService(ctx echo.Context, tenant models.Tenant, credentialPers
 }
 
 func (cs *credentialService) List(dto request.ListCredentialsDto) (response.CredentialDtoList, error) {
-	credentialModels, err := cs.credentialPersister.GetFromUser(dto.UserId, cs.tenant.ID)
+	credentialModels, err := cs.credentialPersister.List(cs.tenant.ID, dto)
 	if err != nil {
 		cs.logger.Error(err)
 		return nil, err
