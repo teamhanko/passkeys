@@ -1,0 +1,14 @@
+- id: 67173f71-1000-0000-0000-000000000000
+  rp_id: localhost
+  display_name: LOCALHOST
+  webauthn_config_id: 67173f71-3e6e-4cc8-8428-afb4a3b4f2f0
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+
+- id: 67173f71-2000-0000-0000-000000000000
+  rp_id: example.loc
+  display_name: example
+  webauthn_config_id: 67173f71-3e6e-4cc8-8428-afb4a3b4f2f1
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+

@@ -1,0 +1,21 @@
+# Transaction
+- id: 80a29443-4765-481f-8240-c5ee995b5fd9
+  challenge: DypAIi85nrUeZDxLym2CjxHQDMdG3MNdbiMwyuJgECfhyeRlcwC0EygVEoaDl91bRU3XKac0JvKmNh2-W3MLWw
+  user_id: test-passkey
+  user_verification: required
+  operation: transaction
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false
+
+# Passkey MFA
+- id: 3bbb21ea-43d1-42e3-9aed-90358bfbbf2e
+  challenge: ASEf77_dZaC_3YIK6tmcz0OMevC1dwo5Muz5Uf_wJMA
+  user_id: mfa-test
+  user_verification: required
+  operation: transaction
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false

@@ -105,5 +105,5 @@ type InitLoginDto struct {
 }
 
 type InitMfaLoginDto struct {
-	UserId *string `json:"user_id" validate:"required,min=1"`
+	UserId string `json:"user_id" validate:"required,min=1"`
 }
