@@ -1,9 +1,10 @@
 package response
 
 import (
+	"time"
+
 	"github.com/gofrs/uuid"
 	"github.com/teamhanko/passkey-server/persistence/models"
-	"time"
 )
 
 type CredentialDto struct {
@@ -18,6 +19,7 @@ type CredentialDto struct {
 	BackupEligible  bool       `json:"backup_eligible"`
 	BackupState     bool       `json:"backup_state"`
 	IsMFA           bool       `json:"is_mfa"`
+	UserID          string     `json:"user_id"`
 }
 
 type CredentialDtoList []CredentialDto
@@ -39,6 +41,7 @@ func CredentialDtoFromModel(credential models.WebauthnCredential) CredentialDto 
 		BackupEligible:  credential.BackupEligible,
 		BackupState:     credential.BackupState,
 		IsMFA:           credential.IsMFA,
+		UserID:          credential.UserId,
 	}
 }
 
