@@ -18,6 +18,7 @@ type WebauthnCredentialPersister interface {
 	Create(credential *models.WebauthnCredential) error
 	Update(credential *models.WebauthnCredential) error
 	Delete(credential *models.WebauthnCredential) error
+	Count(tenantId uuid.UUID, dto request.ListCredentialsDto) (int, error)
 }
 
 type webauthnCredentialPersister struct {
@@ -117,4 +118,27 @@ func (w *webauthnCredentialPersister) Delete(credential *models.WebauthnCredenti
 	}
 
 	return nil
+}
+
+func (w *webauthnCredentialPersister) Count(tenantId uuid.UUID, dto request.ListCredentialsDto) (int, error) {
+	if dto.Order != "desc" && dto.Order != "asc" {
+		dto.Order = "desc"
+	}
+	query := w.database.
+		Where("u.tenant_id = ?", tenantId).
+		LeftJoin("webauthn_users u", "u.id = webauthn_credentials.webauthn_user_id")
+
+	if dto.UserId != "" {
+		query = query.Where("webauthn_credentials.user_id = ?", dto.UserId)
+	}
+
+	count, err := query.Count(&models.WebauthnCredential{})
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("failed to get credential: %w", err)
+	}
+
+	return count, nil
 }
