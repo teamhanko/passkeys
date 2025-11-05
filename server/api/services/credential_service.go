@@ -12,7 +12,7 @@ import (
 )
 
 type CredentialService interface {
-	List(dto request.ListCredentialsDto) (response.CredentialDtoList, error)
+	List(dto request.ListCredentialsDto) (response.CredentialDtoList, int, error)
 	Get(dto request.GetCredentialDto) (*models.WebauthnCredential, error)
 	Update(dto request.UpdateCredentialsDto) (*models.WebauthnCredential, error)
 	Delete(dto request.DeleteCredentialsDto) error
@@ -32,11 +32,11 @@ func NewCredentialService(ctx echo.Context, tenant models.Tenant, credentialPers
 	}
 }
 
-func (cs *credentialService) List(dto request.ListCredentialsDto) (response.CredentialDtoList, error) {
+func (cs *credentialService) List(dto request.ListCredentialsDto) (response.CredentialDtoList, int, error) {
 	credentialModels, err := cs.credentialPersister.List(cs.tenant.ID, dto)
 	if err != nil {
 		cs.logger.Error(err)
-		return nil, err
+		return nil, 0, err
 	}
 
 	dtos := make(response.CredentialDtoList, len(credentialModels))
@@ -44,7 +44,13 @@ func (cs *credentialService) List(dto request.ListCredentialsDto) (response.Cred
 		dtos[i] = response.CredentialDtoFromModel(credentialModels[i])
 	}
 
-	return dtos, nil
+	credentialsCount, err := cs.credentialPersister.Count(cs.tenant.ID, dto)
+	if err != nil {
+		cs.logger.Error(err)
+		return nil, 0, err
+	}
+
+	return dtos, credentialsCount, nil
 }
 
 func (cs *credentialService) Get(dto request.GetCredentialDto) (*models.WebauthnCredential, error) {

@@ -1,13 +1,17 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/gobuffalo/pop/v6"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
 	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/api/helper"
+	"github.com/teamhanko/passkey-server/api/pagination"
 	"github.com/teamhanko/passkey-server/api/services"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
@@ -54,10 +58,15 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 	}
 
 	service := services.NewCredentialService(ctx, *h.Tenant, credHandler.persister.GetWebauthnCredentialPersister(nil))
-	dtos, err := service.List(*requestDto)
+	dtos, credentialsCount, err := service.List(*requestDto)
 	if err != nil {
 		return err
 	}
+
+	u, _ := url.Parse(fmt.Sprintf("%s://%s%s", ctx.Scheme(), ctx.Request().Host, ctx.Request().RequestURI))
+
+	ctx.Response().Header().Set("Link", pagination.CreateHeader(u, credentialsCount, requestDto.Page, requestDto.PerPage))
+	ctx.Response().Header().Set("X-Total-Count", strconv.FormatInt(int64(credentialsCount), 10))
 
 	return ctx.JSON(http.StatusOK, dtos)
 }
