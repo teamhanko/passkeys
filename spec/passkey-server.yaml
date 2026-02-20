@@ -478,7 +478,7 @@ components:
     user_id:
       name: user_id
       in: query
-      description: representational id of the user
+      description: Representational id of the user
       required: true
       schema:
         type: string
