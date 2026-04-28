@@ -134,7 +134,6 @@ func (ts *transactionService) withTransaction(transactionId string, transactionD
 func (ts *transactionService) Finalize(req *protocol.ParsedCredentialAssertionData) (string, string, *models.Transaction, error) {
 	// backward compatibility
 	userHandle := ts.convertUserHandle(req.Response.UserHandle)
-	req.Response.UserHandle = []byte(userHandle)
 
 	challenge := req.Response.CollectedClientData.Challenge
 
@@ -147,6 +146,13 @@ func (ts *transactionService) Finalize(req *protocol.ParsedCredentialAssertionDa
 	if err != nil {
 		return "", userHandle, transaction, echo.NewHTTPError(http.StatusUnauthorized, "failed to get session data").SetInternal(err)
 	}
+
+	// when session was initialized for a non-discoverable cred
+	if !dbSessionData.IsDiscoverable {
+		userHandle = ts.convertUserHandle(sessionData.UserID)
+	}
+
+	req.Response.UserHandle = []byte(userHandle)
 
 	webauthnUser, err := ts.getWebauthnUserByUserHandle(userHandle)
 	if err != nil {
