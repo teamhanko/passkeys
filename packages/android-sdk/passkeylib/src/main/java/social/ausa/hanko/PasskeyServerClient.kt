@@ -40,14 +40,6 @@ class PasskeyServerClient(
             }
 
         private val JSON = "application/json; charset=utf-8".toMediaType()
-
-        /** Registration initialize request body: {"userId": ..., "identifier": ...} */
-        fun registrationInitializeBody(userId: String, identifier: String?): String =
-            buildJson("userId" to userId, identifier?.let { "identifier" to it })
-
-        /** Login initialize request body: {"identifier": ...} */
-        fun loginInitializeBody(identifier: String): String =
-            buildJson("identifier" to identifier)
     }
 
     /** Returns the raw WebAuthn `publicKey` creation options JSON for passkey registration. */
@@ -99,11 +91,10 @@ class PasskeyServerClient(
 
     private fun json(vararg fields: Pair<String, String?>): String =
         fields.mapNotNull { (k, v) ->
-            v?.let { "\"$k\":\"$it\"" }
+            val escaped = v?.replace("\\", "\\\\")
+                ?.replace("\"", "\\\"")
+            escaped?.let { "\"$k\":\"$it\"" }
         }.joinToString(",", "{", "}")
-
-    private fun buildJson(vararg fields: Pair<String, String>): String =
-        json(*fields)
 }
 
 class PasskeyServerError(val statusCode: Int, val body: String) :
