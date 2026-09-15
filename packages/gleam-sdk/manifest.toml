@@ -1,0 +1,31 @@
+# Do not manually edit this file, it is managed by Gleam.
+#
+# This file locks the dependency versions used, to make your build
+# deterministic and to prevent unexpected versions from being included
+# in your application.
+#
+# You should check this file into your source control repository.
+
+packages = [
+  { name = "certifi", version = "2.17.0", build_tools = ["rebar3"], requirements = [], otp_app = "certifi", source = "hex", outer_checksum = "8122798A17F0293C80DAADA25D0F81C7F4D708C73FEF782C7C9B1950E26E4D21" },
+  { name = "gleam_hackney", version = "1.4.0", build_tools = ["gleam"], requirements = ["gleam_http", "gleam_stdlib", "hackney"], otp_app = "gleam_hackney", source = "hex", outer_checksum = "0951232CE492FA3950B14DDE279BB527CBE921AB5F96FD6907D361A897DB6905" },
+  { name = "gleam_http", version = "4.4.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_http", source = "hex", outer_checksum = "F065CE9941A7756ABBAEAE7F9F32A96CAD29DA3311A381DB2D926EA8E8C156DC" },
+  { name = "gleam_json", version = "3.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_json", source = "hex", outer_checksum = "44FDAA8847BE8FC48CA7A1C089706BD54BADCC4C45B237A992EDDF9F2CDB2836" },
+  { name = "gleam_stdlib", version = "1.0.5", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "CEE5B6C076A85B45F60C585F4316C63EC8B7127C119D5738C3958A9C4D50404E" },
+  { name = "gleeunit", version = "1.11.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "EC31ABA74256AEA531EDF8169931D775BBB384FED0A8A1BDC4DD9354E3E21826" },
+  { name = "h2", version = "0.12.0", build_tools = ["rebar3"], requirements = [], otp_app = "h2", source = "hex", outer_checksum = "BEAAFC93C54CDC5D623247334D3970CDF4BC66B6B8B296B74BA1D7C7513C3DFC" },
+  { name = "hackney", version = "4.7.4", build_tools = ["rebar3"], requirements = ["certifi", "h2", "idna", "mimerl", "parse_trans", "ssl_verify_fun", "webtransport"], otp_app = "hackney", source = "hex", outer_checksum = "D07D7E1358353AB6CC75132F058C155287F3E013D43F709FBB79D79EEAB98195" },
+  { name = "idna", version = "7.1.0", build_tools = ["rebar3"], requirements = [], otp_app = "idna", source = "hex", outer_checksum = "6AE959A025BF36DF61A8CAB8508D9654891B5426A84C44D82DEAFFD6DDF8C71F" },
+  { name = "mimerl", version = "1.5.0", build_tools = ["rebar3"], requirements = [], otp_app = "mimerl", source = "hex", outer_checksum = "DB648CE065BAE14EA84CA8B5DD123F42F49417CEF693541110BF6F9E9BE9ECC4" },
+  { name = "parse_trans", version = "3.4.2", build_tools = ["rebar3"], requirements = [], otp_app = "parse_trans", source = "hex", outer_checksum = "4C25347DE3B7C35732D32E69AB43D1CEEE0BEAE3F3B3ADE1B59CBD3DD224D9CA" },
+  { name = "quic", version = "1.8.2", build_tools = ["rebar3"], requirements = [], otp_app = "quic", source = "hex", outer_checksum = "274D2F41EE9C00D8D6415248DF9FB5637381FE69B5387771DC37E91038A65479" },
+  { name = "ssl_verify_fun", version = "1.1.7", build_tools = ["mix", "rebar3", "make"], requirements = [], otp_app = "ssl_verify_fun", source = "hex", outer_checksum = "FE4C190E8F37401D30167C8C405EDA19469F34577987C76DDE613E838BBC67F8" },
+  { name = "webtransport", version = "0.4.5", build_tools = ["rebar3"], requirements = ["h2", "quic"], otp_app = "webtransport", source = "hex", outer_checksum = "BCB512239E48E551D5BD5C667312A9A7DE4F29B89D84B1D33C5AF44E1F3F730D" },
+]
+
+[requirements]
+gleam_hackney = { version = ">= 1.2.0 and < 2.0.0" }
+gleam_http = { version = ">= 4.0.0 and < 5.0.0" }
+gleam_json = { version = ">= 2.0.0 and < 4.0.0" }
+gleam_stdlib = { version = ">= 0.34.0 and < 2.0.0" }
+gleeunit = { version = ">= 1.0.0 and < 2.0.0" }

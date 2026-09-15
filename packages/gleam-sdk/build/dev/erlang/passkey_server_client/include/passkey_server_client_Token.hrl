@@ -1,0 +1,3 @@
+-record(token, {
+    token :: binary()
+}).

@@ -1,0 +1,134 @@
+import gleam/http.{type Scheme}
+import gleam/int
+import gleam/list
+import gleam/option.{type Option}
+import gleam/result
+import gleam/string
+
+/// Policy options for the SameSite cookie attribute
+///
+/// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite
+pub type SameSitePolicy {
+  Lax
+  Strict
+  None
+}
+
+fn same_site_to_string(policy: SameSitePolicy) -> String {
+  case policy {
+    Lax -> "Lax"
+    Strict -> "Strict"
+    None -> "None"
+  }
+}
+
+/// Attributes of a cookie when sent to a client in the `set-cookie` header.
+pub type Attributes {
+  Attributes(
+    max_age: Option(Int),
+    domain: Option(String),
+    path: Option(String),
+    secure: Bool,
+    http_only: Bool,
+    same_site: Option(SameSitePolicy),
+  )
+}
+
+/// Helper to create sensible default attributes for a set cookie.
+///
+/// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#Attributes
+pub fn defaults(scheme: Scheme) -> Attributes {
+  Attributes(
+    max_age: option.None,
+    domain: option.None,
+    path: option.Some("/"),
+    secure: scheme == http.Https,
+    http_only: True,
+    same_site: option.Some(Lax),
+  )
+}
+
+const epoch = "Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+
+fn cookie_attributes_to_list(attributes: Attributes) -> List(String) {
+  let Attributes(max_age:, domain:, path:, secure:, http_only:, same_site:) =
+    attributes
+
+  [
+    // Expires is a deprecated attribute for cookies, it has been replaced with MaxAge
+    // MaxAge is widely supported and so Expires values are not set.
+    // Only when deleting cookies is the exception made to use the old format,
+    // to ensure complete clearup of cookies if required by an application.
+    case max_age {
+      option.Some(0) -> option.Some(epoch)
+      _ -> option.None
+    },
+    option.map(max_age, fn(max_age) { "Max-Age=" <> int.to_string(max_age) }),
+    option.map(domain, fn(domain) { "Domain=" <> domain }),
+    option.map(path, fn(path) { "Path=" <> path }),
+    case secure {
+      True -> option.Some("Secure")
+      False -> option.None
+    },
+    case http_only {
+      True -> option.Some("HttpOnly")
+      False -> option.None
+    },
+    option.map(same_site, fn(same_site) {
+      "SameSite=" <> same_site_to_string(same_site)
+    }),
+  ]
+  |> list.filter_map(option.to_result(_, Nil))
+}
+
+pub fn set_header(
+  name: String,
+  value: String,
+  attributes: Attributes,
+) -> String {
+  [name <> "=" <> value, ..cookie_attributes_to_list(attributes)]
+  |> string.join("; ")
+}
+
+/// Parse a list of cookies from a header string. Any malformed cookies will be
+/// discarded.
+///
+/// ## Backwards compatibility
+///
+/// RFC 6265 states that cookies in the cookie header should be separated by a
+/// `;`, however this function will also accept a `,` separator to remain
+/// compatible with the now-deprecated RFC 2965, and any older software
+/// following that specification.
+///
+pub fn parse(cookie_string: String) -> List(#(String, String)) {
+  cookie_string
+  |> string.split(";")
+  |> list.flat_map(string.split(_, ","))
+  |> list.filter_map(fn(pair) {
+    case string.split_once(string.trim(pair), "=") {
+      Ok(#("", _)) -> Error(Nil)
+      Ok(#(key, value)) -> {
+        let key = string.trim(key)
+        use _ <- result.try(check_token(key))
+        let value = string.trim(value)
+        use _ <- result.try(check_token(value))
+        Ok(#(key, value))
+      }
+      Error(Nil) -> Error(Nil)
+    }
+  })
+}
+
+fn check_token(token: String) -> Result(Nil, Nil) {
+  let contains_invalid_charachter =
+    string.contains(token, " ")
+    || string.contains(token, "\t")
+    || string.contains(token, "\r")
+    || string.contains(token, "\n")
+    || string.contains(token, "\f")
+
+  case contains_invalid_charachter {
+    True -> Error(Nil)
+    False -> Ok(Nil)
+  }
+}

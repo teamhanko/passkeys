@@ -1,0 +1,621 @@
+//// Functions for working with floats.
+////
+//// ## Float representation
+////
+//// Floats are represented as 64 bit floating point numbers on both the Erlang
+//// and JavaScript runtimes. The floating point behaviour is native to their
+//// respective runtimes, so their exact behaviour will be slightly different on
+//// the two runtimes.
+////
+//// ### Infinity and NaN
+////
+//// Under the JavaScript runtime, exceeding the maximum (or minimum)
+//// representable value for a floating point value will result in Infinity (or
+//// -Infinity). Should you try to divide two infinities you will get NaN as a
+//// result.
+////
+//// When running on BEAM, exceeding the maximum (or minimum) representable
+//// value for a floating point value will raise an error.
+////
+//// ## Division by zero
+////
+//// Gleam runs on the Erlang virtual machine, which does not follow the IEEE
+//// 754 standard for floating point arithmetic and does not have an `Infinity`
+//// value.  In Erlang division by zero results in a crash, however Gleam does
+//// not have partial functions and operators in core so instead division by zero
+//// returns zero, a behaviour taken from Pony, Coq, and Lean.
+////
+//// This may seem unexpected at first, but it is no less mathematically valid
+//// than crashing or returning a special value. Division by zero is undefined
+//// in mathematics.
+
+import gleam/order.{type Order}
+
+/// Attempts to parse a string as a `Float`, returning `Error(Nil)` if it was
+/// not possible.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.parse("2.3") == Ok(2.3)
+/// ```
+///
+/// ```gleam
+/// assert float.parse("ABC") == Error(Nil)
+/// ```
+///
+@external(erlang, "gleam_stdlib", "parse_float")
+@external(javascript, "../gleam_stdlib.mjs", "parse_float")
+pub fn parse(string: String) -> Result(Float, Nil)
+
+/// Returns the string representation of the provided `Float`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.to_string(2.3) == "2.3"
+/// ```
+///
+@external(erlang, "gleam_stdlib", "float_to_string")
+@external(javascript, "../gleam_stdlib.mjs", "float_to_string")
+pub fn to_string(x: Float) -> String
+
+/// Restricts a float between two bounds.
+///
+/// Note: If the `min` argument is larger than the `max` argument then they
+/// will be swapped, so the minimum bound is always lower than the maximum
+/// bound.
+///
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.clamp(1.2, min: 1.4, max: 1.6) == 1.4
+/// ```
+///
+/// ```gleam
+/// assert float.clamp(1.2, min: 1.4, max: 0.6) == 1.2
+/// ```
+///
+pub fn clamp(x: Float, min min_bound: Float, max max_bound: Float) -> Float {
+  case min_bound >=. max_bound {
+    True -> x |> min(min_bound) |> max(max_bound)
+    False -> x |> min(max_bound) |> max(min_bound)
+  }
+}
+
+/// Compares two `Float`s, returning an `Order`:
+/// `Lt` for lower than, `Eq` for equals, or `Gt` for greater than.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.compare(2.0, 2.3) == Lt
+/// ```
+///
+/// To handle
+/// [Floating Point Imprecision](https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems)
+/// you may use [`loosely_compare`](#loosely_compare) instead.
+///
+pub fn compare(a: Float, with b: Float) -> Order {
+  case a == b {
+    True -> order.Eq
+    False ->
+      case a <. b {
+        True -> order.Lt
+        False -> order.Gt
+      }
+  }
+}
+
+/// Compares two `Float`s within a tolerance, returning an `Order`:
+/// `Lt` for lower than, `Eq` for equals, or `Gt` for greater than.
+///
+/// This function allows Float comparison while handling
+/// [Floating Point Imprecision](https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems).
+///
+/// Notice: For `Float`s the tolerance won't be exact:
+/// `5.3 - 5.0` is not exactly `0.3`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.loosely_compare(5.0, with: 5.3, tolerating: 0.5) == Eq
+/// ```
+///
+/// If you want to check only for equality you may use
+/// [`loosely_equals`](#loosely_equals) instead.
+///
+pub fn loosely_compare(
+  a: Float,
+  with b: Float,
+  tolerating tolerance: Float,
+) -> Order {
+  let difference = absolute_value(a -. b)
+  case difference <=. tolerance {
+    True -> order.Eq
+    False -> compare(a, b)
+  }
+}
+
+/// Checks for equality of two `Float`s within a tolerance,
+/// returning a `Bool`.
+///
+/// This function allows Float comparison while handling
+/// [Floating Point Imprecision](https://en.wikipedia.org/wiki/Floating-point_arithmetic#Accuracy_problems).
+///
+/// Notice: For `Float`s the tolerance won't be exact:
+/// `5.3 - 5.0` is not exactly `0.3`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.loosely_equals(5.0, with: 5.3, tolerating: 0.5)
+/// ```
+///
+/// ```gleam
+/// assert !float.loosely_equals(5.0, with: 5.1, tolerating: 0.1)
+/// ```
+///
+pub fn loosely_equals(
+  a: Float,
+  with b: Float,
+  tolerating tolerance: Float,
+) -> Bool {
+  let difference = absolute_value(a -. b)
+  difference <=. tolerance
+}
+
+/// Compares two `Float`s, returning the smaller of the two.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.min(2.0, 2.3) == 2.0
+/// ```
+///
+pub fn min(a: Float, b: Float) -> Float {
+  case a <. b {
+    True -> a
+    False -> b
+  }
+}
+
+/// Compares two `Float`s, returning the larger of the two.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.max(2.0, 2.3) == 2.3
+/// ```
+///
+pub fn max(a: Float, b: Float) -> Float {
+  case a >. b {
+    True -> a
+    False -> b
+  }
+}
+
+/// Rounds the value to the next highest whole number as a `Float`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.ceiling(2.3) == 3.0
+/// ```
+///
+@external(erlang, "math", "ceil")
+@external(javascript, "../gleam_stdlib.mjs", "ceiling")
+pub fn ceiling(x: Float) -> Float
+
+/// Rounds the value to the next lowest whole number as a `Float`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.floor(2.3) == 2.0
+/// ```
+///
+@external(erlang, "math", "floor")
+@external(javascript, "../gleam_stdlib.mjs", "floor")
+pub fn floor(x: Float) -> Float
+
+/// Rounds the value to the nearest whole number as an `Int`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.round(2.3) == 2
+/// ```
+///
+/// ```gleam
+/// assert float.round(2.5) == 3
+/// ```
+///
+@external(erlang, "erlang", "round")
+pub fn round(x: Float) -> Int {
+  case x >=. 0.0 {
+    True -> js_round(x)
+    False -> 0 - js_round(negate(x))
+  }
+}
+
+@external(javascript, "../gleam_stdlib.mjs", "round")
+fn js_round(a: Float) -> Int
+
+/// Returns the value as an `Int`, truncating all decimal digits.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.truncate(2.4343434847383438) == 2
+/// ```
+///
+@external(erlang, "erlang", "trunc")
+@external(javascript, "../gleam_stdlib.mjs", "truncate")
+pub fn truncate(x: Float) -> Int
+
+/// Converts the value to a given precision as a `Float`.
+/// The precision is the number of allowed decimal places.
+/// Negative precisions are allowed and force rounding
+/// to the nearest tenth, hundredth, thousandth etc.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.to_precision(2.43434348473, 2) == 2.43
+/// ```
+///
+/// ```gleam
+/// assert float.to_precision(547_890.453444, -3) == 548_000.0
+/// ```
+///
+pub fn to_precision(x: Float, precision: Int) -> Float {
+  case precision <= 0 {
+    True -> {
+      let factor = do_power(10.0, do_to_float(-precision))
+      do_to_float(round(x /. factor)) *. factor
+    }
+    False -> {
+      let factor = do_power(10.0, do_to_float(precision))
+      do_to_float(round(x *. factor)) /. factor
+    }
+  }
+}
+
+@external(erlang, "erlang", "float")
+@external(javascript, "../gleam_stdlib.mjs", "identity")
+fn do_to_float(a: Int) -> Float
+
+/// Returns the absolute value of the input as a `Float`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.absolute_value(-12.5) == 12.5
+/// ```
+///
+/// ```gleam
+/// assert float.absolute_value(10.2) == 10.2
+/// ```
+///
+pub fn absolute_value(x: Float) -> Float {
+  case x >=. 0.0 {
+    True -> x
+    False -> 0.0 -. x
+  }
+}
+
+/// Returns the result of the base being raised to the power of the
+/// exponent, as a `Float`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.power(2.0, -1.0) == Ok(0.5)
+/// ```
+///
+/// ```gleam
+/// assert float.power(2.0, 2.0) == Ok(4.0)
+/// ```
+///
+/// ```gleam
+/// assert float.power(8.0, 1.5) == Ok(22.627416997969522)
+/// ```
+///
+/// ```gleam
+/// assert 4.0 |> float.power(of: 2.0) == Ok(16.0)
+/// ```
+///
+/// ```gleam
+/// assert float.power(-1.0, 0.5) == Error(Nil)
+/// ```
+///
+pub fn power(base: Float, of exponent: Float) -> Result(Float, Nil) {
+  let fractional: Bool = ceiling(exponent) -. exponent >. 0.0
+  // In the following check:
+  // 1. If the base is negative and the exponent is fractional then
+  //    return an error as it will otherwise be an imaginary number
+  // 2. If the base is 0 and the exponent is negative then the expression
+  //    is equivalent to the exponent divided by 0 and an error should be
+  //    returned
+  case base <. 0.0 && fractional || base == 0.0 && exponent <. 0.0 {
+    True -> Error(Nil)
+    False -> Ok(do_power(base, exponent))
+  }
+}
+
+@external(erlang, "math", "pow")
+@external(javascript, "../gleam_stdlib.mjs", "power")
+fn do_power(a: Float, b: Float) -> Float
+
+/// Returns the square root of the input as a `Float`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.square_root(4.0) == Ok(2.0)
+/// ```
+///
+/// ```gleam
+/// assert float.square_root(-16.0) == Error(Nil)
+/// ```
+///
+pub fn square_root(x: Float) -> Result(Float, Nil) {
+  power(x, 0.5)
+}
+
+/// Returns the negative of the value provided.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.negate(1.0) == -1.0
+/// ```
+///
+pub fn negate(x: Float) -> Float {
+  -1.0 *. x
+}
+
+/// Sums a list of `Float`s.
+///
+/// ## Example
+///
+/// ```gleam
+/// assert float.sum([1.0, 2.2, 3.3]) == 6.5
+/// ```
+///
+pub fn sum(numbers: List(Float)) -> Float {
+  sum_loop(numbers, 0.0)
+}
+
+fn sum_loop(numbers: List(Float), initial: Float) -> Float {
+  case numbers {
+    [first, ..rest] -> sum_loop(rest, first +. initial)
+    [] -> initial
+  }
+}
+
+/// Multiplies a list of `Float`s and returns the product.
+///
+/// ## Example
+///
+/// ```gleam
+/// assert float.product([2.5, 3.2, 4.2]) == 33.6
+/// ```
+///
+pub fn product(numbers: List(Float)) -> Float {
+  product_loop(numbers, 1.0)
+}
+
+fn product_loop(numbers: List(Float), initial: Float) -> Float {
+  case numbers {
+    [first, ..rest] -> product_loop(rest, first *. initial)
+    [] -> initial
+  }
+}
+
+/// Generates a random float between the given zero (inclusive) and one
+/// (exclusive).
+///
+/// On Erlang this updates the random state in the process dictionary.
+/// See: <https://www.erlang.org/doc/man/rand.html#uniform-0>
+///
+/// ## Examples
+///
+/// ```gleam
+/// float.random()
+/// // -> 0.646355926896028
+/// ```
+///
+@external(erlang, "rand", "uniform")
+@external(javascript, "../gleam_stdlib.mjs", "random_uniform")
+pub fn random() -> Float
+
+/// Computes the modulo of a float division of inputs as a `Result`.
+///
+/// Returns division of the inputs as a `Result`: If the given divisor equals
+/// `0`, this function returns an `Error`.
+///
+/// The computed value will always have the same sign as the `divisor`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.modulo(13.3, by: 3.3) == Ok(0.1)
+/// ```
+///
+/// ```gleam
+/// assert float.modulo(-13.3, by: 3.3) == Ok(3.2)
+/// ```
+///
+/// ```gleam
+/// assert float.modulo(13.3, by: -3.3) == Ok(-3.2)
+/// ```
+///
+/// ```gleam
+/// assert float.modulo(-13.3, by: -3.3) == Ok(-0.1)
+/// ```
+///
+pub fn modulo(dividend: Float, by divisor: Float) -> Result(Float, Nil) {
+  case divisor {
+    0.0 -> Error(Nil)
+    _ -> Ok(dividend -. floor(dividend /. divisor) *. divisor)
+  }
+}
+
+/// Returns division of the inputs as a `Result`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.divide(0.0, 1.0) == Ok(0.0)
+/// ```
+///
+/// ```gleam
+/// assert float.divide(1.0, 0.0) == Error(Nil)
+/// ```
+///
+pub fn divide(a: Float, by b: Float) -> Result(Float, Nil) {
+  case b {
+    0.0 -> Error(Nil)
+    b -> Ok(a /. b)
+  }
+}
+
+/// Adds two floats together.
+///
+/// It's the function equivalent of the `+.` operator.
+/// This function is useful in higher order functions or pipes.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.add(1.0, 2.0) == 3.0
+/// ```
+///
+/// ```gleam
+/// import gleam/list
+///
+/// assert list.fold([1.0, 2.0, 3.0], 0.0, float.add) == 6.0
+/// ```
+///
+/// ```gleam
+/// assert 3.0 |> float.add(2.0) == 5.0
+/// ```
+///
+pub fn add(a: Float, b: Float) -> Float {
+  a +. b
+}
+
+/// Multiplies two floats together.
+///
+/// It's the function equivalent of the `*.` operator.
+/// This function is useful in higher order functions or pipes.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.multiply(2.0, 4.0) == 8.0
+/// ```
+///
+/// ```gleam
+/// import gleam/list
+///
+/// assert list.fold([2.0, 3.0, 4.0], 1.0, float.multiply) == 24.0
+/// ```
+///
+/// ```gleam
+/// assert 3.0 |> float.multiply(2.0) == 6.0
+/// ```
+///
+pub fn multiply(a: Float, b: Float) -> Float {
+  a *. b
+}
+
+/// Subtracts one float from another.
+///
+/// It's the function equivalent of the `-.` operator.
+/// This function is useful in higher order functions or pipes.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.subtract(3.0, 1.0) == 2.0
+/// ```
+///
+/// ```gleam
+/// import gleam/list
+///
+/// assert list.fold([1.0, 2.0, 3.0], 10.0, float.subtract) == 4.0
+/// ```
+///
+/// ```gleam
+/// assert 3.0 |> float.subtract(2.0) == 1.0
+/// ```
+///
+/// ```gleam
+/// assert 3.0 |> float.subtract(2.0, _) == -1.0
+/// ```
+///
+pub fn subtract(a: Float, b: Float) -> Float {
+  a -. b
+}
+
+/// Returns the natural logarithm (base e) of the given `Float` as a `Result`. If the
+/// input is less than or equal to 0, returns `Error(Nil)`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.logarithm(1.0) == Ok(0.0)
+/// ```
+///
+/// ```gleam
+/// assert float.logarithm(2.718281828459045) == Ok(1.0)
+/// ```
+///
+/// ```gleam
+/// assert float.logarithm(0.0) == Error(Nil)
+/// ```
+///
+/// ```gleam
+/// assert float.logarithm(-1.0) == Error(Nil)
+/// ```
+///
+pub fn logarithm(x: Float) -> Result(Float, Nil) {
+  // In the following check:
+  // 1. If x is negative then return an error as the natural logarithm
+  //    of a negative number is undefined (would be a complex number)
+  // 2. If x is 0 then return an error as the natural logarithm of 0
+  //    approaches negative infinity
+  case x <=. 0.0 {
+    True -> Error(Nil)
+    False -> Ok(do_log(x))
+  }
+}
+
+@external(erlang, "math", "log")
+@external(javascript, "../gleam_stdlib.mjs", "log")
+fn do_log(x: Float) -> Float
+
+/// Returns e (Euler's number) raised to the power of the given exponent, as
+/// a `Float`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// assert float.exponential(0.0) == 1.0
+/// ```
+///
+/// ```gleam
+/// assert float.exponential(1.0) == 2.718281828459045
+/// ```
+///
+/// ```gleam
+/// assert float.exponential(-1.0) == 0.36787944117144233
+/// ```
+///
+@external(erlang, "math", "exp")
+@external(javascript, "../gleam_stdlib.mjs", "exp")
+pub fn exponential(x: Float) -> Float
