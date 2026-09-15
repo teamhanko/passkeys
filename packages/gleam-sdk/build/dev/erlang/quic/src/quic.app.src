@@ -1,0 +1,11 @@
+{application,quic,
+             [{description,"Pure Erlang QUIC implementation (RFC 9000)"},
+              {vsn,"1.8.2"},
+              {registered,[quic_sup,quic_server_registry,quic_server_sup,
+                           quic_dist_sup,quic_dist_tickets,quic_dist_nat]},
+              {mod,{quic_app,[]}},
+              {applications,[kernel,stdlib,crypto,ssl]},
+              {env,[]},
+              {modules,[]},
+              {licenses,["Apache-2.0"]},
+              {links,[{"GitHub","https://github.com/benoitc/erlang_quic"}]}]}.

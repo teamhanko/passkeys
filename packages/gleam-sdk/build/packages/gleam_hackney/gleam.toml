@@ -1,0 +1,20 @@
+name = "gleam_hackney"
+version = "1.4.0"
+gleam = ">= 1.5.0"
+
+description = "Gleam bindings to the Hackney HTTP client"
+licences = ["Apache-2.0"]
+
+repository = { type = "github", user = "gleam-lang", repo = "hackney" }
+links = [
+  { title = "Website", href = "https://gleam.run" },
+  { title = "Sponsor", href = "https://github.com/sponsors/lpil" },
+]
+
+[dependencies]
+gleam_stdlib = ">= 0.45.0 and < 2.0.0"
+gleam_http = ">= 3.0.0 and < 5.0.0"
+hackney = ">= 4.0.2 and < 5.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
