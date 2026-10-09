@@ -1,5 +1,5 @@
 # Build the passkey-server binary
-FROM golang:1.20 AS builder
+FROM golang:1.25 AS builder
 WORKDIR /workspace
 
 # Get Delve
