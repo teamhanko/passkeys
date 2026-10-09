@@ -83,7 +83,7 @@ func (s *adminSuite) TestAdminRouter_Alive() {
 
 			ExpectedStatusCode:        http.StatusOK,
 			ExpectedStatusMessage:     "{\"alive\":true}\n",
-			ExpectedStatusContentType: "application/json; charset=UTF-8",
+			ExpectedStatusContentType: "application/json",
 		},
 		{
 			Name: "broken db but still alive",
@@ -92,7 +92,7 @@ func (s *adminSuite) TestAdminRouter_Alive() {
 
 			ExpectedStatusCode:        http.StatusOK,
 			ExpectedStatusMessage:     "{\"alive\":true}\n",
-			ExpectedStatusContentType: "application/json; charset=UTF-8",
+			ExpectedStatusContentType: "application/json",
 		},
 	}
 
@@ -134,7 +134,7 @@ func (s *adminSuite) TestAdminRouter_Ready() {
 
 			ExpectedStatusCode:        http.StatusOK,
 			ExpectedStatusMessage:     "{\"ready\":true}\n",
-			ExpectedStatusContentType: "application/json; charset=UTF-8",
+			ExpectedStatusContentType: "application/json",
 		},
 		{
 			Name: "broken db but still alive",
@@ -143,7 +143,7 @@ func (s *adminSuite) TestAdminRouter_Ready() {
 
 			ExpectedStatusCode:        http.StatusOK,
 			ExpectedStatusMessage:     "{\"ready\":true}\n",
-			ExpectedStatusContentType: "application/json; charset=UTF-8",
+			ExpectedStatusContentType: "application/json",
 		},
 	}
 
