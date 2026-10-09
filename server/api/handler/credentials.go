@@ -57,18 +57,32 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 		return err
 	}
 
-	service := services.NewCredentialService(ctx, *h.Tenant, credHandler.persister.GetWebauthnCredentialPersister(nil))
-	dtos, credentialsCount, err := service.List(*requestDto)
-	if err != nil {
-		return err
-	}
+	return credHandler.persister.Transaction(func(tx *pop.Connection) error {
+		if requestDto.UserId != "" {
+			user, err := credHandler.persister.GetWebauthnUserPersister(tx).GetByUserId(requestDto.UserId, h.Tenant.ID)
+			if err != nil {
+				ctx.Logger().Error(err)
+				return echo.NewHTTPError(http.StatusInternalServerError, "Unable to get credentials for user").SetInternal(err)
+			}
 
-	u, _ := url.Parse(fmt.Sprintf("%s://%s%s", ctx.Scheme(), ctx.Request().Host, ctx.Request().RequestURI))
+			if user == nil {
+				return echo.NewHTTPError(http.StatusNotFound, "User not found")
+			}
+		}
 
-	ctx.Response().Header().Set("Link", pagination.CreateHeader(u, credentialsCount, requestDto.Page, requestDto.PerPage))
-	ctx.Response().Header().Set("X-Total-Count", strconv.FormatInt(int64(credentialsCount), 10))
+		service := services.NewCredentialService(ctx, *h.Tenant, credHandler.persister.GetWebauthnCredentialPersister(tx))
+		dtos, credentialsCount, err := service.List(*requestDto)
+		if err != nil {
+			return err
+		}
 
-	return ctx.JSON(http.StatusOK, dtos)
+		u, _ := url.Parse(fmt.Sprintf("%s://%s%s", ctx.Scheme(), ctx.Request().Host, ctx.Request().RequestURI))
+
+		ctx.Response().Header().Set("Link", pagination.CreateHeader(u, credentialsCount, requestDto.Page, requestDto.PerPage))
+		ctx.Response().Header().Set("X-Total-Count", strconv.FormatInt(int64(credentialsCount), 10))
+
+		return ctx.JSON(http.StatusOK, dtos)
+	})
 }
 
 func (credHandler *credentialsHandler) Get(ctx echo.Context) error {
