@@ -1,0 +1,45 @@
+# Passkey Registration
+- id: ffa7f50b-aa30-47c2-afb7-31d73106b61a
+  challenge: 9Uh2PrYHyz0AAP1Q7eOn1KJ1sd-GP9jdsJ-0MfRJcEE
+  user_id: test-passkey
+  user_verification: required
+  operation: registration
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false
+
+# Passkey Registration Expires
+- id: ce82188f-adc8-4ff9-ace2-4c7b976d05c4
+  challenge: 3WSPcHAQa_7Qttv3JPdEGDX_pmHJtJ4fQ6_uDDC0Qdc
+  user_id: test-passkey-expire
+  user_verification: required
+  operation: registration
+  expires_at: 2024-05-21 23:59:59
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false
+
+# MFA Registration
+- id: 622f216f-4648-4dbf-83f6-c57596c9968f
+  challenge: imEMZwrShstDbo-UuVSLWJEs_h2ahh3u-L86OXHyprE
+  user_id: test-mfa
+  user_verification: required
+  operation: registration
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false
+
+# MFA Registration Expire
+- id: bf979934-2891-442d-bb6b-8cab26adf379
+  challenge: D7RqtZMXN48lk5S7hZPabQRk56nw3dyaR5hqh4Sl46U
+  user_id: test-mfa
+  user_verification: required
+  operation: registration
+  expires_at: 2024-05-21 23:59:59
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  is_discoverable: false

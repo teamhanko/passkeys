@@ -16,6 +16,7 @@ type JwkPersister interface {
 	GetAllForTenant(tenantId uuid.UUID) ([]models.Jwk, error)
 	GetLast(tenantId uuid.UUID) (*models.Jwk, error)
 	Create(models.Jwk) error
+	Delete(*models.Jwk) error
 }
 
 const (
@@ -74,6 +75,16 @@ func (p *jwkPersister) Create(jwk models.Jwk) error {
 
 	if vErr != nil && vErr.HasAny() {
 		return fmt.Errorf("jwk object validation failed: %w", vErr)
+	}
+
+	return nil
+}
+
+func (p *jwkPersister) Delete(jwk *models.Jwk) error {
+	err := p.db.Destroy(jwk)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete jwk: %w", err)
 	}
 
 	return nil

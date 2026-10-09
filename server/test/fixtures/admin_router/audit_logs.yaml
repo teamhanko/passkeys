@@ -1,0 +1,30 @@
+- id: 728e8991-2f32-497a-b05a-e61b97999c44
+  type: webauthn_transaction_init_succeeded
+  meta_http_request_id: atjAIuTpOGAQmzRNsCxQCEXwREvECCKR
+  meta_source_ip: 192.168.65.1
+  meta_user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+  actor_user_id: test-passkey
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+  transaction_id: 681a8dda-81f4-42f6-96eb-e46709290043
+
+- id: 728e8991-2f32-497a-b05a-e61b97999c45
+  type: webauthn_authentication_init_succeeded
+  meta_http_request_id: SECOND_REQUEST_ID
+  meta_source_ip: 192.168.65.1
+  meta_user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+  actor_user_id: test-passkey
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396e
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59
+
+- id: 728e8991-2f32-497a-b05a-e61b97999c46
+  type: webauthn_authentication_init_succeeded
+  meta_http_request_id: ANOTHER_TENANT_ID
+  meta_source_ip: 192.168.65.1
+  meta_user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+  actor_user_id: test-passkey
+  tenant_id: 6eb4710c-72df-4941-984d-f2cf3dbe396f
+  created_at: 2024-05-21 23:59:59
+  updated_at: 2024-05-21 23:59:59

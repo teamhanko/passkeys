@@ -48,7 +48,7 @@ func (lh *mfaLoginHandler) Init(ctx echo.Context) error {
 			Ctx:                 ctx,
 			Tenant:              *h.Tenant,
 			WebauthnClient:      *h.WebauthnClient,
-			UserId:              dto.UserId,
+			UserId:              &dto.UserId,
 			UserPersister:       userPersister,
 			SessionPersister:    sessionPersister,
 			CredentialPersister: credentialPersister,
@@ -56,12 +56,12 @@ func (lh *mfaLoginHandler) Init(ctx echo.Context) error {
 		})
 
 		credentialAssertion, err := service.Initialize()
-		err = lh.handleError(h.AuditLog, models.AuditLogMfaAuthenticationInitFailed, tx, ctx, dto.UserId, nil, err)
+		err = lh.handleError(h.AuditLog, models.AuditLogMfaAuthenticationInitFailed, tx, ctx, &dto.UserId, nil, err)
 		if err != nil {
 			return err
 		}
 
-		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogMfaAuthenticationInitSucceeded, dto.UserId, nil, nil)
+		auditErr := h.AuditLog.CreateWithConnection(tx, models.AuditLogMfaAuthenticationInitSucceeded, &dto.UserId, nil, nil)
 		if auditErr != nil {
 			ctx.Logger().Error(auditErr)
 			return fmt.Errorf(auditlog.CreationFailureFormat, auditErr)

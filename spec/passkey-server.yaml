@@ -24,21 +24,41 @@ paths:
       tags:
         - credentials
       summary: List Credentials
-      description: Get a list of WebAuthn credentials for a user
+      description: Get a paginated list of WebAuthn credentials. If `user_id` is given, only the credentials of that user are returned, or 404 if that user does not exist in the tenant.
       operationId: get-credentials
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
         - $ref: '#/components/parameters/user_id'
+        - name: page
+          in: query
+          description: Page to start from
+          schema:
+            type: number
+            default: 1
+        - name: per_page
+          in: query
+          description: How many credentials should be displayed per page
+          schema:
+            type: number
+            default: 20
+        - name: order
+          in: query
+          description: Sort order by creation date
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
         - $ref: '#/components/parameters/tenant_id'
-      requestBody:
-        description: ''
-        content: {}
       responses:
         '200':
           $ref: '#/components/responses/get-credentials'
         '400':
           $ref: '#/components/responses/error'
         '401':
+          $ref: '#/components/responses/error'
+        '404':
           $ref: '#/components/responses/error'
         '500':
           $ref: '#/components/responses/error'
@@ -478,8 +498,8 @@ components:
     user_id:
       name: user_id
       in: query
-      description: Representational id of the user
-      required: true
+      description: Representational id of the user. If omitted on the credentials list, credentials of all users of the tenant are returned.
+      required: false
       schema:
         type: string
     credential_id:
@@ -638,6 +658,15 @@ components:
   responses:
     get-credentials:
       description: Example response
+      headers:
+        Link:
+          schema:
+            type: string
+          description: links to pages
+        X-Total-Count:
+          schema:
+            type: number
+          description: Total number of credentials
       content:
         application/json:
           schema:
