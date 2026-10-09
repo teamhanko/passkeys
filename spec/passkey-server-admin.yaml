@@ -144,7 +144,7 @@ paths:
   '/tenants/{tenant_id}/secrets/jwk':
     post:
       summary: Create JWK
-      description: Creates a new JWT encryption key
+      description: Creates a new JWT encryption key. Returns 409 if a key with the same name already exists.
       operationId: post-admin-tenant-tenant_id-secrets-jwk
       parameters:
         - $ref: '#/components/parameters/tenant_id'
@@ -169,6 +169,8 @@ paths:
         '400':
           $ref: '#/components/responses/error'
         '404':
+          $ref: '#/components/responses/error'
+        '409':
           $ref: '#/components/responses/error'
         '500':
           $ref: '#/components/responses/error'
@@ -208,7 +210,7 @@ paths:
   '/tenants/{tenant_id}/secrets/api':
     post:
       summary: Create API key
-      description: Creates a new API key
+      description: Creates a new API key. Returns 409 if a key with the same name already exists.
       operationId: post-admin-tenant-tenant_id-secrets-api
       parameters:
         - $ref: '#/components/parameters/tenant_id'
@@ -233,6 +235,8 @@ paths:
         '400':
           $ref: '#/components/responses/error'
         '404':
+          $ref: '#/components/responses/error'
+        '409':
           $ref: '#/components/responses/error'
         '500':
           $ref: '#/components/responses/error'
