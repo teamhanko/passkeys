@@ -375,6 +375,9 @@ func (s *mainRouterSuite) TestMainRouter_Registration_Finalize() {
 				s.Require().NoError(err)
 
 				s.Assert().Len(creds, 1)
+				n, cerr := s.Storage.GetConnection().Count("webauthn_credential_transports")
+				s.Require().NoError(cerr)
+				s.Assert().Equal(1, n, "credential transports must be persisted")
 				s.Assert().Equal(currentTest.CredName, *creds[0].Name)
 			}
 		})
