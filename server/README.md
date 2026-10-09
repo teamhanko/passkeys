@@ -146,9 +146,9 @@ curl --location 'http://<YOUR DOMAIN>:8001/tenants' \
       "user_verification": "preferred",
       "attestation_preference": "none",
       "resident_key_requirement": "required"
-    },
-    "create_api_key": true
-  }
+    }
+  },
+  "create_api_key": true
 }'
 ```
 > **Note**: The result of the curl command will contain your **tenant id** (Field: `id`) and your **API key** (Field: `api_key.secret`). 

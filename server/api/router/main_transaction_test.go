@@ -469,13 +469,13 @@ func (s *mainRouterSuite) TestMainRouter_Transaction_Finish() {
 			ExpectedStatusMessage: "The api key is invalid",
 		},
 		{
-			Name:                  "wrong user handle",
+			Name:                  "user handle in response is ignored for non-discoverable session",
 			TenantId:              "6eb4710c-72df-4941-984d-f2cf3dbe396e",
 			UserId:                "a1B2c3D4",
 			ApiKey:                "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
 			RequestBody:           `{"type":"public-key","id":"9QEeUpkDJqEy4sa7JUe1PjpYMSO4nQQNN9X-kK0wTFQ","rawId":"9QEeUpkDJqEy4sa7JUe1PjpYMSO4nQQNN9X-kK0wTFQ","authenticatorAttachment":"platform","response":{"clientDataJSON":"eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiRHlwQUlpODVuclVlWkR4THltMkNqeEhRRE1kRzNNTmRiaU13eXVKZ0VDZmh5ZVJsY3dDMEV5Z1ZFb2FEbDkxYlJVM1hLYWMwSnZLbU5oMi1XM01MV3ciLCJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjMwMDAiLCJjcm9zc09yaWdpbiI6ZmFsc2V9","authenticatorData":"SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAAA","signature":"MEYCIQDUYA_5bvdEf0LT5Xq2qMQvEKUflVBd5pcl2wkz87KlYgIhAO3XNLPOSwffYdnwht5h3pJTexxc-KwuLpsCSsWCfbLc","userHandle":"dGVzdA=="},"clientExtensionResults":{}}`,
-			ExpectedStatusCode:    http.StatusUnauthorized,
-			ExpectedStatusMessage: "failed to get user by user handle",
+			ExpectedStatusCode:    http.StatusOK,
+			ExpectedStatusMessage: "token",
 		},
 		{
 			Name:                  "wrong credential",

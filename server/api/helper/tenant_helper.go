@@ -2,10 +2,11 @@ package helper
 
 import (
 	"fmt"
-	"github.com/labstack/echo/v4"
-	"github.com/teamhanko/passkey-server/persistence/models"
 	"net/http"
 	"strings"
+
+	"github.com/labstack/echo/v4"
+	"github.com/teamhanko/passkey-server/persistence/models"
 )
 
 func CheckApiKey(keys []models.Secret, apiKey string) error {
@@ -18,17 +19,13 @@ func CheckApiKey(keys []models.Secret, apiKey string) error {
 	}
 
 	if foundKey == nil {
-		title := "The api key is invalid"
-		details := "api keys needs to be an apiKey Header and 32 byte long"
-
-		return echo.NewHTTPError(http.StatusUnauthorized, title).SetInternal(fmt.Errorf(details))
+		return echo.NewHTTPError(http.StatusUnauthorized, "The api key is invalid").
+			SetInternal(fmt.Errorf("api keys needs to be an apiKey Header and 32 byte long"))
 	}
 
 	if !foundKey.IsAPISecret {
-		title := "The api key is invalid"
-		details := "provided key is not an api key"
-
-		return echo.NewHTTPError(http.StatusUnauthorized, title).SetInternal(fmt.Errorf(details))
+		return echo.NewHTTPError(http.StatusUnauthorized, "The api key is invalid").
+			SetInternal(fmt.Errorf("provided key is not an api key"))
 	}
 
 	return nil

@@ -371,7 +371,7 @@ func (s *mainRouterSuite) TestMainRouter_Registration_Finalize() {
 			s.Assert().Contains(rec.Body.String(), currentTest.ExpectedStatusMessage)
 
 			if rec.Code == http.StatusOK {
-				creds, err := s.Storage.GetWebauthnCredentialPersister(nil).GetFromUser(currentTest.UserId, uuid.FromStringOrNil(currentTest.TenantId))
+				creds, err := s.Storage.GetWebauthnCredentialPersister(nil).List(uuid.FromStringOrNil(currentTest.TenantId), request.ListCredentialsDto{UserId: currentTest.UserId, Page: 1, PerPage: 100})
 				s.Require().NoError(err)
 
 				s.Assert().Len(creds, 1)

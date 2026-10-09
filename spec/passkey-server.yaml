@@ -2,15 +2,15 @@ openapi: 3.1.0
 info:
   version: '1.2'
   title: passkey-server
-  description: 'This API shall represent the private and public endpoints for passkey registration, management and authentication'
+  description: 'This API represents the public and private endpoints for passkey registration, management and authentication'
   termsOfService: 'https://www.hanko.io/terms'
   contact:
     email: developers@hanko.io
     url: 'https://www.hanko.io'
     name: Hanko Dev Team
   license:
-    url: 'https://www.gnu.org/licenses/gpl-3.0.de.html'
-    name: GPLv3
+    url: 'https://www.gnu.org/licenses/agpl-3.0.html'
+    name: AGPLv3
 servers:
   - url: 'http://{host}:8000/{path_prefix}'
     variables:
@@ -24,7 +24,7 @@ paths:
       tags:
         - credentials
       summary: List Credentials
-      description: Get a list of webauthn credentials for a user
+      description: Get a list of WebAuthn credentials for a user
       operationId: get-credentials
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
@@ -55,7 +55,7 @@ paths:
       tags:
         - credentials
       summary: Update Credential
-      description: Endpoint for updating a webauthn credential
+      description: Endpoint for updating a WebAuthn credential
       operationId: patch-credentials-credentialId
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
@@ -84,7 +84,7 @@ paths:
               default: ''
     delete:
       summary: Remove Credential
-      description: Endpoint for removing a webauthn credential
+      description: Endpoint for removing a WebAuthn credential
       operationId: delete-credentials-credentialId
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
@@ -114,7 +114,7 @@ paths:
       tags:
         - credentials
       summary: Start Passkey Registration
-      description: Initialize a registration for webauthn credentials
+      description: Initialize a registration for WebAuthn credentials
       operationId: post-registration-initialize
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
@@ -433,7 +433,7 @@ paths:
       tags:
         - transaction
       summary: List transactions for a user
-      description: Lists all transactions for a given user.
+      description: Lists all transactions for a given user
       operationId: get-tenant_id-transaction-user_id
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'
@@ -478,7 +478,7 @@ components:
     user_id:
       name: user_id
       in: query
-      description: representational id of the user
+      description: Representational id of the user
       required: true
       schema:
         type: string
@@ -624,7 +624,7 @@ components:
             properties:
               user_id:
                 type: string
-                description: optional - when provided the API Key needs to be sent to the server too.
+                description: Optional – if set, the API key needs to be included in the request to the server
     post-mfa-login-initialize:
       content:
         application/json:
@@ -874,7 +874,7 @@ components:
           type: string
         data:
           type: string
-          description: stringified data object
+          description: Stringified data object
         created_at:
           type: string
           format: date-time

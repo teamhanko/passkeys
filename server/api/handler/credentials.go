@@ -1,18 +1,25 @@
 package handler
 
 import (
+	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+
 	"github.com/gobuffalo/pop/v6"
 	"github.com/labstack/echo/v4"
 	"github.com/teamhanko/passkey-server/api/dto/request"
+	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/api/helper"
+	"github.com/teamhanko/passkey-server/api/pagination"
 	"github.com/teamhanko/passkey-server/api/services"
 	"github.com/teamhanko/passkey-server/persistence"
 	"github.com/teamhanko/passkey-server/persistence/models"
-	"net/http"
 )
 
 type CredentialsHandler interface {
 	List(ctx echo.Context) error
+	Get(ctx echo.Context) error
 	Update(ctx echo.Context) error
 	Delete(ctx echo.Context) error
 }
@@ -36,6 +43,14 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 		return err
 	}
 
+	if requestDto.Page <= 0 {
+		requestDto.Page = 1
+	}
+
+	if requestDto.PerPage <= 0 {
+		requestDto.PerPage = 20
+	}
+
 	h, err := helper.GetHandlerContext(ctx)
 	if err != nil {
 		ctx.Logger().Error(err)
@@ -43,25 +58,55 @@ func (credHandler *credentialsHandler) List(ctx echo.Context) error {
 	}
 
 	return credHandler.persister.Transaction(func(tx *pop.Connection) error {
-		user, err := credHandler.persister.GetWebauthnUserPersister(tx).GetByUserId(requestDto.UserId, h.Tenant.ID)
-		if err != nil {
-			ctx.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusInternalServerError, "Unable to get credentials for user").SetInternal(err)
-		}
+		if requestDto.UserId != "" {
+			user, err := credHandler.persister.GetWebauthnUserPersister(tx).GetByUserId(requestDto.UserId, h.Tenant.ID)
+			if err != nil {
+				ctx.Logger().Error(err)
+				return echo.NewHTTPError(http.StatusInternalServerError, "Unable to get credentials for user").SetInternal(err)
+			}
 
-		if user == nil {
-			return echo.NewHTTPError(http.StatusNotFound, "User not found")
+			if user == nil {
+				return echo.NewHTTPError(http.StatusNotFound, "User not found")
+			}
 		}
 
 		service := services.NewCredentialService(ctx, *h.Tenant, credHandler.persister.GetWebauthnCredentialPersister(tx))
-		dtos, err := service.List(*requestDto)
+		dtos, credentialsCount, err := service.List(*requestDto)
 		if err != nil {
 			return err
 		}
 
+		u, _ := url.Parse(fmt.Sprintf("%s://%s%s", ctx.Scheme(), ctx.Request().Host, ctx.Request().RequestURI))
+
+		ctx.Response().Header().Set("Link", pagination.CreateHeader(u, credentialsCount, requestDto.Page, requestDto.PerPage))
+		ctx.Response().Header().Set("X-Total-Count", strconv.FormatInt(int64(credentialsCount), 10))
+
 		return ctx.JSON(http.StatusOK, dtos)
 	})
+}
 
+func (credHandler *credentialsHandler) Get(ctx echo.Context) error {
+	requestDto, err := BindAndValidateRequest[request.GetCredentialDto](ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	h, err := helper.GetHandlerContext(ctx)
+	if err != nil {
+		ctx.Logger().Error(err)
+		return err
+	}
+
+	service := services.NewCredentialService(ctx, *h.Tenant, credHandler.persister.GetWebauthnCredentialPersister(nil))
+	credential, err := service.Get(*requestDto)
+	if err != nil {
+		return err
+	}
+
+	credentialDto := response.CredentialDtoFromModel(*credential)
+
+	return ctx.JSON(http.StatusOK, credentialDto)
 }
 
 func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
