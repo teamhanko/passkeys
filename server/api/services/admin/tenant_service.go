@@ -115,6 +115,10 @@ func (ts *tenantService) Create(dto request.CreateTenantDto) (*response.CreateTe
 		&relyingPartyModel,
 		&mfaConfigModel,
 	)
+	if err != nil {
+		ts.logger.Error(err)
+		return nil, fmt.Errorf("unable to persist tenant config: %w", err)
+	}
 
 	var apiSecretModel *models.Secret = nil
 	if dto.CreateApiKey {
