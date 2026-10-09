@@ -1,0 +1,87 @@
+
+name: DAST - Passkey API
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  dast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start Passkey API
+        run: |
+          cd deploy/docker-compose
+          docker compose -f backend.yaml up -d
+
+      - name: Wait for API
+        run: |
+          for i in $(seq 1 60); do
+            if curl -s --max-time 2 \
+              -o /dev/null http://localhost:8000; then
+              echo "API is reachable"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not start"
+          exit 1
+
+      - name: Prepare ZAP scan
+        run: |
+          SPEC=$(find spec -maxdepth 1 -type f \
+            \( -name '*.yaml' -o -name '*.yml' \) \
+            ! -iname '*admin*' | head -n 1)
+
+          if [ -z "$SPEC" ]; then
+            echo "No public OpenAPI spec found"
+            exit 1
+          fi
+
+          echo "SPEC=$SPEC" >> "$GITHUB_ENV"
+          mkdir -p zap-reports
+          chmod 777 zap-reports
+
+      - name: Run ZAP API scan
+        run: |
+          set +e
+          docker run --rm --network host \
+            -v "$PWD:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-api-scan.py \
+            -t "$SPEC" \
+            -f openapi \
+            -O http://127.0.0.1:8000 \
+            -r zap-reports/report.html \
+            -J zap-reports/report.json \
+            -I
+
+          result=$?
+          if [ "$result" -gt 2 ]; then
+            echo "ZAP execution failed: $result"
+            exit 1
+          fi
+          exit 0
+
+      - name: Upload scan reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-scan-report
+          path: zap-reports/
+          retention-days: 90
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          cd deploy/docker-compose
+          docker compose -f backend.yaml logs --tail=100
