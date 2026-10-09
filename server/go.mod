@@ -47,7 +47,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-viper/mapstructure/v2 v2.1.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/go-webauthn/x v0.1.6 // indirect
 	github.com/gobuffalo/envy v1.10.2 // indirect
 	github.com/gobuffalo/fizz v1.14.4 // indirect

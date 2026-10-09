@@ -115,8 +115,8 @@ github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/me
 github.com/go-test/deep v1.0.2-0.20181118220953-042da051cf31/go.mod h1:wGDj63lr65AM2AQyKZd/NYHGb0R+1RLqB8NKt3aSFNA=
 github.com/go-testfixtures/testfixtures/v3 v3.19.0 h1:/Y0bars250zggm+1A2PvwaJQsJel7/tS4D/Hhwt66Bc=
 github.com/go-testfixtures/testfixtures/v3 v3.19.0/go.mod h1:4/hVAuX2As0/ej3fLuAd+IvoCXV7/h2cj5nInI11uxM=
-github.com/go-viper/mapstructure/v2 v2.1.0 h1:gHnMa2Y/pIxElCH2GlZZ1lZSsn6XMtufpGyP1XxdC/w=
-github.com/go-viper/mapstructure/v2 v2.1.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
+github.com/go-viper/mapstructure/v2 v2.4.0 h1:EBsztssimR/CONLSZZ04E8qAkxNYq4Qp9LvH92wZUgs=
+github.com/go-viper/mapstructure/v2 v2.4.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/go-webauthn/webauthn v0.10.0 h1:yuW2e1tXnRAwAvKrR4q4LQmc6XtCMH639/ypZGhZCwk=
 github.com/go-webauthn/webauthn v0.10.0/go.mod h1:l0NiauXhL6usIKqNLCUM3Qir43GK7ORg8ggold0Uv/Y=
 github.com/go-webauthn/x v0.1.6 h1:QNAX+AWeqRt9loE8mULeWJCqhVG5D/jvdmJ47fIWCkQ=
