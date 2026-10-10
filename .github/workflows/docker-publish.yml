@@ -37,6 +37,15 @@ jobs:
       id-token: write
 
     steps:
+      # Fail early on malformed release tags. Without this, a tag that does not
+      # match the pattern in the metadata step below would silently produce no
+      # tags at all. Keep both patterns in sync.
+      - name: Validate release tag
+        if: github.ref_type == 'tag'
+        run: |
+          [[ "$GITHUB_REF_NAME" =~ ^backend/v[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            || { echo "::error::Tag '$GITHUB_REF_NAME' does not match backend/vX.Y.Z"; exit 1; }
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -66,7 +75,7 @@ jobs:
           tags: |
             type=schedule
             type=ref,event=branch,suffix=-{{sha}}-{{date 'YYYY-MM-DD.HHmmss'}}
-            type=match,pattern=backend/(v\d.\d.\d),group=1,event=tag
+            type=match,pattern=^backend/(v\d+\.\d+\.\d+)$,group=1,event=tag
             type=ref,event=pr
 
       # Build and push Docker image with Buildx (don't push on PR)
