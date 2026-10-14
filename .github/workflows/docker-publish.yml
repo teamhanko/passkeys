@@ -128,6 +128,8 @@ jobs:
           SYFT_CHECK_FOR_APP_UPDATE: 'false'
           SYFT_GOLANG_SEARCH_REMOTE_LICENSES: 'true'
           SYFT_GOLANG_PROXY: https://proxy.golang.org
+          # Preserve evidence for non-standard LicenseRef entries in SPDX.
+          SYFT_LICENSE_CONTENT: 'unknown'
         run: |
           mkdir -p sbom
           for arch in amd64 arm64; do
