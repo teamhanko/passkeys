@@ -78,6 +78,15 @@ jobs:
             type=match,pattern=^backend/(v\d+\.\d+\.\d+)$,group=1,event=tag
             type=ref,event=pr
 
+      - name: Determine server version
+        id: version
+        run: |
+          version="dev-$GITHUB_SHA"
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#backend/}"
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
@@ -89,24 +98,51 @@ jobs:
           file: ${{ matrix.context }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           sbom: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.value }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Export SBOMs from the published image
+      - name: Install Syft
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/syft"
+          cd "$RUNNER_TEMP/syft"
+          gh release download v1.51.0 --repo anchore/syft \
+            --pattern syft_1.51.0_linux_amd64.tar.gz --pattern syft_1.51.0_checksums.txt
+          sha256sum --check --ignore-missing syft_1.51.0_checksums.txt
+          tar -xzf syft_1.51.0_linux_amd64.tar.gz syft
+          echo "$RUNNER_TEMP/syft" >> "$GITHUB_PATH"
+
+      # Customer SBOMs are separate scans of the same immutable image, with
+      # Go license enrichment. The original BuildKit attestations stay intact.
+      - name: Generate release SBOMs with Go license information
         if: github.event_name != 'pull_request'
         env:
           IMAGE: ${{ matrix.image }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
+          VERSION: ${{ steps.version.outputs.value }}
+          SYFT_CHECK_FOR_APP_UPDATE: 'false'
+          SYFT_GOLANG_SEARCH_REMOTE_LICENSES: 'true'
+          SYFT_GOLANG_PROXY: https://proxy.golang.org
         run: |
           mkdir -p sbom
-          docker buildx imagetools inspect "$IMAGE@$DIGEST" \
-            --format '{{ json .SBOM }}' > sbom-index.json
           for arch in amd64 arm64; do
-            jq -e --arg platform "linux/$arch" \
-              '.[$platform].SPDX | select(.spdxVersion and (.packages | type == "array"))' \
-              sbom-index.json > "sbom/passkey-server-linux-$arch.spdx.json"
+            syft scan "registry:$IMAGE@$DIGEST" --platform "linux/$arch" \
+              --source-name passkey-server --source-version "$VERSION" \
+              --override-default-catalogers image,file \
+              --output "spdx-json=sbom/passkey-server-$VERSION-linux-$arch.spdx.json"
+            if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+              jq -e --arg version "$VERSION" \
+                '[.packages[] | select(.name == "github.com/teamhanko/passkey-server")] |
+                 length == 1 and (.[0].versionInfo == $version)' \
+                "sbom/passkey-server-$VERSION-linux-$arch.spdx.json" > /dev/null
+            fi
           done
           printf '%s\n' "$IMAGE@$DIGEST" > sbom/image.txt
+          cp LICENSE sbom/LICENSE
 
       - name: Upload SBOM artifacts
         if: github.event_name != 'pull_request'
