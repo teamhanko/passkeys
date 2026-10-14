@@ -91,3 +91,27 @@ jobs:
           sbom: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Export SBOMs from the published image
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGE: ${{ matrix.image }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+        run: |
+          mkdir -p sbom
+          docker buildx imagetools inspect "$IMAGE@$DIGEST" \
+            --format '{{ json .SBOM }}' > sbom-index.json
+          for arch in amd64 arm64; do
+            jq -e --arg platform "linux/$arch" \
+              '.[$platform].SPDX | select(.spdxVersion and (.packages | type == "array"))' \
+              sbom-index.json > "sbom/passkey-server-linux-$arch.spdx.json"
+          done
+          printf '%s\n' "$IMAGE@$DIGEST" > sbom/image.txt
+
+      - name: Upload SBOM artifacts
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: passkey-server-sbom
+          path: sbom/
+          if-no-files-found: error

@@ -1,0 +1,78 @@
+name: Attach release SBOMs
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  attach-sbom:
+    if: startsWith(github.event.release.tag_name, 'backend/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - name: Find and wait for the release image build
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^backend/v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          # Publishing a release can also create its tag. Allow the Docker
+          # workflow to appear, then wait for its SBOM artifacts to be ready.
+          for attempt in {1..24}; do
+            runs=$(gh run list --workflow docker-publish.yml --event push \
+              --commit "$RELEASE_SHA" --limit 100 \
+              --json databaseId,headBranch)
+            run_id=$(jq -r --arg tag "$RELEASE_TAG" \
+              '[.[] | select(.headBranch == $tag)][0].databaseId // empty' <<< "$runs")
+            if [[ -n "$run_id" ]]; then
+              break
+            fi
+            sleep 5
+          done
+          if [[ -z "$run_id" ]]; then
+            echo "::error::No Docker build found for $RELEASE_TAG at $RELEASE_SHA"
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status --interval 10
+          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download the release image SBOMs
+        uses: actions/download-artifact@v7
+        with:
+          name: passkey-server-sbom
+          path: sbom
+          run-id: ${{ steps.build.outputs.run-id }}
+          github-token: ${{ github.token }}
+
+      - name: Attach missing SBOM assets without replacing existing files
+        shell: bash
+        run: |
+          set -euo pipefail
+          existing=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')
+          comparison_dir=$(mktemp -d)
+          trap 'rm -rf "$comparison_dir"' EXIT
+          missing=()
+          # Check all existing files before uploading anything.
+          for name in passkey-server-linux-amd64.spdx.json passkey-server-linux-arm64.spdx.json image.txt; do
+            test -s "sbom/$name"
+            if grep -Fxq "$name" <<< "$existing"; then
+              gh release download "$RELEASE_TAG" --pattern "$name" --dir "$comparison_dir"
+              if ! cmp -s "sbom/$name" "$comparison_dir/$name"; then
+                echo "::error::Release asset $name already exists with different content; nothing will be replaced."
+                exit 1
+              fi
+            else
+              missing+=("sbom/$name")
+            fi
+          done
+          if (( ${#missing[@]} )); then
+            gh release upload "$RELEASE_TAG" "${missing[@]}"
+          fi
