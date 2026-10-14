@@ -120,6 +120,7 @@ jobs:
       # Go license enrichment. The original BuildKit attestations stay intact.
       - name: Generate release SBOMs with Go license information
         if: github.event_name != 'pull_request'
+        shell: bash
         env:
           IMAGE: ${{ matrix.image }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
@@ -133,7 +134,7 @@ jobs:
             syft scan "registry:$IMAGE@$DIGEST" --platform "linux/$arch" \
               --source-name passkey-server --source-version "$VERSION" \
               --override-default-catalogers image,file \
-              --output "spdx-json=sbom/passkey-server-$VERSION-linux-$arch.spdx.json"
+              --output spdx-json | jq . > "sbom/passkey-server-$VERSION-linux-$arch.spdx.json"
             if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
               jq -e --arg version "$VERSION" \
                 '[.packages[] | select(.name == "github.com/teamhanko/passkey-server")] |
