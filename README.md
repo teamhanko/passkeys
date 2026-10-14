@@ -1,52 +1,107 @@
-This monorepo contains all required infrastructure for adding passkey support to apps with an existing auth system and user base.
+# Hanko Passkey API
 
-It features:
+**Passkey authentication for your web and mobile apps.**
 
--   **Passkey Server (API)**  
-    an HTTP API that manages passkeys for your users
+Hanko Passkey API is an open-source, FIDO2-certified WebAuthn server for passkey registration and authentication. Build a new application with passkeys from day one, or add them to an existing app.
 
--   **OpenAPI 3.0 Spec**  
-    an OpenAPI 3.0 specification for the Passkey Server's API
+Your application controls user management and sessions. Hanko Passkey API handles passkey registration, credential storage, and authentication verification.
 
--   **JavaScript/TypeScript SDK**  
-    a typesafe wrapper around the API for JS apps (Node.js, Browser, Deno, Bun, ...)
+Integrate through an HTTP API or JavaScript/TypeScript SDK. Self-host the server or use the managed service on [Hanko Cloud](https://cloud.hanko.io).
 
-# Passkey Server
+Built-in **multi-tenancy** lets you manage passkeys for multiple applications or customers within a single deployment.
 
-Passkey Server provides an HTTP API for registration and login with passkeys (WebAuthn) to provide a modern
-user experience in a world beyond passwords.
+**Looking for a complete authentication system?** Use [Hanko](https://github.com/teamhanko/hanko). Choose Passkey API when you only need WebAuthn and want to manage users and sessions in your application or through another service.
 
-Passkey Server can be used on its own or in combination with its frontend SDKs to add passkey support to any app.
+[Documentation](https://docs.hanko.io/passkey-api/introduction) · [Hanko Cloud](https://cloud.hanko.io) · [Self-hosting](server/README.md) · [Discord](https://discord.com/invite/jW2r526qjg)
 
-The API is written in Go and provides the following endpoints:
+## Features
 
--   /credential - For managing already registered credentials (Listing, Updating or Removing Credentials)
--   /registration - For registering new passkeys
--   /login - For an authentication flow with passkeys
--   /transaction - Sign transactions with passkeys
+- **Passkey registration and authentication:** Enable passwordless signup and login in your web or mobile app.
+- **Second-factor authentication:** Use WebAuthn credentials, including hardware security keys, alongside your existing login.
+- **Multi-tenancy:** Manage multiple tenants with their own WebAuthn configuration and API keys.
+- **Credential management:** List, update, and remove registered credentials.
+- **Transaction authentication:** Require WebAuthn authentication to authorize transactions.
+- **FIDO2-certified server:** Built on Hanko’s certified WebAuthn infrastructure.
+- **Flexible integration:** Use the HTTP API from any backend or the JavaScript/TypeScript SDK.
+- **Self-hosted or managed:** Run the Go server on your own infrastructure or use Hanko Cloud.
 
-The detailed OpenAPI Specification can be found [here](/spec/passkey-server.yaml)
+## Getting started
 
-### Getting started
+### Hanko Cloud
 
-See the [server readme](/server/README.md) for how to get started.
+Use the managed Passkey API without operating your own server.
 
-# Contact us
+1. Create an account on [Hanko Cloud](https://cloud.hanko.io).
+2. Create a Passkey API project.
+3. Follow the [integration documentation](https://docs.hanko.io/passkey-api/introduction) to add passkey registration and login to your application.
 
-Passkey Server is developed and maintained by [Hanko](https://www.hanko.io). For business inquiries you can book a meeting here:
+### Self-hosting
 
-<a target="_blank" href="https://cal.com/team/hanko/demo"><img alt="Book us with Cal.com"  src="https://cal.com/book-with-cal-light.svg" /></a>
+Run the server locally using Docker Compose:
 
-# Community
+```bash
+git clone https://github.com/teamhanko/passkeys.git
+cd passkeys/deploy/docker-compose
+docker compose -f backend.yaml up -d
+```
 
-### Questions, bugs, ideas
+The Passkey API is available at `http://localhost:8000`, and the Admin API at `http://localhost:8001`.
 
-If you have any questions or issues, please check the [open issues](https://github.com/teamhanko/passkeys/issues). Feel free to comment on existing issues or create a new issue if you encounter any bugs or have a feature request. For yet unanswered questions, feedback, or new ideas, please open a new discussion.
+Next, [create a tenant](server/README.md#create-tenant) to configure your relying party, allowed origins, and API key.
 
-### Discord community & X
+See the [server README](server/README.md) for configuration, database setup, and deployment instructions. The local Docker Compose setup is intended as a starting point; secure access to the Admin API before deploying to production.
 
-We invite you to join our growing [Discord community](https://www.hanko.io/community) if you want to get the latest updates on passkeys, WebAuthn, and this project, or if you just want to chat with us. You can also [follow us on X](https://x.com/hanko_io).
+## How it works
 
-# License
+Your application manages users, accounts, and sessions. Hanko Passkey API handles WebAuthn registration, credential storage, and authentication verification.
 
-This project is licensed under the [AGPL-3.0](LICENSE).
+**Register a passkey**
+
+1. A user creates an account or signs in to an existing account in your application.
+2. Your backend starts passkey registration for that user.
+3. The user creates a passkey using their device or security key.
+4. Hanko Passkey API verifies and stores the credential.
+
+**Sign in with a passkey**
+
+1. Your application starts passkey authentication.
+2. The user authenticates using their passkey.
+3. Hanko Passkey API verifies the response.
+4. Your backend validates the authentication result and creates a session for the user.
+
+Keep secret API keys on your backend. Requests that require an API key must never expose it to the browser or mobile client.
+
+For implementation details and examples, see the [documentation](https://docs.hanko.io/passkey-api/introduction).
+
+## Multi-tenancy
+
+A single Passkey API deployment can serve multiple tenants, making it suitable for SaaS platforms and service providers that offer passkey authentication to their customers.
+
+Each tenant has its own relying party configuration, allowed origins, and API keys. Use the Admin API to provision and manage tenants programmatically.
+
+See the [tenant setup guide](server/README.md#create-tenant) for an example.
+
+## Repository structure
+
+| Directory | Contents |
+| --- | --- |
+| [`server`](server) | Go-based Passkey API server and Admin API |
+| [`packages`](packages) | JavaScript/TypeScript SDK packages |
+| [`spec`](spec) | OpenAPI specifications |
+| [`deploy/docker-compose`](deploy/docker-compose) | Docker Compose configuration for local setup |
+
+## Documentation and support
+
+- [Passkey API documentation](https://docs.hanko.io/passkey-api/introduction)
+- [Self-hosting guide](server/README.md)
+- [OpenAPI specifications](spec)
+- [GitHub issues](https://github.com/teamhanko/passkeys/issues) for bugs and feature requests
+- [Discord](https://discord.com/invite/jW2r526qjg) for questions and community discussions
+
+Developed and maintained by [Hanko](https://www.hanko.io). For commercial licensing, deployment support, or a managed service, contact [info@hanko.io](mailto:info@hanko.io).
+
+## License
+
+The Passkey API server is licensed under [AGPL-3.0](LICENSE). JavaScript/TypeScript SDKs are available under the MIT license; see the respective package licenses.
+
+Commercial licenses are available for organizations that need alternative licensing terms. Contact [info@hanko.io](mailto:info@hanko.io) for details.
