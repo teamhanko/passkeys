@@ -1,18 +1,22 @@
 # Hanko Passkey API
 
-**Add passkeys to your existing app. Keep your authentication stack.**
+**Passkey authentication for your web and mobile apps.**
 
-Hanko Passkey API is an open-source, FIDO2-certified WebAuthn server for adding passkey registration and authentication to applications with an existing user base.
+Hanko Passkey API is an open-source, FIDO2-certified WebAuthn server for passkey registration and authentication. Build a new application with passkeys from day one, or add them to an existing app.
+
+Your application controls user management and sessions. Hanko Passkey API handles passkey registration, credential storage, and authentication verification.
 
 Integrate through an HTTP API or JavaScript/TypeScript SDK. Self-host the server or use the managed service on [Hanko Cloud](https://cloud.hanko.io).
 
 Built-in **multi-tenancy** lets you manage passkeys for multiple applications or customers within a single deployment.
 
+**Looking for a complete authentication system?** Use [Hanko](https://github.com/teamhanko/hanko). Choose Passkey API when you only need WebAuthn and want to manage users and sessions in your application or through another service.
+
 [Documentation](https://docs.hanko.io/passkey-api/introduction) · [Hanko Cloud](https://cloud.hanko.io) · [Self-hosting](server/README.md) · [Discord](https://discord.com/invite/jW2r526qjg)
 
 ## Features
 
-- **Passkey registration and authentication:** Add passwordless login to existing user accounts.
+- **Passkey registration and authentication:** Enable passwordless signup and login in your web or mobile app.
 - **Second-factor authentication:** Use WebAuthn credentials, including hardware security keys, alongside your existing login.
 - **Multi-tenancy:** Manage multiple tenants with their own WebAuthn configuration and API keys.
 - **Credential management:** List, update, and remove registered credentials.
@@ -49,11 +53,11 @@ See the [server README](server/README.md) for configuration, database setup, and
 
 ## How it works
 
-Your application continues to manage users, accounts, and sessions. Hanko Passkey API handles WebAuthn registration, credential storage, and authentication verification.
+Your application manages users, accounts, and sessions. Hanko Passkey API handles WebAuthn registration, credential storage, and authentication verification.
 
 **Register a passkey**
 
-1. A user signs in through your existing authentication system.
+1. A user creates an account or signs in to an existing account in your application.
 2. Your backend starts passkey registration for that user.
 3. The user creates a passkey using their device or security key.
 4. Hanko Passkey API verifies and stores the credential.
@@ -63,7 +67,7 @@ Your application continues to manage users, accounts, and sessions. Hanko Passke
 1. Your application starts passkey authentication.
 2. The user authenticates using their passkey.
 3. Hanko Passkey API verifies the response.
-4. Your backend validates the authentication result and creates a session through your existing authentication system.
+4. Your backend validates the authentication result and creates a session for the user.
 
 Keep secret API keys on your backend. Requests that require an API key must never expose it to the browser or mobile client.
 
