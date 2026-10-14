@@ -4,6 +4,11 @@
 	"private": false,
 	"type": "module",
 	"version": "1.0.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/teamhanko/passkeys.git",
+		"directory": "packages/js/passkeys-sdk"
+	},
 	"module": "src/index.ts",
 	"main": "dist/index.js",
 	"types": "./dist/src/index.d.ts",
