@@ -21,8 +21,12 @@ COPY mapper mapper
 COPY utils utils
 
 # Build
-RUN go generate ./...
-RUN CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" go build -a -o passkey-server main.go
+# The Docker context contains no Git metadata. CI supplies the release version.
+ARG VERSION=dev
+RUN printf '%s\n' "$VERSION" > build_info/version.txt
+RUN CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" go build -a \
+    -ldflags="-X github.com/teamhanko/passkey-server/build_info.version=$VERSION" \
+    -o passkey-server main.go
 
 # Use distroless as minimal base image to package passkey-server binary
 # See https://github.com/GoogleContainerTools/distroless for details
