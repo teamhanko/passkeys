@@ -219,7 +219,13 @@ paths:
   '/{tenant_id}/login/finalize':
     post:
       summary: Finish Login
-      description: Finalize the login operation
+      description: >-
+        Finalize the login operation. The signed JWT includes sub (user ID), cred
+        (credential ID), aud (RP ID), iat, exp, and challenge. The challenge claim
+        is the exact base64url-encoded challenge verified during authentication.
+        Before creating or upgrading an application session, verify the JWT and
+        compare challenge with the value previously stored for that session,
+        unless your backend already enforces an equivalent binding.
       operationId: post-login-finalize
       parameters:
         - $ref: '#/components/parameters/tenant_id'
@@ -422,7 +428,13 @@ paths:
         - credentials
         - mfa
       summary: Finish MFA Login
-      description: Finalize the login operation
+      description: >-
+        Finalize the login operation. The signed JWT includes sub (user ID), cred
+        (credential ID), aud (RP ID), iat, exp, and challenge. The challenge claim
+        is the exact base64url-encoded challenge verified during authentication.
+        Before creating or upgrading an application session, verify the JWT and
+        compare challenge with the value previously stored for that session,
+        unless your backend already enforces an equivalent binding.
       operationId: post-mfa-login-finalize
       parameters:
         - $ref: '#/components/parameters/X-API-KEY'

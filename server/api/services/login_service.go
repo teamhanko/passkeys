@@ -142,7 +142,7 @@ func (ls *loginService) Finalize(req *protocol.ParsedCredentialAssertionData) (s
 		return "", userHandle, fmt.Errorf("failed to delete assertion session data: %w", err)
 	}
 
-	token, err := ls.createUserCredentialToken(webauthnUser.UserId, credentialId)
+	token, err := ls.createUserCredentialToken(webauthnUser.UserId, credentialId, sessionData.Challenge)
 	if err != nil {
 		ls.logger.Error(err)
 		return "", userHandle, err

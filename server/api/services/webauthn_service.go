@@ -80,8 +80,8 @@ func (ws *WebauthnService) getWebauthnUserByUserHandle(userHandle string) (*inte
 	return intern.NewWebauthnUser(*user, ws.useMFA), nil
 }
 
-func (ws *WebauthnService) createUserCredentialToken(userId string, credentialId string) (string, error) {
-	token, err := ws.generator.Generate(userId, credentialId)
+func (ws *WebauthnService) createUserCredentialToken(userId string, credentialId string, challenge string) (string, error) {
+	token, err := ws.generator.GenerateForLogin(userId, credentialId, challenge)
 	if err != nil {
 		ws.logger.Error(err)
 		return "", fmt.Errorf("failed to generate jwt: %w", err)
