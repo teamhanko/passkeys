@@ -704,6 +704,9 @@ func (s *mainRouterSuite) TestMainRouter_MFA_Login_Finish() {
 
 			s.Assert().Equal(currentTest.ExpectedStatusCode, rec.Code)
 			s.Assert().Contains(rec.Body.String(), currentTest.ExpectedStatusMessage)
+			if currentTest.ExpectedStatusCode == http.StatusOK {
+				s.assertLoginChallenge(mainRouter, currentTest.TenantId, currentTest.RequestBody, rec.Body.Bytes())
+			}
 		})
 	}
 }

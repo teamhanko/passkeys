@@ -15,6 +15,7 @@ type Generator interface {
 	Sign(jwt.Token) ([]byte, error)
 	Verify([]byte) (jwt.Token, error)
 	Generate(userId string, credentialId string) (string, error)
+	GenerateForLogin(userId string, credentialId string, challenge string) (string, error)
 	GenerateForTransaction(userId string, credentialId string, transactionIdentifier string) (string, error)
 }
 
@@ -96,6 +97,17 @@ func (g *generator) signToken(token jwt.Token) (string, error) {
 
 func (g *generator) Generate(userId string, credentialId string) (string, error) {
 	token := g.generateDefaultToken(userId, credentialId)
+	return g.signToken(token)
+}
+
+// GenerateForLogin binds the authentication result to the verified WebAuthn
+// challenge. Applications compare this claim with their pending login session.
+func (g *generator) GenerateForLogin(userId string, credentialId string, challenge string) (string, error) {
+	if challenge == "" {
+		return "", fmt.Errorf("login challenge must not be empty")
+	}
+	token := g.generateDefaultToken(userId, credentialId)
+	_ = token.Set("challenge", challenge)
 	return g.signToken(token)
 }
 
