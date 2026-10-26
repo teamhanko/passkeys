@@ -329,9 +329,9 @@ export interface components {
   requestBodies: {
     "patch-credential"?: {
       content: {
-        "application/json": {
-          name: string;
-        };
+        "application/json":
+          | { name: string; is_mfa?: boolean }
+          | { name?: string; is_mfa: boolean };
       };
     };
     "post-registration-initialize"?: {

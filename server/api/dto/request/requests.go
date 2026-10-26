@@ -33,8 +33,9 @@ type DeleteCredentialsDto struct {
 }
 
 type UpdateCredentialsDto struct {
-	CredentialId string `param:"credential_id" validate:"required"`
-	Name         string `json:"name" validate:"required"`
+	CredentialId string  `param:"credential_id" validate:"required"`
+	Name         *string `json:"name" validate:"required_without=IsMFA,omitempty,min=1"`
+	IsMFA        *bool   `json:"is_mfa"`
 }
 
 type WebauthnRequests interface {

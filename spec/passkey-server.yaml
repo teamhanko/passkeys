@@ -546,6 +546,24 @@ components:
         minLength: 32
   requestBodies:
     patch-credential:
+      description: |
+        Administratively update a credential using the tenant's secret API key.
+        Provide name, is_mfa, or both. Omitted fields remain unchanged.
+        Setting is_mfa to false permits normal login and transaction authentication
+        under the tenant's existing WebAuthn policy. Setting it to true restricts
+        the credential to MFA use; normal credentials can also be used for MFA.
+        This operation does not verify possession or user verification (UV), and
+        does not make a credential discoverable. Non-discoverable credentials
+        still require a login with a user_id. Before enabling standalone login,
+        the customer backend should authorize the change using a fresh, complete
+        authentication and ensure user_verification is required for subsequent
+        passwordless logins. A credential that cannot perform UV cannot log in
+        under that policy. Restricting a credential may remove a user's last
+        standalone login method. Existing sessions are not revoked.
+        When audit logging is enabled, webauthn_credential_updated includes the
+        credential_id and, if is_mfa was submitted, old_is_mfa and new_is_mfa.
+        Equal old and new values indicate an idempotent request. Stored audit
+        entries and credential changes are committed in the same transaction.
       content:
         application/json:
           schema:
@@ -553,8 +571,13 @@ components:
             properties:
               name:
                 type: string
-            required:
-              - name
+                minLength: 1
+              is_mfa:
+                type: boolean
+                description: Whether the credential is restricted to MFA use.
+            anyOf:
+              - required: [name]
+              - required: [is_mfa]
     post-registration-initialize:
       description: ''
       content:

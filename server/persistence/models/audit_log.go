@@ -19,6 +19,17 @@ type AuditLog struct {
 	Tenant            *Tenant      `json:"-" belongs_to:"tenants"`
 	TenantID          uuid.UUID    `json:"tenant_id" db:"tenant_id"`
 	TransactionId     *string      `json:"transaction_id" db:"transaction_id"`
+	CredentialID      *string      `json:"credential_id,omitempty" db:"credential_id"`
+	OldIsMFA          *bool        `json:"old_is_mfa,omitempty" db:"old_is_mfa"`
+	NewIsMFA          *bool        `json:"new_is_mfa,omitempty" db:"new_is_mfa"`
+}
+
+// CredentialAuditDetails describes the credential policy before and after an update.
+// Nil flags indicate that is_mfa was not part of the request.
+type CredentialAuditDetails struct {
+	CredentialID string
+	OldIsMFA     *bool
+	NewIsMFA     *bool
 }
 
 type AuditLogs []AuditLog

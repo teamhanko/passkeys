@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gofrs/uuid"
+	"github.com/teamhanko/passkey-server/api/dto/intern"
 	"github.com/teamhanko/passkey-server/api/dto/response"
 	"github.com/teamhanko/passkey-server/config"
+	"github.com/teamhanko/passkey-server/persistence/models"
+	"github.com/teamhanko/passkey-server/persistence/persisters"
 	"net/http"
 	"net/http/httptest"
 )
@@ -257,7 +260,7 @@ func (s *mainRouterSuite) TestMainRouter_UpdateCredentials() {
 				Lorem: "Ipsum",
 			},
 			ExpectedStatusCode:   http.StatusBadRequest,
-			ExpectedErrorMessage: "name is a required field",
+			ExpectedErrorMessage: "name is required when IsMFA is not provided",
 		},
 		{
 			Name:                 "missing request body",
@@ -267,7 +270,7 @@ func (s *mainRouterSuite) TestMainRouter_UpdateCredentials() {
 			ApiKey:               "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg==",
 			SkipBody:             true,
 			ExpectedStatusCode:   http.StatusBadRequest,
-			ExpectedErrorMessage: "name is a required field",
+			ExpectedErrorMessage: "name is required when IsMFA is not provided",
 		},
 		{
 			Name:           "broken db",
@@ -337,6 +340,107 @@ func (s *mainRouterSuite) TestMainRouter_UpdateCredentials() {
 			} else {
 				s.Assert().Contains(rec.Body.String(), currentTest.ExpectedErrorMessage)
 			}
+		})
+	}
+}
+
+func (s *mainRouterSuite) TestMainRouter_UpdateCredentialMFA() {
+	s.SkipOnShort()
+	const tenantID = "6eb4710c-72df-4941-984d-f2cf3dbe396e"
+	const credentialID = "kV8CJn6hoh2wIhKyw6x2fI9nGiEN5Sdczhx3o6ejgcY"
+	const apiKey = "d3917w2_RXsixVaJn2QZn4BmqrRs-G_rNmTTA2Few_lxXMNzv_7aI1uJCg_mJp7h5PdstRSD5LTrvWfwEF0PNg=="
+	for _, tt := range []struct {
+		name                  string
+		body                  string
+		initialMFA            bool
+		expectedMFA           bool
+		status                int
+		unauthorized          bool
+		otherTenantCredential bool
+	}{
+		{"enable standalone login", `{"is_mfa":false}`, true, false, http.StatusNoContent, false, false},
+		{"restrict to MFA", `{"is_mfa":true}`, false, true, http.StatusNoContent, false, false},
+		{"rename MFA credential", `{"name":"Renamed"}`, true, true, http.StatusNoContent, false, false},
+		{"update both", `{"name":"Renamed","is_mfa":false}`, true, false, http.StatusNoContent, false, false},
+		{"idempotent false", `{"is_mfa":false}`, false, false, http.StatusNoContent, false, false},
+		{"idempotent true", `{"is_mfa":true}`, true, true, http.StatusNoContent, false, false},
+		{"empty patch", `{}`, true, true, http.StatusBadRequest, false, false},
+		{"null flag", `{"is_mfa":null}`, true, true, http.StatusBadRequest, false, false},
+		{"invalid flag", `{"is_mfa":"false"}`, true, true, http.StatusBadRequest, false, false},
+		{"empty name and valid flag", `{"name":"","is_mfa":false}`, true, true, http.StatusBadRequest, false, false},
+		{"missing API key", `{"is_mfa":false}`, true, true, http.StatusUnauthorized, true, false},
+		{"different tenant", `{"is_mfa":true}`, false, false, http.StatusNotFound, false, true},
+		{"audit storage failure", `{"is_mfa":false}`, true, true, http.StatusInternalServerError, false, false},
+	} {
+		s.Run(tt.name, func() {
+			s.Require().NoError(s.LoadMultipleFixtures([]string{"../../test/fixtures/common", "../../test/fixtures/main_router/credentials"}))
+			persister := s.Storage.GetWebauthnCredentialPersister(nil)
+			tenant := uuid.FromStringOrNil(tenantID)
+			tenantModel, err := s.Storage.GetTenantPersister(nil).Get(tenant)
+			s.Require().NoError(err)
+			auditConfig := models.AuditLogConfig{ID: uuid.Must(uuid.NewV4()), ConfigID: tenantModel.Config.ID, StorageEnabled: true, OutputStream: "stdout"}
+			s.Require().NoError(s.Storage.GetConnection().Create(&auditConfig))
+			if tt.name == "audit storage failure" {
+				s.Require().NoError(s.Storage.GetConnection().RawQuery("ALTER TABLE audit_logs ADD CONSTRAINT reject_credential_update CHECK (type <> 'webauthn_credential_updated')").Exec())
+			}
+			before, err := persister.Get(credentialID, tenant)
+			s.Require().NoError(err)
+			before.IsMFA = tt.initialMFA
+			s.Require().NoError(persister.Update(before))
+			id := credentialID
+			if tt.otherTenantCredential {
+				id = "4Yx3hvHKiJgqq3BRsmY-5zDzS52GSKcQpWumEl5aF-E"
+			}
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/%s/credentials/%s", tenantID, id), bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			if !tt.unauthorized {
+				req.Header.Set("apiKey", apiKey)
+			}
+			rec := httptest.NewRecorder()
+			NewMainRouter(&config.Config{}, s.Storage, nil).ServeHTTP(rec, req)
+			s.Require().Equal(tt.status, rec.Code, rec.Body.String())
+			after, err := persister.Get(credentialID, tenant)
+			s.Require().NoError(err)
+			s.Equal(tt.expectedMFA, after.IsMFA)
+			var body struct {
+				Name  *string         `json:"name"`
+				IsMFA json.RawMessage `json:"is_mfa"`
+			}
+			s.Require().NoError(json.Unmarshal([]byte(tt.body), &body))
+			if tt.status == http.StatusNoContent && body.Name != nil {
+				s.Equal(*body.Name, *after.Name)
+			} else {
+				s.Equal(before.Name, after.Name)
+			}
+			s.Equal(before.PublicKey, after.PublicKey)
+			logs, err := s.Storage.GetAuditLogPersister(nil).List(persisters.AuditLogOptions{TenantId: tenantID, Page: 1, PerPage: 10})
+			s.Require().NoError(err)
+			if tt.status == http.StatusNoContent {
+				s.Require().Len(logs, 1)
+				s.Equal(models.AuditLogWebAuthnCredentialUpdated, logs[0].Type)
+				s.Require().NotNil(logs[0].CredentialID)
+				s.Equal(credentialID, *logs[0].CredentialID)
+				if body.IsMFA != nil {
+					s.Require().NotNil(logs[0].OldIsMFA)
+					s.Require().NotNil(logs[0].NewIsMFA)
+					s.Equal(tt.initialMFA, *logs[0].OldIsMFA)
+					s.Equal(tt.expectedMFA, *logs[0].NewIsMFA)
+				} else {
+					s.Nil(logs[0].OldIsMFA)
+					s.Nil(logs[0].NewIsMFA)
+				}
+			} else {
+				s.Empty(logs)
+			}
+			// The same persisted policy controls credential availability for login.
+			user := intern.WebauthnUser{WebauthnCredentials: models.WebauthnCredentials{*after}}
+			if tt.expectedMFA {
+				s.Empty(user.WebAuthnCredentials())
+			} else {
+				s.Len(user.WebAuthnCredentials(), 1)
+			}
+			user.IsMfaUser = true
+			s.Len(user.WebAuthnCredentials(), 1)
 		})
 	}
 }
