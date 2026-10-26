@@ -17,7 +17,7 @@ import (
 
 type Logger interface {
 	Create(models.AuditLogType, *string, *models.Transaction, error) error
-	CreateWithConnection(*pop.Connection, models.AuditLogType, *string, *models.Transaction, error) error
+	CreateWithConnection(*pop.Connection, models.AuditLogType, *string, *models.Transaction, error, ...models.CredentialAuditDetails) error
 }
 
 type logger struct {
@@ -58,22 +58,26 @@ func (l *logger) Create(auditLogType models.AuditLogType, user *string, transact
 	return l.CreateWithConnection(l.persister.GetConnection(), auditLogType, user, transaction, logError)
 }
 
-func (l *logger) CreateWithConnection(tx *pop.Connection, auditLogType models.AuditLogType, user *string, transaction *models.Transaction, logError error) error {
+func (l *logger) CreateWithConnection(tx *pop.Connection, auditLogType models.AuditLogType, user *string, transaction *models.Transaction, logError error, details ...models.CredentialAuditDetails) error {
+	var credentialDetails *models.CredentialAuditDetails
+	if len(details) > 0 {
+		credentialDetails = &details[0]
+	}
 	if l.storageEnabled {
-		err := l.store(tx, auditLogType, user, transaction, logError)
+		err := l.store(tx, auditLogType, user, transaction, logError, credentialDetails)
 		if err != nil {
 			return err
 		}
 	}
 
 	if l.consoleLoggingEnabled {
-		l.logToConsole(auditLogType, user, transaction, logError)
+		l.logToConsole(auditLogType, user, transaction, logError, credentialDetails)
 	}
 
 	return nil
 }
 
-func (l *logger) store(tx *pop.Connection, auditLogType models.AuditLogType, user *string, transaction *models.Transaction, logError error) error {
+func (l *logger) store(tx *pop.Connection, auditLogType models.AuditLogType, user *string, transaction *models.Transaction, logError error, details *models.CredentialAuditDetails) error {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return fmt.Errorf("failed to create id: %w", err)
@@ -91,6 +95,11 @@ func (l *logger) store(tx *pop.Connection, auditLogType models.AuditLogType, use
 		TransactionId:     nil,
 	}
 
+	if details != nil {
+		al.CredentialID = &details.CredentialID
+		al.OldIsMFA = details.OldIsMFA
+		al.NewIsMFA = details.NewIsMFA
+	}
 	if user != nil {
 		al.ActorUserId = user
 	}
@@ -108,7 +117,7 @@ func (l *logger) store(tx *pop.Connection, auditLogType models.AuditLogType, use
 	return l.persister.GetAuditLogPersister(tx).Create(al)
 }
 
-func (l *logger) logToConsole(auditLogType models.AuditLogType, user *string, transaction *models.Transaction, logError error) {
+func (l *logger) logToConsole(auditLogType models.AuditLogType, user *string, transaction *models.Transaction, logError error, details *models.CredentialAuditDetails) {
 	now := time.Now()
 	loggerEvent := zeroLogger.Log().
 		Str("audience", "audit").
@@ -129,5 +138,14 @@ func (l *logger) logToConsole(auditLogType models.AuditLogType, user *string, tr
 		loggerEvent.Str("transaction_id", transaction.Identifier)
 	}
 
+	if details != nil {
+		loggerEvent.Str("credential_id", details.CredentialID)
+		if details.OldIsMFA != nil {
+			loggerEvent.Bool("old_is_mfa", *details.OldIsMFA)
+		}
+		if details.NewIsMFA != nil {
+			loggerEvent.Bool("new_is_mfa", *details.NewIsMFA)
+		}
+	}
 	loggerEvent.Send()
 }

@@ -42,6 +42,8 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 				switch err.Tag() {
 				case "required":
 					vErrs[i] = fmt.Sprintf("%s is a required field", err.Field())
+				case "required_without":
+					vErrs[i] = fmt.Sprintf("%s is required when %s is not provided", err.Field(), err.Param())
 				case "email":
 					vErrs[i] = fmt.Sprintf("%s must be a valid email address", err.Field())
 				case "uuid4":

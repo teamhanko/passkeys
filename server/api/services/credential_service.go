@@ -14,12 +14,17 @@ import (
 type CredentialService interface {
 	List(dto request.ListCredentialsDto) (response.CredentialDtoList, int, error)
 	Get(dto request.GetCredentialDto) (*models.WebauthnCredential, error)
-	Update(dto request.UpdateCredentialsDto) (*models.WebauthnCredential, error)
+	Update(dto request.UpdateCredentialsDto) (*CredentialUpdateResult, error)
 	Delete(dto request.DeleteCredentialsDto) error
 }
 
 type credentialService struct {
 	*BaseService
+}
+
+type CredentialUpdateResult struct {
+	*models.WebauthnCredential
+	PreviousIsMFA bool
 }
 
 func NewCredentialService(ctx echo.Context, tenant models.Tenant, credentialPersister persisters.WebauthnCredentialPersister) CredentialService {
@@ -67,7 +72,7 @@ func (cs *credentialService) Get(dto request.GetCredentialDto) (*models.Webauthn
 	return credential, nil
 }
 
-func (cs *credentialService) Update(dto request.UpdateCredentialsDto) (*models.WebauthnCredential, error) {
+func (cs *credentialService) Update(dto request.UpdateCredentialsDto) (*CredentialUpdateResult, error) {
 
 	credential, err := cs.credentialPersister.Get(dto.CredentialId, cs.tenant.ID)
 	if err != nil {
@@ -79,14 +84,20 @@ func (cs *credentialService) Update(dto request.UpdateCredentialsDto) (*models.W
 		return nil, echo.NewHTTPError(http.StatusNotFound, fmt.Errorf("credential with id '%s' not found", dto.CredentialId))
 	}
 
-	credential.Name = &dto.Name
+	previousIsMFA := credential.IsMFA
+	if dto.Name != nil {
+		credential.Name = dto.Name
+	}
+	if dto.IsMFA != nil {
+		credential.IsMFA = *dto.IsMFA
+	}
 	err = cs.credentialPersister.Update(credential)
 	if err != nil {
 		cs.logger.Error(err)
 		return nil, err
 	}
 
-	return credential, nil
+	return &CredentialUpdateResult{WebauthnCredential: credential, PreviousIsMFA: previousIsMFA}, nil
 }
 
 func (cs *credentialService) Delete(dto request.DeleteCredentialsDto) error {

@@ -130,7 +130,12 @@ func (credHandler *credentialsHandler) Update(ctx echo.Context) error {
 			return err
 		}
 
-		err = h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnCredentialUpdated, &credential.UserId, nil, nil)
+		details := models.CredentialAuditDetails{CredentialID: credential.ID}
+		if requestDto.IsMFA != nil {
+			details.OldIsMFA = &credential.PreviousIsMFA
+			details.NewIsMFA = &credential.IsMFA
+		}
+		err = h.AuditLog.CreateWithConnection(tx, models.AuditLogWebAuthnCredentialUpdated, &credential.UserId, nil, nil, details)
 		if err != nil {
 			ctx.Logger().Error(err)
 			return err

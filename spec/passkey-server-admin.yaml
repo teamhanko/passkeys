@@ -926,6 +926,15 @@ components:
           type: string
         actor_user_id:
           type: string
+        credential_id:
+          type: string
+          description: Credential affected by a credential update. Absent on older entries.
+        old_is_mfa:
+          type: boolean
+          description: Previous restriction to MFA use, included when is_mfa was explicitly submitted.
+        new_is_mfa:
+          type: boolean
+          description: Restriction to MFA use after the update. Equal values indicate an idempotent request.
         created_at:
           type: string
           format: date-time
